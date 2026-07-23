@@ -1,44 +1,8 @@
 package ratio
 
-var ImageSizeRatios = map[string]map[string]float64{
-	"dall-e-2": {
-		"256x256":   1,
-		"512x512":   1.125,
-		"1024x1024": 1.25,
-	},
-	"dall-e-3": {
-		"1024x1024": 1,
-		"1024x1792": 2,
-		"1792x1024": 2,
-	},
-	"ali-stable-diffusion-xl": {
-		"512x1024":  1,
-		"1024x768":  1,
-		"1024x1024": 1,
-		"576x1024":  1,
-		"1024x576":  1,
-	},
-	"ali-stable-diffusion-v1.5": {
-		"512x1024":  1,
-		"1024x768":  1,
-		"1024x1024": 1,
-		"576x1024":  1,
-		"1024x576":  1,
-	},
-	"wanx-v1": {
-		"1024x1024": 1,
-		"720x1280":  1,
-		"1280x720":  1,
-	},
-	"step-1x-medium": {
-		"256x256":   1,
-		"512x512":   1,
-		"768x768":   1,
-		"1024x1024": 1,
-		"1280x800":  1,
-		"800x1280":  1,
-	},
-}
+// ImageSizeRatios 图片尺寸倍率表已移除，统一返回固定值 1.0。
+// 保留空 map 声明以兼容 relay/controller/image.go 的引用。
+var ImageSizeRatios = map[string]map[string]float64{}
 
 var ImageGenerationAmounts = map[string][2]int{
 	"dall-e-2":                  {1, 10},

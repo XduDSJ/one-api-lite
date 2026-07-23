@@ -222,3 +222,15 @@ func DeleteDisabledChannel() (int64, error) {
 	result := DB.Where("status = ? or status = ?", ChannelStatusAutoDisabled, ChannelStatusManuallyDisabled).Delete(&Channel{})
 	return result.RowsAffected, result.Error
 }
+
+// GetChannelCount 统计渠道总数与启用中的渠道数
+func GetChannelCount() (int64, int64, error) {
+	var total int64
+	var enabled int64
+	err := DB.Model(&Channel{}).Count(&total).Error
+	if err != nil {
+		return 0, 0, err
+	}
+	err = DB.Model(&Channel{}).Where("status = ?", ChannelStatusEnabled).Count(&enabled).Error
+	return total, enabled, err
+}

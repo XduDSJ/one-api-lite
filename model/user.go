@@ -399,3 +399,10 @@ func GetUsernameById(id int) (username string) {
 	DB.Model(&User{}).Where("id = ?", id).Select("username").Find(&username)
 	return username
 }
+
+// GetUserCount 统计未删除的用户总数
+func GetUserCount() (int64, error) {
+	var count int64
+	err := DB.Model(&User{}).Where("status != ?", UserStatusDeleted).Count(&count).Error
+	return count, err
+}

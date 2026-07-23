@@ -295,3 +295,10 @@ func PostConsumeTokenQuota(tokenId int, quota int64) (err error) {
 	}
 	return nil
 }
+
+// GetTokenCount 统计令牌总数
+func GetTokenCount() (int64, error) {
+	var count int64
+	err := DB.Model(&Token{}).Count(&count).Error
+	return count, err
+}

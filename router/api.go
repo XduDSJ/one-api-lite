@@ -100,5 +100,7 @@ func SetApiRouter(router *gin.Engine) {
 		{
 			groupRoute.GET("/", controller.GetGroups)
 		}
+		// 总览仪表盘（管理员）
+		apiRouter.GET("/dashboard/overview", middleware.AdminAuth(), controller.GetOverviewDashboard)
 	}
 }

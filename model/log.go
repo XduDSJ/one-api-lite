@@ -249,3 +249,88 @@ func SearchLogsByDayAndModel(userId, start, end int) (LogStatistics []*LogStatis
 
 	return LogStatistics, err
 }
+
+// LogDailyStat 全局每日统计
+type LogDailyStat struct {
+	Day              string `gorm:"column:day"`
+	RequestCount     int    `gorm:"column:request_count"`
+	Quota            int    `gorm:"column:quota"`
+	PromptTokens     int    `gorm:"column:prompt_tokens"`
+	CompletionTokens int    `gorm:"column:completion_tokens"`
+}
+
+// LogModelStat 按模型统计
+type LogModelStat struct {
+	ModelName        string `gorm:"column:model_name"`
+	RequestCount     int    `gorm:"column:request_count"`
+	Quota            int    `gorm:"column:quota"`
+	PromptTokens     int    `gorm:"column:prompt_tokens"`
+	CompletionTokens int    `gorm:"column:completion_tokens"`
+}
+
+// LogChannelStat 按渠道统计
+type LogChannelStat struct {
+	ChannelId        int `gorm:"column:channel_id"`
+	RequestCount     int `gorm:"column:request_count"`
+	Quota            int `gorm:"column:quota"`
+	PromptTokens     int `gorm:"column:prompt_tokens"`
+	CompletionTokens int `gorm:"column:completion_tokens"`
+}
+
+// SearchLogsByDayAll 全局按天统计消费日志（type=2）
+func SearchLogsByDayAll(start, end int) (stats []*LogDailyStat, err error) {
+	groupSelect := "DATE_FORMAT(FROM_UNIXTIME(created_at), '%Y-%m-%d') as day"
+	if common.UsingPostgreSQL {
+		groupSelect = "TO_CHAR(date_trunc('day', to_timestamp(created_at)), 'YYYY-MM-DD') as day"
+	}
+	if common.UsingSQLite {
+		groupSelect = "strftime('%Y-%m-%d', datetime(created_at, 'unixepoch')) as day"
+	}
+	err = LOG_DB.Raw(`
+		SELECT `+groupSelect+`,
+		count(1) as request_count,
+		sum(quota) as quota,
+		sum(prompt_tokens) as prompt_tokens,
+		sum(completion_tokens) as completion_tokens
+		FROM logs
+		WHERE type=2
+		AND created_at BETWEEN ? AND ?
+		GROUP BY day
+		ORDER BY day
+	`, start, end).Scan(&stats).Error
+	return stats, err
+}
+
+// SearchLogsByModelAll 全局按模型统计消费日志（type=2）
+func SearchLogsByModelAll(start, end int) (stats []*LogModelStat, err error) {
+	err = LOG_DB.Raw(`
+		SELECT model_name,
+		count(1) as request_count,
+		sum(quota) as quota,
+		sum(prompt_tokens) as prompt_tokens,
+		sum(completion_tokens) as completion_tokens
+		FROM logs
+		WHERE type=2
+		AND created_at BETWEEN ? AND ?
+		GROUP BY model_name
+		ORDER BY request_count DESC
+	`, start, end).Scan(&stats).Error
+	return stats, err
+}
+
+// SearchLogsByChannelAll 全局按渠道统计消费日志（type=2）
+func SearchLogsByChannelAll(start, end int) (stats []*LogChannelStat, err error) {
+	err = LOG_DB.Raw(`
+		SELECT channel_id,
+		count(1) as request_count,
+		sum(quota) as quota,
+		sum(prompt_tokens) as prompt_tokens,
+		sum(completion_tokens) as completion_tokens
+		FROM logs
+		WHERE type=2
+		AND created_at BETWEEN ? AND ?
+		GROUP BY channel_id
+		ORDER BY request_count DESC
+	`, start, end).Scan(&stats).Error
+	return stats, err
+}

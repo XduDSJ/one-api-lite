@@ -35,6 +35,15 @@
 - [ ] 手动验证:新建渠道 → 从上游获取模型 → /v1/models 接口
 - [ ] 手动验证:商业功能已移除(无兑换/充值入口)
 
+### 4. 模型别名功能 ✅
+- [x] `EditChannel.js`: 新增 `modelAliases` 状态和别名表格 UI
+- [x] `loadChannel` 反向解析 modelAliases(从 models + model_mapping)
+- [x] `fetchUpstreamModels`/`addCustomModel`/`handleModelsChange` 同步 modelAliases
+- [x] `submit` 从 modelAliases 生成最终 models 和 model_mapping
+- [x] model_mapping 文本框设为只读,由别名表格自动生成
+- [x] i18n: 添加别名相关翻译 key(中英文)
+- [x] 前端构建验证通过
+
 ## 已知限制
 
 1. **CGO/gcc 未安装**:`model` 包测试因 go-sqlite3 需要 CGO 而跳过,非代码问题;`common/image` 测试因网络超时失败,与改动无关

@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Button, Card, Form, Input, Message} from 'semantic-ui-react';
+import {Button, Card, Form, Input, Message, Table} from 'semantic-ui-react';
 import {useNavigate, useParams} from 'react-router-dom';
 import {API, copy, showError, showInfo, showSuccess, verifyJSON,} from '../../helpers';
 import {CHANNEL_OPTIONS} from '../../constants';
@@ -55,6 +55,9 @@ const EditChannel = () => {
   const [groupOptions, setGroupOptions] = useState([]);
   const [customModel, setCustomModel] = useState('');
   const [fetchingModels, setFetchingModels] = useState(false);
+  // 模型别名列表: [{original: string, alias: string}]
+  // alias 为空时使用原始名;alias !== original 时生成 model_mapping
+  const [modelAliases, setModelAliases] = useState([]);
   const [config, setConfig] = useState({
     region: '',
     sk: '',
@@ -85,13 +88,25 @@ const EditChannel = () => {
       } else {
         data.groups = data.group.split(',');
       }
+      // 从 models + model_mapping 反向解析 modelAliases
+      let mapping = {};
       if (data.model_mapping !== '') {
-        data.model_mapping = JSON.stringify(
-          JSON.parse(data.model_mapping),
-          null,
-          2
-        );
+        try {
+          mapping = JSON.parse(data.model_mapping);
+        } catch (e) {
+          // model_mapping 格式错误,忽略
+        }
       }
+      let aliases = data.models.map((model) => {
+        // 如果 model 是 mapping 的 key,则它是别名
+        if (mapping[model]) {
+          return { original: mapping[model], alias: model };
+        }
+        return { original: model, alias: '' };
+      });
+      setModelAliases(aliases);
+      // inputs.models 设为原始名,供下拉框使用
+      data.models = aliases.map((a) => a.original);
       setInputs(data);
       if (data.config !== '') {
         setConfig(JSON.parse(data.config));
@@ -126,6 +141,13 @@ const EditChannel = () => {
         });
         let allModels = [...inputs.models, ...newModels];
         handleInputChange(null, { name: 'models', value: allModels });
+        // 同步 modelAliases: 新模型添加空别名条目
+        if (newModels.length > 0) {
+          setModelAliases((prev) => [
+            ...prev,
+            ...newModels.map((m) => ({ original: m, alias: '' })),
+          ]);
+        }
         // 更新下拉选项
         let newOptions = newModels.map((m) => ({
           key: m,
@@ -173,6 +195,23 @@ const EditChannel = () => {
     setModelOptions(localModelOptions);
   }, [inputs.models]);
 
+  // modelAliases 变化时自动同步 model_mapping 文本框(只读展示)
+  useEffect(() => {
+    let mapping = {};
+    modelAliases.forEach((a) => {
+      if (a.alias.trim() !== '' && a.alias.trim() !== a.original) {
+        mapping[a.alias.trim()] = a.original;
+      }
+    });
+    const mappingStr =
+      Object.keys(mapping).length > 0 ? JSON.stringify(mapping, null, 2) : '';
+    setInputs((prev) =>
+      prev.model_mapping === mappingStr
+        ? prev
+        : { ...prev, model_mapping: mappingStr }
+    );
+  }, [modelAliases]);
+
   useEffect(() => {
     if (isEdit) {
       loadChannel().then();
@@ -217,10 +256,24 @@ const EditChannel = () => {
     if (localInputs.type === 3 && localInputs.other === '') {
       localInputs.other = '2024-03-01-preview';
     }
-    let res;
-    localInputs.models = localInputs.models.join(',');
+    // 从 modelAliases 生成最终 models 和 model_mapping
+    // models 存别名(有别名时)或原始名(无别名时)
+    // model_mapping 存 {别名: 原始名},仅当 alias !== original 时
+    let finalModels = [];
+    let mapping = {};
+    modelAliases.forEach((a) => {
+      const name = a.alias.trim() !== '' ? a.alias.trim() : a.original;
+      finalModels.push(name);
+      if (a.alias.trim() !== '' && a.alias.trim() !== a.original) {
+        mapping[a.alias.trim()] = a.original;
+      }
+    });
+    localInputs.models = finalModels.join(',');
+    localInputs.model_mapping =
+      Object.keys(mapping).length > 0 ? JSON.stringify(mapping, null, 2) : '';
     localInputs.group = localInputs.groups.join(',');
     localInputs.config = JSON.stringify(config);
+    let res;
     if (isEdit) {
       res = await API.put(`/api/channel/`, {
         ...localInputs,
@@ -258,6 +311,43 @@ const EditChannel = () => {
     });
     setCustomModel('');
     handleInputChange(null, { name: 'models', value: localModels });
+    // 同步 modelAliases
+    setModelAliases((prev) => [...prev, { original: customModel, alias: '' }]);
+  };
+
+  // 下拉框增删模型时同步 modelAliases
+  const handleModelsChange = (e, { value }) => {
+    const newModels = value;
+    const oldModels = inputs.models;
+    // 找出新增的模型
+    const added = newModels.filter((m) => !oldModels.includes(m));
+    // 找出删除的模型
+    const removed = oldModels.filter((m) => !newModels.includes(m));
+    setModelAliases((prev) => {
+      let result = prev.filter((a) => !removed.includes(a.original));
+      result = [...result, ...added.map((m) => ({ original: m, alias: '' }))];
+      return result;
+    });
+    handleInputChange(null, { name: 'models', value: newModels });
+  };
+
+  // 更新某行的别名
+  const updateModelAlias = (index, alias) => {
+    setModelAliases((prev) => {
+      let result = [...prev];
+      result[index] = { ...result[index], alias };
+      return result;
+    });
+  };
+
+  // 删除某行(同时从 models 中移除)
+  const removeModelAlias = (index) => {
+    const model = modelAliases[index].original;
+    setModelAliases((prev) => prev.filter((_, i) => i !== index));
+    handleInputChange(null, {
+      name: 'models',
+      value: inputs.models.filter((m) => m !== model),
+    });
   };
 
   return (
@@ -441,7 +531,7 @@ const EditChannel = () => {
                     copy(value).then();
                   }}
                   selection
-                  onChange={handleInputChange}
+                  onChange={handleModelsChange}
                   value={inputs.models}
                   autoComplete='new-password'
                   options={modelOptions}
@@ -462,6 +552,7 @@ const EditChannel = () => {
                   type={'button'}
                   onClick={() => {
                     handleInputChange(null, { name: 'models', value: [] });
+                    setModelAliases([]);
                   }}
                 >
                   {t('channel.edit.buttons.clear')}
@@ -486,16 +577,65 @@ const EditChannel = () => {
                 />
               </div>
             )}
+            {inputs.type !== 43 && modelAliases.length > 0 && (
+              <Form.Field>
+                <label>{t('channel.edit.model_aliases')}</label>
+                <p style={{ color: 'gray', fontSize: '0.85em', marginTop: '-5px' }}>
+                  {t('channel.edit.model_aliases_hint')}
+                </p>
+                <Table compact size='small' unstackable>
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.HeaderCell width={7}>
+                        {t('channel.edit.alias_original')}
+                      </Table.HeaderCell>
+                      <Table.HeaderCell width={7}>
+                        {t('channel.edit.alias_name')}
+                      </Table.HeaderCell>
+                      <Table.HeaderCell width={2}>
+                        {t('channel.edit.alias_actions')}
+                      </Table.HeaderCell>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    {modelAliases.map((item, index) => (
+                      <Table.Row key={index}>
+                        <Table.Cell>{item.original}</Table.Cell>
+                        <Table.Cell>
+                          <Input
+                            fluid
+                            size='small'
+                            placeholder={item.original}
+                            value={item.alias}
+                            onChange={(e, { value }) =>
+                              updateModelAlias(index, value)
+                            }
+                          />
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Button
+                            size='mini'
+                            negative
+                            type='button'
+                            onClick={() => removeModelAlias(index)}
+                          >
+                            {t('channel.edit.alias_remove')}
+                          </Button>
+                        </Table.Cell>
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table>
+              </Form.Field>
+            )}
             {inputs.type !== 43 && (
               <>
                 <Form.Field>
                   <Form.TextArea
-                    label={t('channel.edit.model_mapping')}
-                    placeholder={`${t(
-                      'channel.edit.model_mapping_placeholder'
-                    )}\n${JSON.stringify(MODEL_MAPPING_EXAMPLE, null, 2)}`}
+                    label={`${t('channel.edit.model_mapping')}（${t('channel.edit.model_mapping_auto')}）`}
+                    placeholder={t('channel.edit.model_mapping_placeholder')}
                     name='model_mapping'
-                    onChange={handleInputChange}
+                    readOnly
                     value={inputs.model_mapping}
                     style={{
                       minHeight: 150,

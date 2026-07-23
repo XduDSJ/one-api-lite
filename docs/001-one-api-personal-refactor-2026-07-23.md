@@ -81,6 +81,36 @@
 2. **berry/air 主题未修改**:仅修改了 default 主题
 3. **残留 config 变量**:`QuotaForNewUser`/`QuotaForInviter`/`QuotaForInvitee` 默认值为 0(不赠送),`QuotaRemindThreshold` 默认 1000(低额度提醒),行为正确
 
+## 模型别名功能
+
+> 日期: 2026-07-23(追加)
+
+### 需求
+
+从上游获取模型后,可为每个模型设置别名(留空则用原始名)。别名作为对外暴露的模型名,同名模型走负载均衡。通过别名可区分不同渠道的同一模型(如渠道 A 的 `deepseek-chat` 别名为 `ds-a-chat`,渠道 B 的别名为 `ds-b-chat`)。
+
+### 设计决策
+
+- **复用 ModelMapping**:别名本质是反向的 model_mapping。`models` 字段存别名(或原始名),`model_mapping` 存 `{别名: 原始名}`,后端请求时自动替换。
+- **前端独立管理**:新增 `modelAliases` 状态(`[{original, alias}]`),与 `inputs.models`(存原始名)分离,submit 时从 modelAliases 生成最终 models 和 model_mapping。
+- **model_mapping 文本框设为只读**:由别名表格自动生成,避免手动编辑与别名数据不一致。
+
+### 改动详情
+
+| 文件 | 操作 | 说明 |
+|------|------|------|
+| `web/default/src/pages/Channel/EditChannel.js` | 修改 | 新增 `modelAliases` 状态、别名表格 UI、`handleModelsChange`/`updateModelAlias`/`removeModelAlias` 函数;`loadChannel` 反向解析 modelAliases;`submit` 从 modelAliases 生成 models+model_mapping;model_mapping 文本框设为只读 |
+| `web/default/src/locales/zh/translation.json` | 修改 | 新增 `model_aliases`/`model_aliases_hint`/`alias_original`/`alias_name`/`alias_actions`/`alias_remove`/`model_mapping_auto` |
+| `web/default/src/locales/en/translation.json` | 修改 | 同上英文翻译 |
+
+### 数据流
+
+1. **加载渠道**: `loadChannel` 从 `models`(逗号分隔)+ `model_mapping`(JSON)反向解析 → `modelAliases`(`inputs.models` 存原始名)
+2. **从上游获取**: `fetchUpstreamModels` 合并新模型到 `inputs.models`,同步追加空别名条目到 `modelAliases`
+3. **下拉框增删**: `handleModelsChange` 同步增删 `modelAliases` 条目
+4. **编辑别名**: `updateModelAlias` 更新 `modelAliases[index].alias`,useEffect 自动同步 `model_mapping` 文本框
+5. **提交**: `submit` 从 `modelAliases` 生成 `models`(别名||原始名)和 `model_mapping`({别名:原始名},仅 alias!==original)
+
 ## 相关文档
 
 - 设计文档: `docs/superpowers/specs/2026-07-23-one-api-personal-refactor-design.md`

@@ -110,3 +110,28 @@ func GetGroupModels(ctx context.Context, group string) ([]string, error) {
 	sort.Strings(models)
 	return models, err
 }
+
+// GetAllDistinctModels 返回 ability 表中所有去重的模型名
+func GetAllDistinctModels() ([]string, error) {
+	var models []string
+	err := DB.Model(&Ability{}).Distinct("model").Pluck("model", &models).Error
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(models)
+	return models, nil
+}
+
+// GetChannelModelsMap 返回 channel_id -> []model 映射
+func GetChannelModelsMap() (map[int][]string, error) {
+	var abilities []Ability
+	err := DB.Select("channel_id, model").Find(&abilities).Error
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[int][]string)
+	for _, a := range abilities {
+		result[a.ChannelId] = append(result[a.ChannelId], a.Model)
+	}
+	return result, nil
+}

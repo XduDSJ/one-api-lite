@@ -447,6 +447,18 @@
         "date": "Date",
         "value": "Value"
       }
+    },
+    "overview": {
+      "total_requests": "Total Requests",
+      "total_tokens": "Total Tokens",
+      "total_users": "Total Users",
+      "total_channels": "Total Channels",
+      "enabled_channels": "Enabled Channels",
+      "total_token_count": "Total API Keys",
+      "model_distribution": "Model Distribution (Top 10)",
+      "channel_distribution": "Channel Distribution (Top 10)",
+      "daily_requests": "Daily Requests",
+      "daily_tokens": "Daily Tokens"
     }
   },
   "setting": {

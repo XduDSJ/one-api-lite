@@ -447,6 +447,18 @@
         "date": "日期",
         "value": "数值"
       }
+    },
+    "overview": {
+      "total_requests": "总请求数",
+      "total_tokens": "总 Token 数",
+      "total_users": "用户总数",
+      "total_channels": "渠道总数",
+      "enabled_channels": "启用渠道",
+      "total_token_count": "令牌总数",
+      "model_distribution": "模型分布 (Top 10)",
+      "channel_distribution": "渠道分布 (Top 10)",
+      "daily_requests": "每日请求数",
+      "daily_tokens": "每日 Token 数"
     }
   },
   "setting": {

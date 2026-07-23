@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/songquanpeng/one-api/common/client"
@@ -99,8 +100,14 @@ func FetchChannelModels(c *gin.Context) {
 		return
 	}
 
-	// 构建 /v1/models URL
-	url := baseURL + "/v1/models"
+	// 构建 /v1/models URL，处理 baseURL 已含 /v1 的情况
+	baseURL = strings.TrimSuffix(baseURL, "/")
+	var url string
+	if strings.HasSuffix(baseURL, "/v1") {
+		url = baseURL + "/models"
+	} else {
+		url = baseURL + "/v1/models"
+	}
 
 	models, err := fetchModelsFromUpstream(url, channel.Key)
 	if err != nil {

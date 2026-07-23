@@ -29,7 +29,7 @@ const EditToken = () => {
     name: '',
     remain_quota: isEdit ? 0 : 500000,
     expired_time: -1,
-    unlimited_quota: false,
+    unlimited_quota: true,
     models: [],
     subnet: '',
   };

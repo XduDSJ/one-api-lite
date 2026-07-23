@@ -39,10 +39,6 @@ type User struct {
 	Role             int    `json:"role" gorm:"type:int;default:1"`   // admin, util
 	Status           int    `json:"status" gorm:"type:int;default:1"` // enabled, disabled
 	Email            string `json:"email" gorm:"index" validate:"max=50"`
-	GitHubId         string `json:"github_id" gorm:"column:github_id;index"`
-	WeChatId         string `json:"wechat_id" gorm:"column:wechat_id;index"`
-	LarkId           string `json:"lark_id" gorm:"column:lark_id;index"`
-	OidcId           string `json:"oidc_id" gorm:"column:oidc_id;index"`
 	VerificationCode string `json:"verification_code" gorm:"-:all"`                                    // this field is only for Email verification, don't save it to database!
 	AccessToken      string `json:"access_token" gorm:"type:char(32);column:access_token;uniqueIndex"` // this token is for system management
 	Quota            int64  `json:"quota" gorm:"bigint;default:0"`
@@ -233,38 +229,6 @@ func (user *User) FillUserByEmail() error {
 	return nil
 }
 
-func (user *User) FillUserByGitHubId() error {
-	if user.GitHubId == "" {
-		return errors.New("GitHub id 为空！")
-	}
-	DB.Where(User{GitHubId: user.GitHubId}).First(user)
-	return nil
-}
-
-func (user *User) FillUserByLarkId() error {
-	if user.LarkId == "" {
-		return errors.New("lark id 为空！")
-	}
-	DB.Where(User{LarkId: user.LarkId}).First(user)
-	return nil
-}
-
-func (user *User) FillUserByOidcId() error {
-	if user.OidcId == "" {
-		return errors.New("oidc id 为空！")
-	}
-	DB.Where(User{OidcId: user.OidcId}).First(user)
-	return nil
-}
-
-func (user *User) FillUserByWeChatId() error {
-	if user.WeChatId == "" {
-		return errors.New("WeChat id 为空！")
-	}
-	DB.Where(User{WeChatId: user.WeChatId}).First(user)
-	return nil
-}
-
 func (user *User) FillUserByUsername() error {
 	if user.Username == "" {
 		return errors.New("username 为空！")
@@ -275,22 +239,6 @@ func (user *User) FillUserByUsername() error {
 
 func IsEmailAlreadyTaken(email string) bool {
 	return DB.Where("email = ?", email).Find(&User{}).RowsAffected == 1
-}
-
-func IsWeChatIdAlreadyTaken(wechatId string) bool {
-	return DB.Where("wechat_id = ?", wechatId).Find(&User{}).RowsAffected == 1
-}
-
-func IsGitHubIdAlreadyTaken(githubId string) bool {
-	return DB.Where("github_id = ?", githubId).Find(&User{}).RowsAffected == 1
-}
-
-func IsLarkIdAlreadyTaken(githubId string) bool {
-	return DB.Where("lark_id = ?", githubId).Find(&User{}).RowsAffected == 1
-}
-
-func IsOidcIdAlreadyTaken(oidcId string) bool {
-	return DB.Where("oidc_id = ?", oidcId).Find(&User{}).RowsAffected == 1
 }
 
 func IsUsernameAlreadyTaken(username string) bool {

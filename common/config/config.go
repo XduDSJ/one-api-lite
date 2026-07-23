@@ -35,10 +35,6 @@ var MaxRecentItems = 100
 var PasswordLoginEnabled = true
 var PasswordRegisterEnabled = true
 var EmailVerificationEnabled = false
-var GitHubOAuthEnabled = false
-var OidcEnabled = false
-var WeChatAuthEnabled = false
-var TurnstileCheckEnabled = false
 var RegisterEnabled = true
 
 var EmailDomainRestrictionEnabled = false
@@ -66,28 +62,8 @@ var SMTPAccount = ""
 var SMTPFrom = ""
 var SMTPToken = ""
 
-var GitHubClientId = ""
-var GitHubClientSecret = ""
-
-var LarkClientId = ""
-var LarkClientSecret = ""
-
-var OidcClientId = ""
-var OidcClientSecret = ""
-var OidcWellKnown = ""
-var OidcAuthorizationEndpoint = ""
-var OidcTokenEndpoint = ""
-var OidcUserinfoEndpoint = ""
-
-var WeChatServerAddress = ""
-var WeChatServerToken = ""
-var WeChatAccountQRCodeImageURL = ""
-
 var MessagePusherAddress = ""
 var MessagePusherToken = ""
-
-var TurnstileSiteKey = ""
-var TurnstileSecretKey = ""
 
 var QuotaForNewUser int64 = 0
 var QuotaForInviter int64 = 0

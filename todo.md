@@ -29,14 +29,15 @@
 - [x] router/api.go 合并两个计划的改动
 - [x] 前端构建验证通过
 - [x] 静态检查:无残留引用(兑换码/充值/模型加载相关)
-- [ ] Go 编译验证(Go 未安装,待环境就绪后执行 `go build ./...`)
-- [ ] Go 测试验证(待环境就绪后执行 `go test ./...`)
+- [x] Go 编译验证通过(`CGO_ENABLED=0 go build ./...` 无错误)
+- [x] Go 测试:controller/relay/channeltype/network 全部通过
+- [x] 修复 `model/main.go` 遗漏的 Redemption AutoMigrate 引用
 - [ ] 手动验证:新建渠道 → 从上游获取模型 → /v1/models 接口
 - [ ] 手动验证:商业功能已移除(无兑换/充值入口)
 
 ## 已知限制
 
-1. **Go 未安装**:无法运行 `go build`/`go test`,代码改动已通过静态检查和前端构建验证
+1. **CGO/gcc 未安装**:`model` 包测试因 go-sqlite3 需要 CGO 而跳过,非代码问题;`common/image` 测试因网络超时失败,与改动无关
 2. **残留引用**:`config.DisplayInCurrencyEnabled`、`config.QuotaPerUnit`、`config.QuotaForNewUser` 等变量仍保留在 `common/config/config.go` 中,默认值安全(无除零、无额度赠送),属于设计文档中"保留计费框架"的范围
 3. **berry/air 主题未修改**:仅修改了 default 主题,其他主题如有相同商业功能需单独处理
 
@@ -59,3 +60,5 @@
 | `7639f6e` | 精简运营设置页 |
 | `5bf3341` | 清理 TokensTable 死代码 |
 | `97d2bcd` | 注册 fetch_models 路由 |
+| `738fe98` | 改造实现记录和进度跟踪 |
+| `6729cd8` | 修复 model/main.go 遗漏的 Redemption 引用 |

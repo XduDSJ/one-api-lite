@@ -124,3 +124,61 @@ func FetchChannelModels(c *gin.Context) {
 		"data":    models,
 	})
 }
+
+// fetchModelsRequest POST 请求体
+type fetchModelsRequest struct {
+	BaseURL string `json:"base_url"`
+	Key     string `json:"key"`
+	Type    int    `json:"type"`
+}
+
+// FetchChannelModelsByConfig 接受 {base_url, key, type}，不依赖已保存渠道
+func FetchChannelModelsByConfig(c *gin.Context) {
+	var req fetchModelsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "请求参数无效: " + err.Error(),
+		})
+		return
+	}
+
+	baseURL := strings.TrimSpace(req.BaseURL)
+	if baseURL == "" {
+		// BaseURL 未设置时，从渠道类型默认 URL 取值
+		if req.Type >= 0 && req.Type < len(channeltype.ChannelBaseURLs) {
+			baseURL = channeltype.ChannelBaseURLs[req.Type]
+		}
+	}
+	if baseURL == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "未设置 BaseURL，无法获取模型列表",
+		})
+		return
+	}
+
+	// 构建 /models URL，处理 baseURL 已含 /v1 的情况
+	baseURL = strings.TrimSuffix(baseURL, "/")
+	var url string
+	if strings.HasSuffix(baseURL, "/v1") {
+		url = baseURL + "/models"
+	} else {
+		url = baseURL + "/v1/models"
+	}
+
+	models, err := fetchModelsFromUpstream(url, req.Key)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "获取模型失败: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data":    models,
+	})
+}

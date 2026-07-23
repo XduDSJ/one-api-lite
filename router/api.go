@@ -74,6 +74,7 @@ func SetApiRouter(router *gin.Engine) {
 			channelRoute.GET("/models", controller.ListAllModels)
 			channelRoute.GET("/:id", controller.GetChannel)
 			channelRoute.GET("/fetch_models/:id", controller.FetchChannelModels)
+			channelRoute.POST("/fetch_models", controller.FetchChannelModelsByConfig)
 			channelRoute.GET("/test", controller.TestChannels)
 			channelRoute.GET("/test/:id", controller.TestChannel)
 			channelRoute.GET("/update_balance", controller.UpdateAllChannelsBalance)

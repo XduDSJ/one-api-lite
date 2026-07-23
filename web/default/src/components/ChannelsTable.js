@@ -4,7 +4,6 @@ import {Button, Dropdown, Form, Input, Label, Message, Pagination, Popup, Table,
 import {Link} from 'react-router-dom';
 import {
   API,
-  loadChannelModels,
   setPromptShown,
   shouldShowPrompt,
   showError,
@@ -157,7 +156,6 @@ const ChannelsTable = () => {
       .catch((reason) => {
         showError(reason);
       });
-    loadChannelModels().then();
   }, []);
 
   const manageChannel = async (id, action, idx, value) => {

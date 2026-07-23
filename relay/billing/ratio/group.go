@@ -29,12 +29,5 @@ func UpdateGroupRatioByJSONString(jsonStr string) error {
 }
 
 func GetGroupRatio(name string) float64 {
-	groupRatioLock.RLock()
-	defer groupRatioLock.RUnlock()
-	ratio, ok := GroupRatio[name]
-	if !ok {
-		logger.SysError("group ratio not found: " + name)
-		return 1
-	}
-	return ratio
+	return 1
 }

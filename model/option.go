@@ -62,17 +62,8 @@ func InitOptionMap() {
 	config.OptionMap["MessagePusherToken"] = ""
 	config.OptionMap["TurnstileSiteKey"] = ""
 	config.OptionMap["TurnstileSecretKey"] = ""
-	config.OptionMap["QuotaForNewUser"] = strconv.FormatInt(config.QuotaForNewUser, 10)
-	config.OptionMap["QuotaForInviter"] = strconv.FormatInt(config.QuotaForInviter, 10)
-	config.OptionMap["QuotaForInvitee"] = strconv.FormatInt(config.QuotaForInvitee, 10)
-	config.OptionMap["QuotaRemindThreshold"] = strconv.FormatInt(config.QuotaRemindThreshold, 10)
 	config.OptionMap["PreConsumedQuota"] = strconv.FormatInt(config.PreConsumedQuota, 10)
-	config.OptionMap["ModelRatio"] = billingratio.ModelRatio2JSONString()
-	config.OptionMap["GroupRatio"] = billingratio.GroupRatio2JSONString()
-	config.OptionMap["CompletionRatio"] = billingratio.CompletionRatio2JSONString()
-	config.OptionMap["TopUpLink"] = config.TopUpLink
 	config.OptionMap["ChatLink"] = config.ChatLink
-	config.OptionMap["QuotaPerUnit"] = strconv.FormatFloat(config.QuotaPerUnit, 'f', -1, 64)
 	config.OptionMap["RetryTimes"] = strconv.Itoa(config.RetryTimes)
 	config.OptionMap["Theme"] = config.Theme
 	config.OptionMapRWMutex.Unlock()
@@ -211,32 +202,14 @@ func updateOptionMap(key string, value string) (err error) {
 		config.TurnstileSiteKey = value
 	case "TurnstileSecretKey":
 		config.TurnstileSecretKey = value
-	case "QuotaForNewUser":
-		config.QuotaForNewUser, _ = strconv.ParseInt(value, 10, 64)
-	case "QuotaForInviter":
-		config.QuotaForInviter, _ = strconv.ParseInt(value, 10, 64)
-	case "QuotaForInvitee":
-		config.QuotaForInvitee, _ = strconv.ParseInt(value, 10, 64)
-	case "QuotaRemindThreshold":
-		config.QuotaRemindThreshold, _ = strconv.ParseInt(value, 10, 64)
 	case "PreConsumedQuota":
 		config.PreConsumedQuota, _ = strconv.ParseInt(value, 10, 64)
 	case "RetryTimes":
 		config.RetryTimes, _ = strconv.Atoi(value)
-	case "ModelRatio":
-		err = billingratio.UpdateModelRatioByJSONString(value)
-	case "GroupRatio":
-		err = billingratio.UpdateGroupRatioByJSONString(value)
-	case "CompletionRatio":
-		err = billingratio.UpdateCompletionRatioByJSONString(value)
-	case "TopUpLink":
-		config.TopUpLink = value
 	case "ChatLink":
 		config.ChatLink = value
 	case "ChannelDisableThreshold":
 		config.ChannelDisableThreshold, _ = strconv.ParseFloat(value, 64)
-	case "QuotaPerUnit":
-		config.QuotaPerUnit, _ = strconv.ParseFloat(value, 64)
 	case "Theme":
 		config.Theme = value
 	}

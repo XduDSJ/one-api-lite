@@ -32,8 +32,10 @@
 - [x] Go 编译验证通过(`CGO_ENABLED=0 go build ./...` 无错误)
 - [x] Go 测试:controller/relay/channeltype/network 全部通过
 - [x] 修复 `model/main.go` 遗漏的 Redemption AutoMigrate 引用
-- [ ] 手动验证:新建渠道 → 从上游获取模型 → /v1/models 接口
-- [ ] 手动验证:商业功能已移除(无兑换/充值入口)
+- [x] 静态验证:fetch_models 路由已注册、/v1/models 从 ability 表查询
+- [x] 静态验证:商业功能已移除(redemption/topup 路由、页面、菜单均无残留)
+- [x] 修复 `model/token.go` 额度提醒邮件中的充值链接(指向已删除的 /topup)
+- [ ] 运行时验证:需 gcc/Docker 环境(本地无 gcc,无法构建 SQLite 版本)
 
 ### 4. 模型别名功能 ✅
 - [x] `EditChannel.js`: 新增 `modelAliases` 状态和别名表格 UI
@@ -43,6 +45,10 @@
 - [x] model_mapping 文本框设为只读,由别名表格自动生成
 - [x] i18n: 添加别名相关翻译 key(中英文)
 - [x] 前端构建验证通过
+- [x] Oracle 代码审查 + 修复 P0-P3 全部问题
+- [x] 别名输入校验(逗号禁止、重复检测)
+- [x] 旧数据迁移兼容(mapping value 去重、遗漏 key 提示)
+- [x] 硬编码中文 i18n 化
 
 ## 已知限制
 
@@ -71,3 +77,12 @@
 | `97d2bcd` | 注册 fetch_models 路由 |
 | `738fe98` | 改造实现记录和进度跟踪 |
 | `6729cd8` | 修复 model/main.go 遗漏的 Redemption 引用 |
+| `0f5d220` | Docker workflow 改造(仅推 GHCR) |
+| `14c5712` | README 重写为 fork 精简版 |
+| `80c775a` | dev 标签修复 |
+| `ca15cc2` | i18n + BaseURL 默认值修复 |
+| `baf9032` | Actions Node.js 24 升级 |
+| `f523347` | BaseURL /v1 重复修复 |
+| `7fd95d6` | 模型别名功能 |
+| `36a8863` | 别名功能审查修复(P0-P3) |
+| `8522f2b` | 移除额度提醒邮件充值链接 |

@@ -119,7 +119,8 @@
         "fill_all": "填入所有模型",
         "clear": "清除所有模型",
         "add_custom": "填入",
-        "custom_placeholder": "输入自定义模型名称"
+        "custom_placeholder": "输入自定义模型名称",
+        "fetch_upstream": "从上游获取"
       },
       "messages": {
         "name_required": "请填写渠道名称和渠道密钥！",

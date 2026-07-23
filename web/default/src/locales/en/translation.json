@@ -119,7 +119,8 @@
         "fill_all": "Fill All Models",
         "clear": "Clear All Models",
         "add_custom": "Add",
-        "custom_placeholder": "Enter custom model name"
+        "custom_placeholder": "Enter custom model name",
+        "fetch_upstream": "Fetch from Upstream"
       },
       "messages": {
         "name_required": "Please enter channel name and key!",

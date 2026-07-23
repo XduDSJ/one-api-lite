@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/songquanpeng/one-api/common/client"
 	"github.com/songquanpeng/one-api/model"
+	"github.com/songquanpeng/one-api/relay/channeltype"
 )
 
 // upstreamModelResponse 上游 /v1/models 的响应格式
@@ -84,6 +85,12 @@ func FetchChannelModels(c *gin.Context) {
 	}
 
 	baseURL := channel.GetBaseURL()
+	if baseURL == "" {
+		// BaseURL 未设置时,从渠道类型默认 URL 取值
+		if channel.Type >= 0 && channel.Type < len(channeltype.ChannelBaseURLs) {
+			baseURL = channeltype.ChannelBaseURLs[channel.Type]
+		}
+	}
 	if baseURL == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,

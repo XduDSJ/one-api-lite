@@ -35,7 +35,7 @@
 - [x] 静态验证:fetch_models 路由已注册、/v1/models 从 ability 表查询
 - [x] 静态验证:商业功能已移除(redemption/topup 路由、页面、菜单均无残留)
 - [x] 修复 `model/token.go` 额度提醒邮件中的充值链接(指向已删除的 /topup)
-- [ ] 运行时验证:需 gcc/Docker 环境(本地无 gcc,无法构建 SQLite 版本)
+- [x] 运行时验证:服务启动、登录、创建渠道、/v1/models 聚合、fetch_models 路由、redemption/topup 404、group=default
 
 ### 4. 模型别名功能 ✅
 - [x] `EditChannel.js`: 新增 `modelAliases` 状态和别名表格 UI
@@ -52,7 +52,7 @@
 
 ## 已知限制
 
-1. **CGO/gcc 未安装**:`model` 包测试因 go-sqlite3 需要 CGO 而跳过,非代码问题;`common/image` 测试因网络超时失败,与改动无关
+1. **CGO/gcc 已安装**:mingw64 16.1.0 已添加到环境变量,`CGO_ENABLED=1 go build` 成功,`model` 包测试可运行
 2. **残留引用**:`config.DisplayInCurrencyEnabled`、`config.QuotaPerUnit`、`config.QuotaForNewUser` 等变量仍保留在 `common/config/config.go` 中,默认值安全(无除零、无额度赠送),属于设计文档中"保留计费框架"的范围
 3. **berry/air 主题未修改**:仅修改了 default 主题,其他主题如有相同商业功能需单独处理
 

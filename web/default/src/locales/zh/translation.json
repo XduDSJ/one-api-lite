@@ -134,7 +134,13 @@
         "models_required": "请至少选择一个模型！",
         "model_mapping_invalid": "模型映射必须是合法的 JSON 格式！",
         "update_success": "渠道更新成功！",
-        "create_success": "渠道创建成功！"
+        "create_success": "渠道创建成功！",
+        "fetch_save_first": "请先保存渠道后再从上游获取模型",
+        "fetch_empty": "上游未返回任何模型,请检查 Key 和 BaseURL",
+        "fetch_success": "获取到 {{total}} 个模型,新增 {{added}} 个",
+        "alias_invalid_comma": "模型别名不能包含逗号",
+        "alias_duplicate": "存在重复的模型名称: {{name}}",
+        "mapping_keys_ignored": "检测到 {{count}} 条无法还原的模型重定向,已忽略"
       },
       "spark_version": "模型版本",
       "spark_version_placeholder": "请输入星火大模型版本，注意是接口地址中的版本号，例如：v2.1",

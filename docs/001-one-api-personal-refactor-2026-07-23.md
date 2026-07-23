@@ -111,6 +111,19 @@
 4. **编辑别名**: `updateModelAlias` 更新 `modelAliases[index].alias`,useEffect 自动同步 `model_mapping` 文本框
 5. **提交**: `submit` 从 `modelAliases` 生成 `models`(别名||原始名)和 `model_mapping`({别名:原始名},仅 alias!==original)
 
+### 代码审查修复(Oracle 审查后)
+
+| 问题 | 严重度 | 修复 |
+|------|--------|------|
+| 别名含逗号破坏 models 字段分隔 | P0 | submit 前校验,含逗号则 showError 阻止提交 |
+| 别名重复/与其它原始名冲突无校验 | P1 | submit 前用 Set 检测重复对外名,showError 阻止提交 |
+| 旧数据 models 含 mapping value 时反向解析重复 | P1 | loadChannel 两遍解析:先处理 mapping key,再跳过已被引用的 value |
+| mapping key 不在 models 中静默丢失 | P2 | 检测未消费 key 数量,showInfo 提示用户 |
+| 硬编码中文未走 i18n | P2 | 6 条提示信息改用 t() + 新增 i18n key(zh/en) |
+| clear 按钮未清 modelOptions | P3 | 显式 setModelOptions([]) |
+| fetchUpstreamModels 手动 setModelOptions 冗余 | P3 | 删除,依赖 useEffect 重建 |
+| `t() \|\| '兜底'` 死代码 | P3 | 删除兜底 |
+
 ## 相关文档
 
 - 设计文档: `docs/superpowers/specs/2026-07-23-one-api-personal-refactor-design.md`

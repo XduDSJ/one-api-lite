@@ -97,13 +97,32 @@ const EditChannel = () => {
           // model_mapping 格式错误,忽略
         }
       }
-      let aliases = data.models.map((model) => {
-        // 如果 model 是 mapping 的 key,则它是别名
+      const mappingValues = new Set(Object.values(mapping));
+      let consumedKeys = new Set();
+      let originalsFromKeys = new Set();
+      let aliases = [];
+      // 第一遍: 处理 mapping key(别名)
+      data.models.forEach((model) => {
         if (mapping[model]) {
-          return { original: mapping[model], alias: model };
+          aliases.push({ original: mapping[model], alias: model });
+          consumedKeys.add(model);
+          originalsFromKeys.add(mapping[model]);
         }
-        return { original: model, alias: '' };
       });
+      // 第二遍: 处理非 key 的 model,跳过已被 key 引用为 original 的 value(旧数据兼容)
+      data.models.forEach((model) => {
+        if (!mapping[model]) {
+          if (originalsFromKeys.has(model)) {
+            return;
+          }
+          aliases.push({ original: model, alias: '' });
+        }
+      });
+      // 检测未被消费的 mapping key(旧数据中 key 不在 models 里)
+      let unconsumedCount = Object.keys(mapping).length - consumedKeys.size;
+      if (unconsumedCount > 0) {
+        showInfo(t('channel.edit.messages.mapping_keys_ignored', { count: unconsumedCount }));
+      }
       setModelAliases(aliases);
       // inputs.models 设为原始名,供下拉框使用
       data.models = aliases.map((a) => a.original);
@@ -119,7 +138,7 @@ const EditChannel = () => {
 
   const fetchUpstreamModels = async () => {
     if (!channelId) {
-      showInfo('请先保存渠道后再从上游获取模型');
+      showInfo(t('channel.edit.messages.fetch_save_first'));
       return;
     }
     setFetchingModels(true);
@@ -128,7 +147,7 @@ const EditChannel = () => {
       const { success, message, data } = res.data;
       if (success) {
         if (data.length === 0) {
-          showInfo('上游未返回任何模型,请检查 Key 和 BaseURL');
+          showInfo(t('channel.edit.messages.fetch_empty'));
           return;
         }
         // 合并到当前已选模型(去重)
@@ -148,14 +167,7 @@ const EditChannel = () => {
             ...newModels.map((m) => ({ original: m, alias: '' })),
           ]);
         }
-        // 更新下拉选项
-        let newOptions = newModels.map((m) => ({
-          key: m,
-          text: m,
-          value: m,
-        }));
-        setModelOptions((modelOptions) => [...modelOptions, ...newOptions]);
-        showSuccess(`获取到 ${data.length} 个模型,新增 ${newModels.length} 个`);
+        showSuccess(t('channel.edit.messages.fetch_success', { total: data.length, added: newModels.length }));
       } else {
         showError(message);
       }
@@ -259,15 +271,28 @@ const EditChannel = () => {
     // 从 modelAliases 生成最终 models 和 model_mapping
     // models 存别名(有别名时)或原始名(无别名时)
     // model_mapping 存 {别名: 原始名},仅当 alias !== original 时
+    // 校验: 禁止逗号(破坏 models 字段分隔)、禁止重复对外名
     let finalModels = [];
     let mapping = {};
-    modelAliases.forEach((a) => {
-      const name = a.alias.trim() !== '' ? a.alias.trim() : a.original;
-      finalModels.push(name);
-      if (a.alias.trim() !== '' && a.alias.trim() !== a.original) {
-        mapping[a.alias.trim()] = a.original;
+    let seenNames = new Set();
+    for (let i = 0; i < modelAliases.length; i++) {
+      const a = modelAliases[i];
+      const alias = a.alias.trim();
+      if (alias.includes(',')) {
+        showError(t('channel.edit.messages.alias_invalid_comma'));
+        return;
       }
-    });
+      const finalName = alias !== '' ? alias : a.original;
+      if (seenNames.has(finalName)) {
+        showError(t('channel.edit.messages.alias_duplicate', { name: finalName }));
+        return;
+      }
+      seenNames.add(finalName);
+      finalModels.push(finalName);
+      if (alias !== '' && alias !== a.original) {
+        mapping[alias] = a.original;
+      }
+    }
     localInputs.models = finalModels.join(',');
     localInputs.model_mapping =
       Object.keys(mapping).length > 0 ? JSON.stringify(mapping, null, 2) : '';
@@ -546,13 +571,14 @@ const EditChannel = () => {
                   disabled={!isEdit || fetchingModels}
                   onClick={fetchUpstreamModels}
                 >
-                  {t('channel.edit.buttons.fetch_upstream') || '从上游获取'}
+                  {t('channel.edit.buttons.fetch_upstream')}
                 </Button>
                 <Button
                   type={'button'}
                   onClick={() => {
                     handleInputChange(null, { name: 'models', value: [] });
                     setModelAliases([]);
+                    setModelOptions([]);
                   }}
                 >
                   {t('channel.edit.buttons.clear')}

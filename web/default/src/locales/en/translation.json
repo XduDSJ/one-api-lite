@@ -134,7 +134,13 @@
         "models_required": "Please select at least one model!",
         "model_mapping_invalid": "Model mapping must be valid JSON format!",
         "update_success": "Channel updated successfully!",
-        "create_success": "Channel created successfully!"
+        "create_success": "Channel created successfully!",
+        "fetch_save_first": "Please save the channel before fetching models from upstream",
+        "fetch_empty": "Upstream returned no models, please check Key and BaseURL",
+        "fetch_success": "Fetched {{total}} models, {{added}} new",
+        "alias_invalid_comma": "Model alias cannot contain commas",
+        "alias_duplicate": "Duplicate model name: {{name}}",
+        "mapping_keys_ignored": "Detected {{count}} model mapping(s) that cannot be restored, ignored"
       },
       "spark_version": "Model Version",
       "spark_version_placeholder": "Please enter Spark model version from API URL, e.g.: v2.1",

@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Button, Card, Form, Input, Message} from 'semantic-ui-react';
 import {useNavigate, useParams} from 'react-router-dom';
-import {API, copy, getChannelModels, showError, showInfo, showSuccess, verifyJSON,} from '../../helpers';
+import {API, copy, showError, showInfo, showSuccess, verifyJSON,} from '../../helpers';
 import {CHANNEL_OPTIONS} from '../../constants';
 import {renderChannelTip} from '../../helpers/render';
 
@@ -51,12 +51,10 @@ const EditChannel = () => {
   };
   const [batch, setBatch] = useState(false);
   const [inputs, setInputs] = useState(originInputs);
-  const [originModelOptions, setOriginModelOptions] = useState([]);
   const [modelOptions, setModelOptions] = useState([]);
   const [groupOptions, setGroupOptions] = useState([]);
-  const [basicModels, setBasicModels] = useState([]);
-  const [fullModels, setFullModels] = useState([]);
   const [customModel, setCustomModel] = useState('');
+  const [fetchingModels, setFetchingModels] = useState(false);
   const [config, setConfig] = useState({
     region: '',
     sk: '',
@@ -67,13 +65,6 @@ const EditChannel = () => {
   });
   const handleInputChange = (e, { name, value }) => {
     setInputs((inputs) => ({ ...inputs, [name]: value }));
-    if (name === 'type') {
-      let localModels = getChannelModels(value);
-      if (inputs.models.length === 0) {
-        setInputs((inputs) => ({ ...inputs, models: localModels }));
-      }
-      setBasicModels(localModels);
-    }
   };
 
   const handleConfigChange = (e, { name, value }) => {
@@ -105,25 +96,51 @@ const EditChannel = () => {
       if (data.config !== '') {
         setConfig(JSON.parse(data.config));
       }
-      setBasicModels(getChannelModels(data.type));
     } else {
       showError(message);
     }
     setLoading(false);
   };
 
-  const fetchModels = async () => {
+  const fetchUpstreamModels = async () => {
+    if (!channelId) {
+      showInfo('请先保存渠道后再从上游获取模型');
+      return;
+    }
+    setFetchingModels(true);
     try {
-      let res = await API.get(`/api/channel/models`);
-      let localModelOptions = res.data.data.map((model) => ({
-        key: model.id,
-        text: model.id,
-        value: model.id,
-      }));
-      setOriginModelOptions(localModelOptions);
-      setFullModels(res.data.data.map((model) => model.id));
+      let res = await API.get(`/api/channel/fetch_models/${channelId}`);
+      const { success, message, data } = res.data;
+      if (success) {
+        if (data.length === 0) {
+          showInfo('上游未返回任何模型,请检查 Key 和 BaseURL');
+          return;
+        }
+        // 合并到当前已选模型(去重)
+        let existingModels = new Set(inputs.models);
+        let newModels = [];
+        data.forEach((model) => {
+          if (!existingModels.has(model)) {
+            newModels.push(model);
+          }
+        });
+        let allModels = [...inputs.models, ...newModels];
+        handleInputChange(null, { name: 'models', value: allModels });
+        // 更新下拉选项
+        let newOptions = newModels.map((m) => ({
+          key: m,
+          text: m,
+          value: m,
+        }));
+        setModelOptions((modelOptions) => [...modelOptions, ...newOptions]);
+        showSuccess(`获取到 ${data.length} 个模型,新增 ${newModels.length} 个`);
+      } else {
+        showError(message);
+      }
     } catch (error) {
       showError(error.message);
+    } finally {
+      setFetchingModels(false);
     }
   };
 
@@ -143,7 +160,7 @@ const EditChannel = () => {
   };
 
   useEffect(() => {
-    let localModelOptions = [...originModelOptions];
+    let localModelOptions = [];
     inputs.models.forEach((model) => {
       if (!localModelOptions.find((option) => option.key === model)) {
         localModelOptions.push({
@@ -154,16 +171,12 @@ const EditChannel = () => {
       }
     });
     setModelOptions(localModelOptions);
-  }, [originModelOptions, inputs.models]);
+  }, [inputs.models]);
 
   useEffect(() => {
     if (isEdit) {
       loadChannel().then();
-    } else {
-      let localModels = getChannelModels(inputs.type);
-      setBasicModels(localModels);
     }
-    fetchModels().then();
     fetchGroups().then();
   }, []);
 
@@ -439,25 +452,11 @@ const EditChannel = () => {
               <div style={{ lineHeight: '40px', marginBottom: '12px' }}>
                 <Button
                   type={'button'}
-                  onClick={() => {
-                    handleInputChange(null, {
-                      name: 'models',
-                      value: basicModels,
-                    });
-                  }}
+                  loading={fetchingModels}
+                  disabled={!isEdit || fetchingModels}
+                  onClick={fetchUpstreamModels}
                 >
-                  {t('channel.edit.buttons.fill_models')}
-                </Button>
-                <Button
-                  type={'button'}
-                  onClick={() => {
-                    handleInputChange(null, {
-                      name: 'models',
-                      value: fullModels,
-                    });
-                  }}
-                >
-                  {t('channel.edit.buttons.fill_all')}
+                  {t('channel.edit.buttons.fetch_upstream') || '从上游获取'}
                 </Button>
                 <Button
                   type={'button'}

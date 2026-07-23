@@ -133,7 +133,7 @@ const Home = () => {
                             {t('home.system_status.info.source')}
                           </span>
                           <a
-                            href='https://github.com/songquanpeng/one-api'
+                            href='https://github.com/XduDSJ/one-api-lite'
                             target='_blank'
                             style={{ color: '#2185d0' }}
                           >

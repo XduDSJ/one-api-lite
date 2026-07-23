@@ -471,16 +471,7 @@
       "binding": {
         "title": "Account Binding",
         "buttons": {
-          "bind_wechat": "Bind WeChat Account",
-          "bind_github": "Bind GitHub Account",
-          "bind_email": "Bind Email Address",
-          "bind_lark": "Bind Lark Account"
-        },
-        "wechat": {
-          "title": "WeChat Binding",
-          "description": "Scan QR code to follow the official account, enter 'verification code' to get the code (valid for 3 minutes)",
-          "verification_code": "Verification Code",
-          "bind": "Bind"
+          "bind_email": "Bind Email Address"
         },
         "email": {
           "title": "Bind Email Address",
@@ -516,10 +507,7 @@
         "password_login": "Allow Password Login",
         "password_register": "Allow Password Registration",
         "email_verification": "Require Email Verification for Password Registration",
-        "github_oauth": "Allow GitHub OAuth Login & Registration",
-        "wechat_login": "Allow WeChat Login & Registration",
-        "registration": "Allow New User Registration (When disabled, new users cannot register by any means)",
-        "turnstile": "Enable Turnstile User Verification"
+        "registration": "Allow New User Registration (When disabled, new users cannot register by any means)"
       },
       "email_restriction": {
         "title": "Email Domain Whitelist",
@@ -548,63 +536,6 @@
         "token_placeholder": "Sensitive information will not be sent to frontend",
         "buttons": {
           "save": "Save SMTP Settings"
-        }
-      },
-      "github": {
-        "title": "GitHub OAuth App Configuration",
-        "subtitle": "Used to support GitHub login and registration",
-        "manage_link": "Click here",
-        "manage_text": "to manage your GitHub OAuth Apps",
-        "url_notice": "Set Homepage URL to {{server_url}}, and Authorization callback URL to {{callback_url}}",
-        "client_id": "GitHub Client ID",
-        "client_id_placeholder": "Enter your registered GitHub OAuth APP ID",
-        "client_secret": "GitHub Client Secret",
-        "client_secret_placeholder": "Sensitive information will not be sent to frontend",
-        "buttons": {
-          "save": "Save GitHub OAuth Settings"
-        }
-      },
-      "lark": {
-        "title": "Lark OAuth Configuration",
-        "subtitle": "Used to support Lark login and registration",
-        "manage_link": "Click here",
-        "manage_text": "to manage your Lark applications",
-        "url_notice": "Set Homepage URL to {{server_url}}, and Redirect URL to {{callback_url}}",
-        "client_id": "App ID",
-        "client_id_placeholder": "Enter App ID",
-        "client_secret": "App Secret",
-        "client_secret_placeholder": "Sensitive information will not be sent to frontend",
-        "buttons": {
-          "save": "Save Lark OAuth Settings"
-        }
-      },
-      "wechat": {
-        "title": "WeChat Server Configuration",
-        "subtitle": "Used to support WeChat login and registration",
-        "learn_more": "Learn about WeChat Server",
-        "server_address": "WeChat Server Address",
-        "server_address_placeholder": "e.g.: https://yourdomain.com",
-        "token": "WeChat Server Access Token",
-        "token_placeholder": "Sensitive information will not be sent to frontend",
-        "qrcode": "WeChat Official Account QR Code Image URL",
-        "qrcode_placeholder": "Enter an image URL",
-        "buttons": {
-          "save": "Save WeChat Server Settings"
-        },
-        "scan_tip": "Scan QR code to follow WeChat Official Account, enter 'code' to get verification code (valid for 3 minutes)",
-        "code_placeholder": "Verification code"
-      },
-      "turnstile": {
-        "title": "Turnstile Configuration",
-        "subtitle": "Used to support user verification",
-        "manage_link": "Click here",
-        "manage_text": "to manage your Turnstile Sites, Invisible Widget Type recommended",
-        "site_key": "Turnstile Site Key",
-        "site_key_placeholder": "Enter your registered Turnstile Site Key",
-        "secret_key": "Turnstile Secret Key",
-        "secret_key_placeholder": "Sensitive information will not be sent to frontend",
-        "buttons": {
-          "save": "Save Turnstile Settings"
         }
       },
       "password_login": {
@@ -750,8 +681,8 @@
   },
   "home": {
     "welcome": {
-      "title": "Welcome to One API",
-      "description": "One API is a LLM API management and distribution system that helps you better manage and use LLM APIs from various providers.",
+      "title": "Welcome to One API Lite",
+      "description": "One API Lite is a LLM API management and distribution system that helps you manage and use LLM APIs from various providers.",
       "login_notice": "To use the service, please login or register first."
     },
     "system_status": {
@@ -767,9 +698,6 @@
       "config": {
         "title": "System Configuration",
         "email_verify": "Email Verification: ",
-        "github_oauth": "GitHub OAuth: ",
-        "wechat_login": "WeChat Login: ",
-        "turnstile": "Turnstile Check: ",
         "enabled": "Enabled",
         "disabled": "Disabled"
       }
@@ -821,7 +749,7 @@
   },
   "about": {
     "title": "About",
-    "description": "One API is an open-source API management and proxy platform.",
+    "description": "One API Lite is a personal streamlined fork of One API, removing third-party login and redundant features to focus on core relay capabilities.",
     "repository": "Repository: ",
     "loading_failed": "Loading failed"
   },
@@ -836,7 +764,6 @@
       "login_expired": "Not logged in or session expired, please login again!",
       "password_length": "Password must be at least 8 characters!",
       "password_mismatch": "Passwords do not match",
-      "turnstile_wait": "Please wait a few seconds, Turnstile is checking the environment!",
       "root_password": "Please change the default password immediately!"
     },
     "notice": {

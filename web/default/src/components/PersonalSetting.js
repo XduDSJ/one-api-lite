@@ -18,9 +18,7 @@ import {
   showNotice,
   showSuccess,
 } from '../helpers';
-import Turnstile from 'react-turnstile';
 import { UserContext } from '../context/User';
-import { onGitHubOAuthClicked, onLarkOAuthClicked } from './utils';
 
 const PersonalSetting = () => {
   const { t } = useTranslation();
@@ -28,18 +26,13 @@ const PersonalSetting = () => {
   let navigate = useNavigate();
 
   const [inputs, setInputs] = useState({
-    wechat_verification_code: '',
     email_verification_code: '',
     email: '',
     self_account_deletion_confirmation: '',
   });
   const [status, setStatus] = useState({});
-  const [showWeChatBindModal, setShowWeChatBindModal] = useState(false);
   const [showEmailBindModal, setShowEmailBindModal] = useState(false);
   const [showAccountDeleteModal, setShowAccountDeleteModal] = useState(false);
-  const [turnstileEnabled, setTurnstileEnabled] = useState(false);
-  const [turnstileSiteKey, setTurnstileSiteKey] = useState('');
-  const [turnstileToken, setTurnstileToken] = useState('');
   const [loading, setLoading] = useState(false);
   const [disableButton, setDisableButton] = useState(false);
   const [countdown, setCountdown] = useState(30);
@@ -51,10 +44,6 @@ const PersonalSetting = () => {
     if (status) {
       status = JSON.parse(status);
       setStatus(status);
-      if (status.turnstile_check) {
-        setTurnstileEnabled(true);
-        setTurnstileSiteKey(status.turnstile_site_key);
-      }
     }
   }, []);
 
@@ -134,30 +123,12 @@ const PersonalSetting = () => {
     }
   };
 
-  const bindWeChat = async () => {
-    if (inputs.wechat_verification_code === '') return;
-    const res = await API.get(
-      `/api/oauth/wechat/bind?code=${inputs.wechat_verification_code}`
-    );
-    const { success, message } = res.data;
-    if (success) {
-      showSuccess('微信账户绑定成功！');
-      setShowWeChatBindModal(false);
-    } else {
-      showError(message);
-    }
-  };
-
   const sendVerificationCode = async () => {
     setDisableButton(true);
     if (inputs.email === '') return;
-    if (turnstileEnabled && turnstileToken === '') {
-      showInfo('请稍后几秒重试，Turnstile 正在检查用户环境！');
-      return;
-    }
     setLoading(true);
     const res = await API.get(
-      `/api/verification?email=${inputs.email}&turnstile=${turnstileToken}`
+      `/api/verification?email=${inputs.email}`
     );
     const { success, message } = res.data;
     if (success) {
@@ -225,50 +196,6 @@ const PersonalSetting = () => {
       )}
       <Divider />
       <Header as='h3'>{t('setting.personal.binding.title')}</Header>
-      {status.wechat_login && (
-        <Button onClick={() => setShowWeChatBindModal(true)}>
-          {t('setting.personal.binding.buttons.bind_wechat')}
-        </Button>
-      )}
-      <Modal
-        onClose={() => setShowWeChatBindModal(false)}
-        onOpen={() => setShowWeChatBindModal(true)}
-        open={showWeChatBindModal}
-        size={'mini'}
-      >
-        <Modal.Content>
-          <Modal.Description>
-            <Image src={status.wechat_qrcode} fluid />
-            <div style={{ textAlign: 'center' }}>
-              <p>{t('setting.personal.binding.wechat.description')}</p>
-            </div>
-            <Form size='large'>
-              <Form.Input
-                fluid
-                placeholder={t(
-                  'setting.personal.binding.wechat.verification_code'
-                )}
-                name='wechat_verification_code'
-                value={inputs.wechat_verification_code}
-                onChange={handleInputChange}
-              />
-              <Button color='' fluid size='large' onClick={bindWeChat}>
-                {t('setting.personal.binding.wechat.bind')}
-              </Button>
-            </Form>
-          </Modal.Description>
-        </Modal.Content>
-      </Modal>
-      {status.github_oauth && (
-        <Button onClick={() => onGitHubOAuthClicked(status.github_client_id)}>
-          {t('setting.personal.binding.buttons.bind_github')}
-        </Button>
-      )}
-      {status.lark_client_id && (
-        <Button onClick={() => onLarkOAuthClicked(status.lark_client_id)}>
-          {t('setting.personal.binding.buttons.bind_lark')}
-        </Button>
-      )}
       <Button onClick={() => setShowEmailBindModal(true)}>
         {t('setting.personal.binding.buttons.bind_email')}
       </Button>
@@ -313,14 +240,6 @@ const PersonalSetting = () => {
                 value={inputs.email_verification_code}
                 onChange={handleInputChange}
               />
-              {turnstileEnabled && (
-                <Turnstile
-                  sitekey={turnstileSiteKey}
-                  onVerify={(token) => {
-                    setTurnstileToken(token);
-                  }}
-                />
-              )}
               <div
                 style={{
                   display: 'flex',
@@ -376,14 +295,6 @@ const PersonalSetting = () => {
                 value={inputs.self_account_deletion_confirmation}
                 onChange={handleInputChange}
               />
-              {turnstileEnabled && (
-                <Turnstile
-                  sitekey={turnstileSiteKey}
-                  onVerify={(token) => {
-                    setTurnstileToken(token);
-                  }}
-                />
-              )}
               <div
                 style={{
                   display: 'flex',

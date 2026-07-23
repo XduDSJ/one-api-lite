@@ -11,7 +11,6 @@ import EditUser from './pages/User/EditUser';
 import AddUser from './pages/User/AddUser';
 import { API, getLogo, getSystemName, showError, showNotice } from './helpers';
 import PasswordResetForm from './components/PasswordResetForm';
-import GitHubOAuth from './components/GitHubOAuth';
 import PasswordResetConfirm from './components/PasswordResetConfirm';
 import { UserContext } from './context/User';
 import { StatusContext } from './context/Status';
@@ -21,7 +20,6 @@ import EditToken from './pages/Token/EditToken';
 import EditChannel from './pages/Channel/EditChannel';
 import Log from './pages/Log';
 import Chat from './pages/Chat';
-import LarkOAuth from './components/LarkOAuth';
 import Dashboard from './pages/Dashboard';
 
 const Home = lazy(() => import('./pages/Home'));
@@ -208,22 +206,6 @@ function App() {
         element={
           <Suspense fallback={<Loading></Loading>}>
             <PasswordResetForm />
-          </Suspense>
-        }
-      />
-      <Route
-        path='/oauth/github'
-        element={
-          <Suspense fallback={<Loading></Loading>}>
-            <GitHubOAuth />
-          </Suspense>
-        }
-      />
-      <Route
-        path='/oauth/lark'
-        element={
-          <Suspense fallback={<Loading></Loading>}>
-            <LarkOAuth />
           </Suspense>
         }
       />

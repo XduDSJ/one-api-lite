@@ -10,7 +10,6 @@ import {
 } from 'semantic-ui-react';
 import { useTranslation } from 'react-i18next';
 import { API, getLogo, showError, showInfo, showSuccess } from '../helpers';
-import Turnstile from 'react-turnstile';
 
 const PasswordResetForm = () => {
   const { t } = useTranslation();
@@ -19,9 +18,6 @@ const PasswordResetForm = () => {
   });
   const { email } = inputs;
   const [loading, setLoading] = useState(false);
-  const [turnstileEnabled, setTurnstileEnabled] = useState(false);
-  const [turnstileSiteKey, setTurnstileSiteKey] = useState('');
-  const [turnstileToken, setTurnstileToken] = useState('');
   const [disableButton, setDisableButton] = useState(false);
   const [countdown, setCountdown] = useState(30);
   const logo = getLogo();
@@ -30,10 +26,6 @@ const PasswordResetForm = () => {
     let status = localStorage.getItem('status');
     if (status) {
       status = JSON.parse(status);
-      if (status.turnstile_check) {
-        setTurnstileEnabled(true);
-        setTurnstileSiteKey(status.turnstile_site_key);
-      }
     }
   }, []);
 
@@ -58,13 +50,9 @@ const PasswordResetForm = () => {
   async function handleSubmit(e) {
     setDisableButton(true);
     if (!email) return;
-    if (turnstileEnabled && turnstileToken === '') {
-      showInfo('请稍后几秒重试，Turnstile 正在检查用户环境！');
-      return;
-    }
     setLoading(true);
     const res = await API.get(
-      `/api/reset_password?email=${email}&turnstile=${turnstileToken}`
+      `/api/reset_password?email=${email}`
     );
     const { success, message } = res.data;
     if (success) {
@@ -108,22 +96,6 @@ const PasswordResetForm = () => {
                 onChange={handleChange}
                 style={{ marginBottom: '1em' }}
               />
-              {turnstileEnabled && (
-                <div
-                  style={{
-                    marginBottom: '1em',
-                    display: 'flex',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Turnstile
-                    sitekey={turnstileSiteKey}
-                    onVerify={(token) => {
-                      setTurnstileToken(token);
-                    }}
-                  />
-                </div>
-              )}
               <Button
                 color='blue'
                 fluid

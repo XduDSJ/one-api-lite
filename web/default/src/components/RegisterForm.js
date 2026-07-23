@@ -12,7 +12,6 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { API, getLogo, showError, showInfo, showSuccess } from '../helpers';
-import Turnstile from 'react-turnstile';
 
 const RegisterForm = () => {
   const { t } = useTranslation();
@@ -25,9 +24,6 @@ const RegisterForm = () => {
   });
   const { username, password, password2 } = inputs;
   const [showEmailVerification, setShowEmailVerification] = useState(false);
-  const [turnstileEnabled, setTurnstileEnabled] = useState(false);
-  const [turnstileSiteKey, setTurnstileSiteKey] = useState('');
-  const [turnstileToken, setTurnstileToken] = useState('');
   const [loading, setLoading] = useState(false);
   const [disableButton, setDisableButton] = useState(false);
   const [countdown, setCountdown] = useState(30);
@@ -42,10 +38,6 @@ const RegisterForm = () => {
     if (status) {
       status = JSON.parse(status);
       setShowEmailVerification(status.email_verification);
-      if (status.turnstile_check) {
-        setTurnstileEnabled(true);
-        setTurnstileSiteKey(status.turnstile_site_key);
-      }
     }
   });
 
@@ -80,19 +72,12 @@ const RegisterForm = () => {
       return;
     }
     if (username && password) {
-      if (turnstileEnabled && turnstileToken === '') {
-        showInfo(t('messages.error.turnstile_wait'));
-        return;
-      }
       setLoading(true);
       if (!affCode) {
         affCode = localStorage.getItem('aff');
       }
       inputs.aff_code = affCode;
-      const res = await API.post(
-        `/api/user/register?turnstile=${turnstileToken}`,
-        inputs
-      );
+      const res = await API.post(`/api/user/register`, inputs);
       const { success, message } = res.data;
       if (success) {
         navigate('/login');
@@ -106,14 +91,10 @@ const RegisterForm = () => {
 
   const sendVerificationCode = async () => {
     if (inputs.email === '') return;
-    if (turnstileEnabled && turnstileToken === '') {
-      showInfo(t('messages.error.turnstile_wait'));
-      return;
-    }
     setDisableButton(true);
     setLoading(true);
     const res = await API.get(
-      `/api/verification?email=${inputs.email}&turnstile=${turnstileToken}`
+      `/api/verification?email=${inputs.email}`
     );
     const { success, message } = res.data;
     if (success) {
@@ -205,23 +186,6 @@ const RegisterForm = () => {
                     style={{ marginBottom: '1em' }}
                   />
                 </>
-              )}
-
-              {turnstileEnabled && (
-                <div
-                  style={{
-                    marginBottom: '1em',
-                    display: 'flex',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Turnstile
-                    sitekey={turnstileSiteKey}
-                    onVerify={(token) => {
-                      setTurnstileToken(token);
-                    }}
-                  />
-                </div>
               )}
 
               <Button

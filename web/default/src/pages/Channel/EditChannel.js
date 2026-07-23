@@ -7,9 +7,7 @@ import {CHANNEL_OPTIONS} from '../../constants';
 import {renderChannelTip} from '../../helpers/render';
 
 const MODEL_MAPPING_EXAMPLE = {
-  'gpt-3.5-turbo-0301': 'gpt-3.5-turbo',
-  'gpt-4-0314': 'gpt-4',
-  'gpt-4-32k-0314': 'gpt-4-32k',
+  'model-alias': 'original-model-name',
 };
 
 function type2secretPrompt(type, t) {
@@ -45,7 +43,6 @@ const EditChannel = () => {
     base_url: '',
     other: '',
     model_mapping: '',
-    system_prompt: '',
     models: [],
     groups: ['default'],
   };
@@ -137,13 +134,24 @@ const EditChannel = () => {
   };
 
   const fetchUpstreamModels = async () => {
-    if (!channelId) {
-      showInfo(t('channel.edit.messages.fetch_save_first'));
-      return;
-    }
     setFetchingModels(true);
     try {
-      let res = await API.get(`/api/channel/fetch_models/${channelId}`);
+      let res;
+      if (channelId) {
+        // 已保存渠道：用 GET /fetch_models/:id
+        res = await API.get(`/api/channel/fetch_models/${channelId}`);
+      } else {
+        // 新建渠道：用 POST /fetch_models，传 {base_url, key, type}
+        if (!inputs.base_url && !inputs.key) {
+          showInfo(t('channel.edit.messages.fetch_need_config'));
+          return;
+        }
+        res = await API.post('/api/channel/fetch_models', {
+          base_url: inputs.base_url,
+          key: inputs.key,
+          type: inputs.type,
+        });
+      }
       const { success, message, data } = res.data;
       if (success) {
         if (data.length === 0) {
@@ -542,6 +550,163 @@ const EditChannel = () => {
                 {t('channel.edit.douban_notice_2')}
               </Message>
             )}
+            {inputs.type !== 3 &&
+              inputs.type !== 33 &&
+              inputs.type !== 8 &&
+                inputs.type !== 50 &&
+              inputs.type !== 22 && (
+                <Form.Field>
+                  <Form.Input
+                      label={t('channel.edit.proxy_url')}
+                    name='base_url'
+                      placeholder={t('channel.edit.proxy_url_placeholder')}
+                    onChange={handleInputChange}
+                    value={inputs.base_url}
+                    autoComplete='new-password'
+                  />
+                </Form.Field>
+              )}
+            {inputs.type === 22 && (
+              <Form.Field>
+                <Form.Input
+                  label='私有部署地址'
+                  name='base_url'
+                  placeholder={
+                    '请输入私有部署地址，格式为：https://fastgpt.run/api/openapi'
+                  }
+                  onChange={handleInputChange}
+                  value={inputs.base_url}
+                  autoComplete='new-password'
+                />
+              </Form.Field>
+            )}
+            {inputs.type !== 33 &&
+              inputs.type !== 42 &&
+              (batch ? (
+                <Form.Field>
+                  <Form.TextArea
+                    label={t('channel.edit.key')}
+                    name='key'
+                    required
+                    placeholder={t('channel.edit.batch_placeholder')}
+                    onChange={handleInputChange}
+                    value={inputs.key}
+                    style={{
+                      minHeight: 150,
+                      fontFamily: 'JetBrains Mono, Consolas',
+                    }}
+                    autoComplete='new-password'
+                  />
+                </Form.Field>
+              ) : (
+                <Form.Field>
+                  <Form.Input
+                    label={t('channel.edit.key')}
+                    name='key'
+                    required
+                    placeholder={type2secretPrompt(inputs.type, t)}
+                    onChange={handleInputChange}
+                    value={inputs.key}
+                    autoComplete='new-password'
+                  />
+                </Form.Field>
+              ))}
+            {inputs.type !== 33 && !isEdit && (
+              <Form.Checkbox
+                checked={batch}
+                label={t('channel.edit.batch')}
+                name='batch'
+                onChange={() => setBatch(!batch)}
+              />
+            )}
+            {inputs.type === 33 && (
+              <Form.Field>
+                <Form.Input
+                  label='Region'
+                  name='region'
+                  required
+                  placeholder={t('channel.edit.aws_region_placeholder')}
+                  onChange={handleConfigChange}
+                  value={config.region}
+                  autoComplete=''
+                />
+                <Form.Input
+                  label='AK'
+                  name='ak'
+                  required
+                  placeholder={t('channel.edit.aws_ak_placeholder')}
+                  onChange={handleConfigChange}
+                  value={config.ak}
+                  autoComplete=''
+                />
+                <Form.Input
+                  label='SK'
+                  name='sk'
+                  required
+                  placeholder={t('channel.edit.aws_sk_placeholder')}
+                  onChange={handleConfigChange}
+                  value={config.sk}
+                  autoComplete=''
+                />
+              </Form.Field>
+            )}
+            {inputs.type === 42 && (
+              <Form.Field>
+                <Form.Input
+                  label='Region'
+                  name='region'
+                  required
+                  placeholder={t('channel.edit.vertex_region_placeholder')}
+                  onChange={handleConfigChange}
+                  value={config.region}
+                  autoComplete=''
+                />
+                <Form.Input
+                  label={t('channel.edit.vertex_project_id')}
+                  name='vertex_ai_project_id'
+                  required
+                  placeholder={t('channel.edit.vertex_project_id_placeholder')}
+                  onChange={handleConfigChange}
+                  value={config.vertex_ai_project_id}
+                  autoComplete=''
+                />
+                <Form.Input
+                  label={t('channel.edit.vertex_credentials')}
+                  name='vertex_ai_adc'
+                  required
+                  placeholder={t('channel.edit.vertex_credentials_placeholder')}
+                  onChange={handleConfigChange}
+                  value={config.vertex_ai_adc}
+                  autoComplete=''
+                />
+              </Form.Field>
+            )}
+            {inputs.type === 34 && (
+              <Form.Input
+                label={t('channel.edit.user_id')}
+                name='user_id'
+                required
+                placeholder={t('channel.edit.user_id_placeholder')}
+                onChange={handleConfigChange}
+                value={config.user_id}
+                autoComplete=''
+              />
+            )}
+            {inputs.type === 37 && (
+              <Form.Field>
+                <Form.Input
+                  label='Account ID'
+                  name='user_id'
+                  required
+                  placeholder={
+                    '请输入 Account ID，例如：d8d7c61dbc334c32d3ced580e4bf42b4'
+                  }
+                  onChange={handleConfigChange}
+                  value={config.user_id}
+                  autoComplete=''
+                />
+              </Form.Field>
+            )}
             {inputs.type !== 43 && (
               <Form.Field>
                 <Form.Dropdown
@@ -568,7 +733,7 @@ const EditChannel = () => {
                 <Button
                   type={'button'}
                   loading={fetchingModels}
-                  disabled={!isEdit || fetchingModels}
+                  disabled={fetchingModels}
                   onClick={fetchUpstreamModels}
                 >
                   {t('channel.edit.buttons.fetch_upstream')}
@@ -652,195 +817,6 @@ const EditChannel = () => {
                     ))}
                   </Table.Body>
                 </Table>
-              </Form.Field>
-            )}
-            {inputs.type !== 43 && (
-              <>
-                <Form.Field>
-                  <Form.TextArea
-                    label={`${t('channel.edit.model_mapping')}（${t('channel.edit.model_mapping_auto')}）`}
-                    placeholder={t('channel.edit.model_mapping_placeholder')}
-                    name='model_mapping'
-                    readOnly
-                    value={inputs.model_mapping}
-                    style={{
-                      minHeight: 150,
-                      fontFamily: 'JetBrains Mono, Consolas',
-                    }}
-                    autoComplete='new-password'
-                  />
-                </Form.Field>
-                <Form.Field>
-                  <Form.TextArea
-                    label={t('channel.edit.system_prompt')}
-                    placeholder={t('channel.edit.system_prompt_placeholder')}
-                    name='system_prompt'
-                    onChange={handleInputChange}
-                    value={inputs.system_prompt}
-                    style={{
-                      minHeight: 150,
-                      fontFamily: 'JetBrains Mono, Consolas',
-                    }}
-                    autoComplete='new-password'
-                  />
-                </Form.Field>
-              </>
-            )}
-            {inputs.type === 33 && (
-              <Form.Field>
-                <Form.Input
-                  label='Region'
-                  name='region'
-                  required
-                  placeholder={t('channel.edit.aws_region_placeholder')}
-                  onChange={handleConfigChange}
-                  value={config.region}
-                  autoComplete=''
-                />
-                <Form.Input
-                  label='AK'
-                  name='ak'
-                  required
-                  placeholder={t('channel.edit.aws_ak_placeholder')}
-                  onChange={handleConfigChange}
-                  value={config.ak}
-                  autoComplete=''
-                />
-                <Form.Input
-                  label='SK'
-                  name='sk'
-                  required
-                  placeholder={t('channel.edit.aws_sk_placeholder')}
-                  onChange={handleConfigChange}
-                  value={config.sk}
-                  autoComplete=''
-                />
-              </Form.Field>
-            )}
-            {inputs.type === 42 && (
-              <Form.Field>
-                <Form.Input
-                  label='Region'
-                  name='region'
-                  required
-                  placeholder={t('channel.edit.vertex_region_placeholder')}
-                  onChange={handleConfigChange}
-                  value={config.region}
-                  autoComplete=''
-                />
-                <Form.Input
-                  label={t('channel.edit.vertex_project_id')}
-                  name='vertex_ai_project_id'
-                  required
-                  placeholder={t('channel.edit.vertex_project_id_placeholder')}
-                  onChange={handleConfigChange}
-                  value={config.vertex_ai_project_id}
-                  autoComplete=''
-                />
-                <Form.Input
-                  label={t('channel.edit.vertex_credentials')}
-                  name='vertex_ai_adc'
-                  required
-                  placeholder={t('channel.edit.vertex_credentials_placeholder')}
-                  onChange={handleConfigChange}
-                  value={config.vertex_ai_adc}
-                  autoComplete=''
-                />
-              </Form.Field>
-            )}
-            {inputs.type === 34 && (
-              <Form.Input
-                label={t('channel.edit.user_id')}
-                name='user_id'
-                required
-                placeholder={t('channel.edit.user_id_placeholder')}
-                onChange={handleConfigChange}
-                value={config.user_id}
-                autoComplete=''
-              />
-            )}
-            {inputs.type !== 33 &&
-              inputs.type !== 42 &&
-              (batch ? (
-                <Form.Field>
-                  <Form.TextArea
-                    label={t('channel.edit.key')}
-                    name='key'
-                    required
-                    placeholder={t('channel.edit.batch_placeholder')}
-                    onChange={handleInputChange}
-                    value={inputs.key}
-                    style={{
-                      minHeight: 150,
-                      fontFamily: 'JetBrains Mono, Consolas',
-                    }}
-                    autoComplete='new-password'
-                  />
-                </Form.Field>
-              ) : (
-                <Form.Field>
-                  <Form.Input
-                    label={t('channel.edit.key')}
-                    name='key'
-                    required
-                    placeholder={type2secretPrompt(inputs.type, t)}
-                    onChange={handleInputChange}
-                    value={inputs.key}
-                    autoComplete='new-password'
-                  />
-                </Form.Field>
-              ))}
-            {inputs.type === 37 && (
-              <Form.Field>
-                <Form.Input
-                  label='Account ID'
-                  name='user_id'
-                  required
-                  placeholder={
-                    '请输入 Account ID，例如：d8d7c61dbc334c32d3ced580e4bf42b4'
-                  }
-                  onChange={handleConfigChange}
-                  value={config.user_id}
-                  autoComplete=''
-                />
-              </Form.Field>
-            )}
-            {inputs.type !== 33 && !isEdit && (
-              <Form.Checkbox
-                checked={batch}
-                label={t('channel.edit.batch')}
-                name='batch'
-                onChange={() => setBatch(!batch)}
-              />
-            )}
-            {inputs.type !== 3 &&
-              inputs.type !== 33 &&
-              inputs.type !== 8 &&
-                inputs.type !== 50 &&
-              inputs.type !== 22 && (
-                <Form.Field>
-                  <Form.Input
-                      label={t('channel.edit.proxy_url')}
-                    name='base_url'
-                      placeholder={t('channel.edit.proxy_url_placeholder')}
-                    onChange={handleInputChange}
-                    value={inputs.base_url}
-                    autoComplete='new-password'
-                  />
-                </Form.Field>
-              )}
-            {inputs.type === 22 && (
-              <Form.Field>
-                <Form.Input
-                  label='私有部署地址'
-                  name='base_url'
-                  placeholder={
-                    '请输入私有部署地址，格式为：https://fastgpt.run/api/openapi'
-                  }
-                  onChange={handleInputChange}
-                  value={inputs.base_url}
-                  autoComplete='new-password'
-                />
               </Form.Field>
             )}
             <Button onClick={handleCancel}>

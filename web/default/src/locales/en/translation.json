@@ -136,6 +136,7 @@
         "update_success": "Channel updated successfully!",
         "create_success": "Channel created successfully!",
         "fetch_save_first": "Please save the channel before fetching models from upstream",
+        "fetch_need_config": "Please fill in BaseURL and Key first",
         "fetch_empty": "Upstream returned no models, please check Key and BaseURL",
         "fetch_success": "Fetched {{total}} models, {{added}} new",
         "alias_invalid_comma": "Model alias cannot contain commas",

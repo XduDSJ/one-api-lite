@@ -136,6 +136,7 @@
         "update_success": "渠道更新成功！",
         "create_success": "渠道创建成功！",
         "fetch_save_first": "请先保存渠道后再从上游获取模型",
+        "fetch_need_config": "请先填写 BaseURL 和密钥",
         "fetch_empty": "上游未返回任何模型,请检查 Key 和 BaseURL",
         "fetch_success": "获取到 {{total}} 个模型,新增 {{added}} 个",
         "alias_invalid_comma": "模型别名不能包含逗号",

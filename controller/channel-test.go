@@ -35,9 +35,7 @@ import (
 )
 
 func buildTestRequest(model string) *relaymodel.GeneralOpenAIRequest {
-	if model == "" {
-		model = "gpt-3.5-turbo"
-	}
+	// model 为空时保持空，由 testChannel 内部回退到渠道首个模型
 	testRequest := &relaymodel.GeneralOpenAIRequest{
 		Model: model,
 	}
@@ -185,6 +183,15 @@ func TestChannel(c *gin.Context) {
 		return
 	}
 	modelName := c.Query("model")
+	// 未指定测试模型时，取渠道第一个模型
+	if modelName == "" {
+		models := strings.Split(channel.Models, ",")
+		if len(models) == 0 || models[0] == "" {
+			c.JSON(http.StatusOK, gin.H{"success": false, "message": "该渠道未配置模型"})
+			return
+		}
+		modelName = models[0]
+	}
 	testRequest := buildTestRequest(modelName)
 	tik := time.Now()
 	responseMessage, err, _ := testChannel(ctx, channel, testRequest)

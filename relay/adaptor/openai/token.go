@@ -2,79 +2,22 @@ package openai
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"strings"
 
-	"github.com/pkoukk/tiktoken-go"
-
-	"github.com/songquanpeng/one-api/common/config"
 	"github.com/songquanpeng/one-api/common/image"
 	"github.com/songquanpeng/one-api/common/logger"
-	billingratio "github.com/songquanpeng/one-api/relay/billing/ratio"
 	"github.com/songquanpeng/one-api/relay/model"
 )
 
-// tokenEncoderMap won't grow after initialization
-var tokenEncoderMap = map[string]*tiktoken.Tiktoken{}
-var defaultTokenEncoder *tiktoken.Tiktoken
-
-func InitTokenEncoders() {
-	logger.SysLog("initializing token encoders")
-	gpt35TokenEncoder, err := tiktoken.EncodingForModel("gpt-3.5-turbo")
-	if err != nil {
-		logger.FatalLog(fmt.Sprintf("failed to get gpt-3.5-turbo token encoder: %s, "+
-			"if you are using in offline environment, please set TIKTOKEN_CACHE_DIR to use exsited files, check this link for more information: https://stackoverflow.com/questions/76106366/how-to-use-tiktoken-in-offline-mode-computer ", err.Error()))
-	}
-	defaultTokenEncoder = gpt35TokenEncoder
-	gpt4oTokenEncoder, err := tiktoken.EncodingForModel("gpt-4o")
-	if err != nil {
-		logger.FatalLog(fmt.Sprintf("failed to get gpt-4o token encoder: %s", err.Error()))
-	}
-	gpt4TokenEncoder, err := tiktoken.EncodingForModel("gpt-4")
-	if err != nil {
-		logger.FatalLog(fmt.Sprintf("failed to get gpt-4 token encoder: %s", err.Error()))
-	}
-	for model := range billingratio.ModelRatio {
-		if strings.HasPrefix(model, "gpt-3.5") {
-			tokenEncoderMap[model] = gpt35TokenEncoder
-		} else if strings.HasPrefix(model, "gpt-4o") {
-			tokenEncoderMap[model] = gpt4oTokenEncoder
-		} else if strings.HasPrefix(model, "gpt-4") {
-			tokenEncoderMap[model] = gpt4TokenEncoder
-		} else {
-			tokenEncoderMap[model] = nil
-		}
-	}
-	logger.SysLog("token encoders initialized")
-}
-
-func getTokenEncoder(model string) *tiktoken.Tiktoken {
-	tokenEncoder, ok := tokenEncoderMap[model]
-	if ok && tokenEncoder != nil {
-		return tokenEncoder
-	}
-	if ok {
-		tokenEncoder, err := tiktoken.EncodingForModel(model)
-		if err != nil {
-			logger.SysError(fmt.Sprintf("failed to get token encoder for model %s: %s, using encoder for gpt-3.5-turbo", model, err.Error()))
-			tokenEncoder = defaultTokenEncoder
-		}
-		tokenEncoderMap[model] = tokenEncoder
-		return tokenEncoder
-	}
-	return defaultTokenEncoder
-}
-
-func getTokenNum(tokenEncoder *tiktoken.Tiktoken, text string) int {
-	if config.ApproximateTokenEnabled {
-		return int(float64(len(text)) * 0.38)
-	}
-	return len(tokenEncoder.Encode(text, nil, nil))
+// countTokens 近似估算文本 token 数
+// one-api-lite 已移除计费，非 OpenAI 模型本来就用 cl100k_base 粗略估算，
+// 统一用 len(text)*0.38 近似，避免 tiktoken 网络下载词表导致启动卡顿
+func countTokens(text string) int {
+	return int(float64(len(text)) * 0.38)
 }
 
 func CountTokenMessages(messages []model.Message, model string) int {
-	tokenEncoder := getTokenEncoder(model)
 	// Reference:
 	// https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
 	// https://github.com/pkoukk/tiktoken-go/issues/6
@@ -94,7 +37,7 @@ func CountTokenMessages(messages []model.Message, model string) int {
 		tokenNum += tokensPerMessage
 		switch v := message.Content.(type) {
 		case string:
-			tokenNum += getTokenNum(tokenEncoder, v)
+			tokenNum += countTokens(v)
 		case []any:
 			for _, it := range v {
 				m := it.(map[string]any)
@@ -102,7 +45,7 @@ func CountTokenMessages(messages []model.Message, model string) int {
 				case "text":
 					if textValue, ok := m["text"]; ok {
 						if textString, ok := textValue.(string); ok {
-							tokenNum += getTokenNum(tokenEncoder, textString)
+							tokenNum += countTokens(textString)
 						}
 					}
 				case "image_url":
@@ -123,10 +66,10 @@ func CountTokenMessages(messages []model.Message, model string) int {
 				}
 			}
 		}
-		tokenNum += getTokenNum(tokenEncoder, message.Role)
+		tokenNum += countTokens(message.Role)
 		if message.Name != nil {
 			tokenNum += tokensPerName
-			tokenNum += getTokenNum(tokenEncoder, *message.Name)
+			tokenNum += countTokens(*message.Name)
 		}
 	}
 	tokenNum += 3 // Every reply is primed with <|start|>assistant<|message|>
@@ -226,10 +169,9 @@ func CountTokenInput(input any, model string) int {
 }
 
 func CountTokenText(text string, model string) int {
-	tokenEncoder := getTokenEncoder(model)
-	return getTokenNum(tokenEncoder, text)
+	return countTokens(text)
 }
 
 func CountToken(text string) int {
-	return CountTokenInput(text, "gpt-3.5-turbo")
+	return countTokens(text)
 }

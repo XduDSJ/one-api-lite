@@ -36,11 +36,18 @@ COPY --from=builder /web/build ./web/build
 
 RUN go build -trimpath -ldflags "-s -w -X 'github.com/songquanpeng/one-api/common.Version=$(cat VERSION)' -linkmode external -extldflags '-static'" -o one-api
 
+# 预下载 tiktoken BPE 词表缓存，避免容器启动时从外网下载卡 2 分钟
+ENV TIKTOKEN_CACHE_DIR=/tiktoken_cache
+RUN go run ./cmd/cache_tiktoken
+
 FROM alpine:latest
 
 RUN apk add --no-cache ca-certificates tzdata
 
 COPY --from=builder2 /build/one-api /
+COPY --from=builder2 /tiktoken_cache /tiktoken_cache
+
+ENV TIKTOKEN_CACHE_DIR=/tiktoken_cache
 
 EXPOSE 3000
 WORKDIR /data

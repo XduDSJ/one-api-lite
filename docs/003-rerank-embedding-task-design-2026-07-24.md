@@ -2,7 +2,7 @@
 
 > 编号：003  
 > 日期：2026-07-24  
-> 状态：待实现  
+> 状态：已实现 ✅（commits 7c73c4c..ba7fe3e）
 > 关联文档：`docs/001-reranker-api-format-research-2026-01-24.md`
 
 ## 一、背景

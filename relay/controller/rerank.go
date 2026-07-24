@@ -50,7 +50,10 @@ func RelayRerankHelper(c *gin.Context) *relaymodel.ErrorWithStatusCode {
 	if err != nil {
 		return openai.ErrorWrapper(err, "convert_rerank_request_failed", http.StatusInternalServerError)
 	}
-	jsonData, _ := json.Marshal(convertedRequest)
+	jsonData, err := json.Marshal(convertedRequest)
+	if err != nil {
+		return openai.ErrorWrapper(err, "marshal_rerank_request_failed", http.StatusInternalServerError)
+	}
 	requestBody := bytes.NewBuffer(jsonData)
 
 	// 发送请求
@@ -58,6 +61,7 @@ func RelayRerankHelper(c *gin.Context) *relaymodel.ErrorWithStatusCode {
 	if err != nil {
 		return openai.ErrorWrapper(err, "do_request_failed", http.StatusInternalServerError)
 	}
+	defer resp.Body.Close()
 
 	// 处理响应
 	rerankResp, respErr := rerankAdaptor.DoRerankResponse(c, resp, meta)

@@ -128,11 +128,6 @@ func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Met
 	return
 }
 
-func (a *Adaptor) GetModelList() []string {
-	_, modelList := GetCompatibleChannelMeta(a.ChannelType)
-	return modelList
-}
-
 func (a *Adaptor) GetChannelName() string {
 	channelName, _ := GetCompatibleChannelMeta(a.ChannelType)
 	return channelName

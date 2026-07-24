@@ -147,16 +147,6 @@ func (t *Token) Delete() error {
 	return err
 }
 
-func (t *Token) GetModels() string {
-	if t == nil {
-		return ""
-	}
-	if t.Models == nil {
-		return ""
-	}
-	return *t.Models
-}
-
 func DeleteTokenById(id int, userId int) (err error) {
 	// Why we need userId here? In case user want to delete other's token.
 	if id == 0 || userId == 0 {

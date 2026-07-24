@@ -91,10 +91,6 @@ func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Met
 	return
 }
 
-func (a *Adaptor) GetModelList() []string {
-	return ModelList
-}
-
 func (a *Adaptor) GetChannelName() string {
 	return "cloudflare"
 }

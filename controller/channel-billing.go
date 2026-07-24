@@ -10,10 +10,7 @@ import (
 	"time"
 
 	"github.com/songquanpeng/one-api/common/client"
-	"github.com/songquanpeng/one-api/common/config"
-	"github.com/songquanpeng/one-api/common/logger"
 	"github.com/songquanpeng/one-api/model"
-	"github.com/songquanpeng/one-api/monitor"
 	"github.com/songquanpeng/one-api/relay/channeltype"
 
 	"github.com/gin-gonic/gin"
@@ -404,56 +401,4 @@ func UpdateChannelBalance(c *gin.Context) {
 		"balance": balance,
 	})
 	return
-}
-
-func updateAllChannelsBalance() error {
-	channels, err := model.GetAllChannels(0, 0, "all")
-	if err != nil {
-		return err
-	}
-	for _, channel := range channels {
-		if channel.Status != model.ChannelStatusEnabled {
-			continue
-		}
-		// TODO: support Azure
-		if channel.Type != channeltype.OpenAI && channel.Type != channeltype.Custom {
-			continue
-		}
-		balance, err := updateChannelBalance(channel)
-		if err != nil {
-			continue
-		} else {
-			// err is nil & balance <= 0 means quota is used up
-			if balance <= 0 {
-				monitor.DisableChannel(channel.Id, channel.Name, "余额不足")
-			}
-		}
-		time.Sleep(config.RequestInterval)
-	}
-	return nil
-}
-
-func UpdateAllChannelsBalance(c *gin.Context) {
-	//err := updateAllChannelsBalance()
-	//if err != nil {
-	//	c.JSON(http.StatusOK, gin.H{
-	//		"success": false,
-	//		"message": err.Error(),
-	//	})
-	//	return
-	//}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-	})
-	return
-}
-
-func AutomaticallyUpdateChannels(frequency int) {
-	for {
-		time.Sleep(time.Duration(frequency) * time.Minute)
-		logger.SysLog("updating all channels")
-		_ = updateAllChannelsBalance()
-		logger.SysLog("channels update done")
-	}
 }

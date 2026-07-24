@@ -140,10 +140,6 @@ func ConvertEmbeddingRequest(request model.GeneralOpenAIRequest) (*EmbeddingRequ
 	}, nil
 }
 
-func (a *Adaptor) GetModelList() []string {
-	return ModelList
-}
-
 func (a *Adaptor) GetChannelName() string {
 	return "zhipu"
 }

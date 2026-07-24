@@ -53,13 +53,6 @@ func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Met
 	return a.awsAdapter.DoResponse(c, a.AwsClient, meta)
 }
 
-func (a *Adaptor) GetModelList() (models []string) {
-	for model := range adaptors {
-		models = append(models, model)
-	}
-	return
-}
-
 func (a *Adaptor) GetChannelName() string {
 	return "aws"
 }

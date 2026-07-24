@@ -49,12 +49,6 @@ type User struct {
 	InviterId        int    `json:"inviter_id" gorm:"type:int;column:inviter_id;index"`
 }
 
-func GetMaxUserId() int {
-	var user User
-	DB.Last(&user)
-	return user.Id
-}
-
 func GetAllUsers(startIdx int, num int, order string) (users []*User, err error) {
 	query := DB.Limit(num).Offset(startIdx).Omit("password").Where("status != ?", UserStatusDeleted)
 
@@ -218,22 +212,6 @@ func (user *User) FillUserById() error {
 		return errors.New("id 为空！")
 	}
 	DB.Where(User{Id: user.Id}).First(user)
-	return nil
-}
-
-func (user *User) FillUserByEmail() error {
-	if user.Email == "" {
-		return errors.New("email 为空！")
-	}
-	DB.Where(User{Email: user.Email}).First(user)
-	return nil
-}
-
-func (user *User) FillUserByUsername() error {
-	if user.Username == "" {
-		return errors.New("username 为空！")
-	}
-	DB.Where(User{Username: user.Username}).First(user)
 	return nil
 }
 

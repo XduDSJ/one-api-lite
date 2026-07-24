@@ -50,11 +50,6 @@ func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Met
 	return adaptor.DoResponse(c, resp, meta)
 }
 
-func (a *Adaptor) GetModelList() (models []string) {
-	models = modelList
-	return
-}
-
 func (a *Adaptor) GetChannelName() string {
 	return channelName
 }

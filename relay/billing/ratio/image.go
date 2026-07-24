@@ -1,7 +1,7 @@
 package ratio
 
-// ImageSizeRatios 图片尺寸倍率表已移除，统一返回固定值 1.0。
-// 保留空 map 声明以兼容 relay/controller/image.go 的引用。
+// 图片尺寸校验已放开：空 map 使所有尺寸通过校验，由上游自行拒绝不支持的尺寸。
+// 图片成本比率因此固定为 1.0（dall-e-3 hd 除外），与"倍率统一为 1"的设计一致。
 var ImageSizeRatios = map[string]map[string]float64{}
 
 var ImageGenerationAmounts = map[string][2]int{

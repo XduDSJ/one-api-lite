@@ -21,6 +21,7 @@ import (
 	"github.com/songquanpeng/one-api/model"
 	"github.com/songquanpeng/one-api/relay/adaptor/openai"
 	"github.com/songquanpeng/one-api/router"
+	"github.com/songquanpeng/one-api/service"
 )
 
 //go:embed web/build/*
@@ -92,6 +93,8 @@ func main() {
 		logger.SysLog("metric enabled, will disable channel if too much request failed")
 	}
 	openai.InitTokenEncoders()
+	// 启动异步任务轮询服务
+	service.StartTaskPoller()
 	client.Init()
 
 	// Initialize i18n

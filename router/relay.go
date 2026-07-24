@@ -76,7 +76,7 @@ func SetRelayRouter(router *gin.Engine) {
 	}
 	// 异步任务路由 — 查询/列表只需 TokenAuth（无需选渠道，无 model 字段）
 	taskRouter := router.Group("/v1/tasks")
-	taskRouter.Use(middleware.TokenAuth())
+	taskRouter.Use(middleware.RelayPanicRecover(), middleware.TokenAuth())
 	{
 		taskRouter.GET("/:task_id", controller.RelayTaskQuery)
 		taskRouter.GET("", controller.RelayTaskList)

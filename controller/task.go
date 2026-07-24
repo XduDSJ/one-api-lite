@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/songquanpeng/one-api/common"
+	"github.com/songquanpeng/one-api/common/client"
 	"github.com/songquanpeng/one-api/common/ctxkey"
 	"github.com/songquanpeng/one-api/model"
 	"github.com/songquanpeng/one-api/relay"
@@ -25,6 +26,10 @@ func RelayTaskSubmit(c *gin.Context) {
 	taskRequest := &relaymodel.TaskRequest{}
 	if err := common.UnmarshalBodyReusable(c, taskRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": err.Error(), "type": "one_api_error"}})
+		return
+	}
+	if taskRequest.Model == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "model is required", "type": "one_api_error"}})
 		return
 	}
 
@@ -66,8 +71,24 @@ func RelayTaskSubmit(c *gin.Context) {
 	}
 	requestBody := bytes.NewBuffer(jsonData)
 
-	// 发送请求
-	resp, err := channelAdaptor.DoRequest(c, meta, requestBody)
+	// 构建提交 URL（使用 TaskAdaptor 专用方法，而非标准 GetRequestURL）
+	requestURL, err := taskAdaptor.GetTaskRequestURL(meta)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": err.Error(), "type": "one_api_error"}})
+		return
+	}
+
+	// 手动构建请求（DoRequest 内部调用 GetRequestURL 而非 GetTaskRequestURL，故不使用）
+	req, err := http.NewRequest(c.Request.Method, requestURL, requestBody)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": err.Error(), "type": "one_api_error"}})
+		return
+	}
+	if err := channelAdaptor.SetupRequestHeader(c, req, meta); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": err.Error(), "type": "one_api_error"}})
+		return
+	}
+	resp, err := client.HTTPClient.Do(req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": err.Error(), "type": "one_api_error"}})
 		return

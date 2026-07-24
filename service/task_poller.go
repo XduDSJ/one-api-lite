@@ -113,7 +113,14 @@ func pollSingleTask(task model.Task) {
 	// 更新数据库
 	var failReason string
 	if model.TaskStatus(status) == model.TaskStatusFailure {
-		failReason = "upstream reported failure"
+		// 失败时将上游返回的 result 作为失败原因，保留具体错误信息
+		if result != "" {
+			failReason = result
+		} else {
+			failReason = "upstream reported failure"
+		}
 	}
-	model.UpdateTaskStatus(task.ID, model.TaskStatus(status), progress, result, failReason)
+	if err := model.UpdateTaskStatus(task.ID, model.TaskStatus(status), progress, result, failReason); err != nil {
+		logger.SysError(fmt.Sprintf("更新任务 %s 状态失败: %s", task.TaskID, err.Error()))
+	}
 }

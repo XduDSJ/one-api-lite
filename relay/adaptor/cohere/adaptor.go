@@ -10,6 +10,7 @@ import (
 	"github.com/songquanpeng/one-api/relay/adaptor"
 	"github.com/songquanpeng/one-api/relay/meta"
 	"github.com/songquanpeng/one-api/relay/model"
+	"github.com/songquanpeng/one-api/relay/relaymode"
 )
 
 type Adaptor struct{}
@@ -26,6 +27,9 @@ func (a *Adaptor) Init(meta *meta.Meta) {
 }
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
+	if meta.Mode == relaymode.Rerank {
+		return fmt.Sprintf("%s/v1/rerank", meta.BaseURL), nil
+	}
 	return fmt.Sprintf("%s/v1/chat", meta.BaseURL), nil
 }
 

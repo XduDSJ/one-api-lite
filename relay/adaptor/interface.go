@@ -18,3 +18,10 @@ type Adaptor interface {
 	DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *model.Usage, err *model.ErrorWithStatusCode)
 	GetChannelName() string
 }
+
+// RerankAdaptor 可选接口，只有支持 rerank 的适配器实现
+// 不实现此接口的适配器，Helper 会返回 "rerank not supported" 错误
+type RerankAdaptor interface {
+	ConvertRerankRequest(c *gin.Context, request *model.RerankRequest) (any, error)
+	DoRerankResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (*model.RerankResponse, *model.ErrorWithStatusCode)
+}

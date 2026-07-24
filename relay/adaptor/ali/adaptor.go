@@ -29,6 +29,8 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		fullRequestURL = fmt.Sprintf("%s/api/v1/services/embeddings/text-embedding/text-embedding", meta.BaseURL)
 	case relaymode.ImagesGenerations:
 		fullRequestURL = fmt.Sprintf("%s/api/v1/services/aigc/text2image/image-synthesis", meta.BaseURL)
+	case relaymode.Rerank:
+		fullRequestURL = fmt.Sprintf("%s/api/v1/services/rerank/text-rerank/text-rerank", meta.BaseURL)
 	default:
 		fullRequestURL = fmt.Sprintf("%s/api/v1/services/aigc/text-generation/generation", meta.BaseURL)
 	}

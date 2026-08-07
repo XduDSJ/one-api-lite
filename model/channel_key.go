@@ -262,3 +262,88 @@ func MarkChannelKeyExhaustedIfQuota(keyId int64) {
 		logger.SysError("failed to mark channel key exhausted: " + err.Error())
 	}
 }
+
+// parseNextResetTime 解析 "HH:MM" 规则，计算从 now 起下一个 HH:MM 时刻的 unix 秒。
+// rule 为空或解析失败返回 0。例如 rule="00:00" 表示每天 0 点重置。
+func parseNextResetTime(rule string, now int64) int64 {
+	if rule == "" {
+		return 0
+	}
+	t, err := time.Parse("15:04", rule)
+	if err != nil {
+		return 0
+	}
+	nowTime := time.Unix(now, 0)
+	next := time.Date(nowTime.Year(), nowTime.Month(), nowTime.Day(), t.Hour(), t.Minute(), 0, 0, nowTime.Location())
+	if !next.After(nowTime) {
+		next = next.Add(24 * time.Hour)
+	}
+	return next.Unix()
+}
+
+// StartQuotaResetScanner 每 30s 扫描配额耗尽的 key，到期则重置
+func StartQuotaResetScanner() {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+	for range ticker.C {
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					logger.SysError(fmt.Sprintf("quota reset scanner panic: %v", r))
+				}
+			}()
+			now := time.Now().Unix()
+			var keys []ChannelKey
+			if err := DB.Where("quota_reset_at > 0 AND quota_reset_at <= ? AND status = ?", now, KeyStatusExhausted).Find(&keys).Error; err != nil {
+				logger.SysError("quota reset scanner query error: " + err.Error())
+				return
+			}
+			for _, key := range keys {
+				updates := map[string]interface{}{
+					"daily_used_quota": 0,
+					"status":           KeyStatusEnabled,
+				}
+				// 按 QuotaResetRule 解析下一次重置时刻，rule 为空则不设 QuotaResetAt
+				if key.QuotaResetRule != "" {
+					nextReset := parseNextResetTime(key.QuotaResetRule, now)
+					if nextReset > 0 {
+						updates["quota_reset_at"] = nextReset
+					}
+				}
+				if err := DB.Model(&ChannelKey{}).Where("id = ?", key.Id).Updates(updates).Error; err != nil {
+					logger.SysError(fmt.Sprintf("quota reset scanner update key %d error: %s", key.Id, err.Error()))
+				}
+			}
+		}()
+	}
+}
+
+// StartCooldownScanner 每 10s 扫描冷却到期的 key，恢复为启用
+func StartCooldownScanner() {
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+	for range ticker.C {
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					logger.SysError(fmt.Sprintf("cooldown scanner panic: %v", r))
+				}
+			}()
+			now := time.Now().Unix()
+			result := DB.Model(&ChannelKey{}).Where("cooled_until > 0 AND cooled_until <= ? AND status = ?", now, KeyStatusCooling).Updates(map[string]interface{}{
+				"status":       KeyStatusEnabled,
+				"cooled_until": 0,
+			})
+			if result.Error != nil {
+				logger.SysError("cooldown scanner update error: " + result.Error.Error())
+			}
+		}()
+	}
+}
+
+// StartChannelKeyScanners 启动配额重置与冷却恢复扫描 goroutine
+func StartChannelKeyScanners() {
+	go StartQuotaResetScanner()
+	go StartCooldownScanner()
+	logger.SysLog("channel key scanners started")
+}

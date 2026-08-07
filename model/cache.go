@@ -253,3 +253,25 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 	}
 	return channels[idx], nil
 }
+
+// InvalidateChannelCache 失效渠道缓存，CRUD 后主动调用以触发重新同步
+func InvalidateChannelCache(channelId int) {
+	if !config.MemoryCacheEnabled {
+		return
+	}
+	// 主动重新同步整个渠道缓存（简单实现，保证一致性）
+	go InitChannelCache()
+}
+
+// WarnLegacyMultiKeyChannels 启动时检测老格式 \n 多 key 渠道并打 warning
+func WarnLegacyMultiKeyChannels() {
+	keyCol := "`key`"
+	if common.UsingPostgreSQL {
+		keyCol = `"key"`
+	}
+	var count int64
+	DB.Model(&Channel{}).Where(keyCol + " LIKE ?", "%\n%").Count(&count)
+	if count > 0 {
+		logger.SysWarn(fmt.Sprintf("检测到 %d 个老格式多 key 渠道（key 字段含 \\n），建议重建为多 key 模式以使用配额调度与故障转移", count))
+	}
+}

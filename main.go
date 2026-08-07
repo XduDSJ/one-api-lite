@@ -41,6 +41,8 @@ func main() {
 	// Initialize SQL Database
 	model.InitDB()
 	model.InitLogDB()
+	// 检测老格式 \n 多 key 渠道并打 warning（不依赖内存缓存）
+	model.WarnLegacyMultiKeyChannels()
 
 	var err error
 	err = model.CreateRootAccountIfNeed()
@@ -71,6 +73,7 @@ func main() {
 		logger.SysLog("memory cache enabled")
 		logger.SysLog(fmt.Sprintf("sync frequency: %d seconds", config.SyncFrequency))
 		model.InitChannelCache()
+		go model.StartChannelKeyScanners()
 	}
 	if config.MemoryCacheEnabled {
 		go model.SyncOptions(config.SyncFrequency)

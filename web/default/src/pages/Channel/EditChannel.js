@@ -163,6 +163,9 @@ const EditChannel = () => {
       } else {
         data.keys = [];
       }
+      // 防御性归一化：避免 API 失败/异常导致 keys 或 multi_key_mode 为 undefined
+      data.keys = data.keys || [];
+      data.multi_key_mode = data.multi_key_mode || 0;
       setInputs(data);
       if (data.config !== '') {
         setConfig(JSON.parse(data.config));
@@ -642,17 +645,17 @@ const EditChannel = () => {
             {inputs.type !== 33 && inputs.type !== 42 && (
               <Form.Field>
                 <Form.Dropdown
-                  label={t('channel.edit.multi_key_mode') || '多 Key 模式'}
+                  label={t('channel.edit.multi_key_mode', '多 Key 模式')}
                   name='multi_key_mode'
                   selection
                   value={inputs.multi_key_mode}
                   onChange={handleInputChange}
                   options={[
-                    { key: 0, text: t('channel.edit.multi_key_off') || '关闭（单 key 兼容）', value: 0 },
-                    { key: 1, text: t('channel.edit.multi_key_priority') || '优先级 + 故障转移', value: 1 },
-                    { key: 2, text: t('channel.edit.multi_key_prefix_shard') || '前缀分片', value: 2 },
-                    { key: 3, text: t('channel.edit.multi_key_polling') || '轮询', value: 3 },
-                    { key: 4, text: t('channel.edit.multi_key_lur') || '最少已用比例优先', value: 4 },
+                    { key: 0, text: t('channel.edit.multi_key_off', '关闭（单 key 兼容）'), value: 0 },
+                    { key: 1, text: t('channel.edit.multi_key_priority', '优先级 + 故障转移'), value: 1 },
+                    { key: 2, text: t('channel.edit.multi_key_prefix_shard', '前缀分片'), value: 2 },
+                    { key: 3, text: t('channel.edit.multi_key_polling', '轮询'), value: 3 },
+                    { key: 4, text: t('channel.edit.multi_key_lur', '最少已用比例优先'), value: 4 },
                   ]}
                 />
               </Form.Field>
@@ -660,16 +663,16 @@ const EditChannel = () => {
             {/* 多 Key 动态列表 */}
             {inputs.type !== 33 && inputs.type !== 42 && inputs.multi_key_mode !== 0 && (
               <Form.Field>
-                <label>{t('channel.edit.keys_list') || '密钥列表'}</label>
+                <label>{t('channel.edit.keys_list', '密钥列表')}</label>
                 <Button type='button' primary size='small' onClick={addKey} style={{ marginBottom: 10 }}>
-                  {t('channel.edit.add_key') || '+ 添加密钥'}
+                  {t('channel.edit.add_key', '+ 添加密钥')}
                 </Button>
                 <Card.Group>
                   {inputs.keys.map((k, index) => (
-                    <Card key={index} fluid>
+                    <Card key={index + '_' + k.key_value} fluid>
                       <Card.Content>
                         <Form.Input
-                          label={t('channel.edit.key_value') || '密钥'}
+                          label={t('channel.edit.key_value', '密钥')}
                           required
                           value={k.key_value}
                           onChange={(e, { value }) => updateKeyField(index, 'key_value', value)}
@@ -677,12 +680,12 @@ const EditChannel = () => {
                         />
                         <Form.Group widths='equal'>
                           <Form.Input
-                            label={t('channel.edit.key_remark') || '备注'}
+                            label={t('channel.edit.key_remark', '备注')}
                             value={k.remark}
                             onChange={(e, { value }) => updateKeyField(index, 'remark', value)}
                           />
                           <Form.Input
-                            label={t('channel.edit.key_priority') || '优先级'}
+                            label={t('channel.edit.key_priority', '优先级')}
                             type='number'
                             value={k.priority}
                             onChange={(e, { value }) => updateKeyField(index, 'priority', parseInt(value) || 0)}
@@ -690,18 +693,18 @@ const EditChannel = () => {
                         </Form.Group>
                         <Form.Group widths='equal'>
                           <Form.Input
-                            label={t('channel.edit.key_daily_quota') || '每日配额(token)'}
+                            label={t('channel.edit.key_daily_quota', '每日配额(token)')}
                             type='number'
                             value={k.daily_quota_limit}
                             onChange={(e, { value }) => updateKeyField(index, 'daily_quota_limit', parseInt(value) || 0)}
                           />
                           <Form.Dropdown
-                            label={t('channel.edit.key_reset_rule') || '重置时刻'}
+                            label={t('channel.edit.key_reset_rule', '重置时刻')}
                             selection
                             value={k.quota_reset_rule}
                             onChange={(e, { value }) => updateKeyField(index, 'quota_reset_rule', value)}
                             options={[
-                              { key: '', text: t('channel.edit.no_reset') || '不自动重置', value: '' },
+                              { key: '', text: t('channel.edit.no_reset', '不自动重置'), value: '' },
                               { key: '00:00', text: '00:00', value: '00:00' },
                               { key: '06:00', text: '06:00', value: '06:00' },
                               { key: '12:00', text: '12:00', value: '12:00' },
@@ -710,7 +713,7 @@ const EditChannel = () => {
                           />
                         </Form.Group>
                         <Button type='button' negative size='mini' onClick={() => removeKey(index)}>
-                          {t('channel.edit.remove_key') || '删除'}
+                          {t('channel.edit.remove_key', '删除')}
                         </Button>
                       </Card.Content>
                     </Card>

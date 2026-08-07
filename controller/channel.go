@@ -222,9 +222,10 @@ func UpdateChannel(c *gin.Context) {
 		})
 		return
 	}
-	// 多 key 模式：同步增删 channel_keys（先删后插，保证一致性）
+	// 多 key 模式：按 key_value 做 diff 增量更新，保留已存在 key 的 Id 和运行时字段
+	// （DailyUsedQuota/CooledUntil/TotalUsedQuota/TotalRequests 等），避免先删后插重置运行时状态
 	if channel.MultiKeyMode != model.MultiKeyModeOff && len(req.Keys) > 0 {
-		err = model.DeleteChannelKeysByChannelId(channel.Id)
+		existingKeys, err := model.GetChannelKeysByChannelId(channel.Id)
 		if err != nil {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
@@ -232,30 +233,70 @@ func UpdateChannel(c *gin.Context) {
 			})
 			return
 		}
-		keys := make([]model.ChannelKey, 0, len(req.Keys))
+		existingMap := make(map[string]*model.ChannelKey, len(existingKeys))
+		for i := range existingKeys {
+			existingMap[existingKeys[i].KeyValue] = &existingKeys[i]
+		}
+		newKeys := make([]model.ChannelKey, 0)
+		now := helper.GetTimestamp()
 		for _, k := range req.Keys {
 			if k.KeyValue == "" {
 				continue
 			}
-			keys = append(keys, model.ChannelKey{
-				ChannelId:       channel.Id,
-				KeyValue:        k.KeyValue,
-				Remark:          k.Remark,
-				Status:          model.KeyStatusEnabled,
-				Priority:        k.Priority,
-				DailyQuotaLimit: k.DailyQuotaLimit,
-				QuotaResetRule:  k.QuotaResetRule,
-				CreatedTime:     helper.GetTimestamp(),
-				UpdatedTime:     helper.GetTimestamp(),
-			})
+			if existing, ok := existingMap[k.KeyValue]; ok {
+				// 复用：保留 Id 和运行时字段，只更新可编辑字段
+				existing.Remark = k.Remark
+				existing.Priority = k.Priority
+				existing.DailyQuotaLimit = k.DailyQuotaLimit
+				existing.QuotaResetRule = k.QuotaResetRule
+				existing.UpdatedTime = now
+				err = model.UpdateChannelKey(existing)
+				if err != nil {
+					c.JSON(http.StatusOK, gin.H{
+						"success": false,
+						"message": err.Error(),
+					})
+					return
+				}
+				delete(existingMap, k.KeyValue) // 已处理
+			} else {
+				// 新增
+				newKeys = append(newKeys, model.ChannelKey{
+					ChannelId:       channel.Id,
+					KeyValue:        k.KeyValue,
+					Remark:          k.Remark,
+					Status:          model.KeyStatusEnabled,
+					Priority:        k.Priority,
+					DailyQuotaLimit: k.DailyQuotaLimit,
+					QuotaResetRule:  k.QuotaResetRule,
+					CreatedTime:     now,
+					UpdatedTime:     now,
+				})
+			}
 		}
-		err = model.BatchInsertChannelKeys(keys)
-		if err != nil {
-			c.JSON(http.StatusOK, gin.H{
-				"success": false,
-				"message": err.Error(),
-			})
-			return
+		// 剩余 existingMap 中的 key：前端不再传，软删除（Status=Disabled）保留历史统计
+		for _, existing := range existingMap {
+			existing.Status = model.KeyStatusDisabled
+			existing.UpdatedTime = now
+			err = model.UpdateChannelKey(existing)
+			if err != nil {
+				c.JSON(http.StatusOK, gin.H{
+					"success": false,
+					"message": err.Error(),
+				})
+				return
+			}
+		}
+		// 批量插入新增 key
+		if len(newKeys) > 0 {
+			err = model.BatchInsertChannelKeys(newKeys)
+			if err != nil {
+				c.JSON(http.StatusOK, gin.H{
+					"success": false,
+					"message": err.Error(),
+				})
+				return
+			}
 		}
 	}
 	model.InvalidateChannelCache(channel.Id)
@@ -319,8 +360,8 @@ func EnableChannelKey(c *gin.Context) {
 		})
 		return
 	}
-	// 重置该渠道该 key 的所有 model 熔断状态（model 传空串，Reset 按 channelId+keyId 删所有 model entry）
-	breaker.GlobalBreaker.Reset(channelId, int(keyId), "")
+	// 范围重置该 key 在所有 model 上的熔断状态，使其立即可被调度
+	breaker.GlobalBreaker.ResetByKey(channelId, int(keyId))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",

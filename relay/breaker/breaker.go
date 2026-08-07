@@ -2,6 +2,7 @@ package breaker
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 )
@@ -98,4 +99,19 @@ func (b *Breaker) Reset(channelId, keyId int, model string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	delete(b.m, key)
+}
+
+// ResetByKey 范围重置：删除指定 channelId+keyId 在所有 model 上的熔断记录。
+// 用于 EnableChannelKey 等「按 key 维度立即恢复」场景，
+// 避免对每个 model 逐条调用 Reset（传空串 model 的 Reset 只会删 channelId:keyId: 这一条不存在的 entry）。
+// 前缀 "channelId:keyId:" 不会误伤其他 key（如 keyId=1 的前缀 "3:1:" 不匹配 "3:10:foo"）。
+func (b *Breaker) ResetByKey(channelId, keyId int) {
+	prefix := fmt.Sprintf("%d:%d:", channelId, keyId)
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	for k := range b.m {
+		if strings.HasPrefix(k, prefix) {
+			delete(b.m, k)
+		}
+	}
 }

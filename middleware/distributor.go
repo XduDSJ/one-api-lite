@@ -64,13 +64,17 @@ func Distribute() func(c *gin.Context) {
 func SetupContextForSelectedChannel(c *gin.Context, channel *model.Channel, modelName string) {
 	c.Set(ctxkey.Channel, channel.Type)
 	c.Set(ctxkey.ChannelId, channel.Id)
+	c.Set(ctxkey.MultiKeyMode, channel.MultiKeyMode)
 	c.Set(ctxkey.ChannelName, channel.Name)
 	if channel.SystemPrompt != nil && *channel.SystemPrompt != "" {
 		c.Set(ctxkey.SystemPrompt, *channel.SystemPrompt)
 	}
 	c.Set(ctxkey.ModelMapping, channel.GetModelMapping())
 	c.Set(ctxkey.OriginalModel, modelName) // for retry
-	c.Request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", channel.Key))
+	// 单 key 兼容模式仍在此注入 Authorization；多 key 模式延后到 relay 阶段 PickKey 后注入
+	if channel.MultiKeyMode == model.MultiKeyModeOff {
+		c.Request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", channel.Key))
+	}
 	c.Set(ctxkey.BaseURL, channel.GetBaseURL())
 	cfg, _ := channel.LoadConfig()
 	// this is for backward compatibility

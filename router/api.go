@@ -75,6 +75,8 @@ func SetApiRouter(router *gin.Engine) {
 			channelRoute.PUT("/", controller.UpdateChannel)
 			channelRoute.DELETE("/disabled", controller.DeleteDisabledChannel)
 			channelRoute.DELETE("/:id", controller.DeleteChannel)
+			channelRoute.POST("/:id/key/:keyId/enable", controller.EnableChannelKey)
+			channelRoute.GET("/:id/keys/status", controller.GetChannelKeysStatus)
 		}
 		tokenRoute := apiRouter.Group("/token")
 		tokenRoute.Use(middleware.UserAuth())

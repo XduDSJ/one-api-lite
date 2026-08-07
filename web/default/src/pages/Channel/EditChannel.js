@@ -40,6 +40,8 @@ const EditChannel = () => {
     name: '',
     type: 1,
     key: '',
+    multi_key_mode: 0,
+    keys: [],
     base_url: '',
     other: '',
     model_mapping: '',
@@ -69,6 +71,24 @@ const EditChannel = () => {
 
   const handleConfigChange = (e, { name, value }) => {
     setConfig((inputs) => ({ ...inputs, [name]: value }));
+  };
+
+  // —— 多 Key 列表操作 ——
+  const addKey = () => {
+    setInputs((prev) => ({
+      ...prev,
+      keys: [...prev.keys, { key_value: '', remark: '', priority: 0, daily_quota_limit: 0, quota_reset_rule: '', status: 1 }],
+    }));
+  };
+  const removeKey = (index) => {
+    setInputs((prev) => ({ ...prev, keys: prev.keys.filter((_, i) => i !== index) }));
+  };
+  const updateKeyField = (index, field, value) => {
+    setInputs((prev) => {
+      let keys = [...prev.keys];
+      keys[index] = { ...keys[index], [field]: value };
+      return { ...prev, keys };
+    });
   };
 
   const loadChannel = async () => {
@@ -123,6 +143,26 @@ const EditChannel = () => {
       setModelAliases(aliases);
       // inputs.models 设为原始名,供下拉框使用
       data.models = aliases.map((a) => a.original);
+      // 多 key 模式：额外拉取该渠道的 key 列表
+      if (data.multi_key_mode && data.multi_key_mode !== 0) {
+        try {
+          let keysRes = await API.get(`/api/channel/${channelId}/keys/status`);
+          if (keysRes.data.success && Array.isArray(keysRes.data.data)) {
+            data.keys = keysRes.data.data.map((k) => ({
+              key_value: k.key_value || '',
+              remark: k.remark || '',
+              priority: k.priority || 0,
+              daily_quota_limit: k.daily_quota_limit || 0,
+              quota_reset_rule: k.quota_reset_rule || '',
+              status: k.status || 1,
+            }));
+          }
+        } catch (e) {
+          // 拉取 key 列表失败不阻断编辑
+        }
+      } else {
+        data.keys = [];
+      }
       setInputs(data);
       if (data.config !== '') {
         setConfig(JSON.parse(data.config));
@@ -264,6 +304,24 @@ const EditChannel = () => {
       return;
     }
     let localInputs = { ...inputs };
+    // 多 key 模式：组装 keys 数组，保留首个 key 到 key 字段兼容
+    if (localInputs.multi_key_mode && localInputs.multi_key_mode !== 0 && localInputs.keys && localInputs.keys.length > 0) {
+      let validKeys = localInputs.keys.filter((k) => k.key_value && k.key_value.trim() !== '');
+      if (validKeys.length === 0 && !isEdit) {
+        showInfo(t('channel.edit.messages.name_required'));
+        return;
+      }
+      localInputs.keys = validKeys.map((k) => ({
+        key_value: k.key_value,
+        remark: k.remark || '',
+        priority: k.priority || 0,
+        daily_quota_limit: k.daily_quota_limit || 0,
+        quota_reset_rule: k.quota_reset_rule || '',
+      }));
+      if (validKeys.length > 0) {
+        localInputs.key = validKeys[0].key_value;
+      }
+    }
     if (localInputs.key === 'undefined|undefined|undefined') {
       localInputs.key = ''; // prevent potential bug
     }
@@ -580,8 +638,89 @@ const EditChannel = () => {
                 />
               </Form.Field>
             )}
+            {/* 多 Key 模式选择 */}
+            {inputs.type !== 33 && inputs.type !== 42 && (
+              <Form.Field>
+                <Form.Dropdown
+                  label={t('channel.edit.multi_key_mode') || '多 Key 模式'}
+                  name='multi_key_mode'
+                  selection
+                  value={inputs.multi_key_mode}
+                  onChange={handleInputChange}
+                  options={[
+                    { key: 0, text: t('channel.edit.multi_key_off') || '关闭（单 key 兼容）', value: 0 },
+                    { key: 1, text: t('channel.edit.multi_key_priority') || '优先级 + 故障转移', value: 1 },
+                    { key: 2, text: t('channel.edit.multi_key_prefix_shard') || '前缀分片', value: 2 },
+                    { key: 3, text: t('channel.edit.multi_key_polling') || '轮询', value: 3 },
+                    { key: 4, text: t('channel.edit.multi_key_lur') || '最少已用比例优先', value: 4 },
+                  ]}
+                />
+              </Form.Field>
+            )}
+            {/* 多 Key 动态列表 */}
+            {inputs.type !== 33 && inputs.type !== 42 && inputs.multi_key_mode !== 0 && (
+              <Form.Field>
+                <label>{t('channel.edit.keys_list') || '密钥列表'}</label>
+                <Button type='button' primary size='small' onClick={addKey} style={{ marginBottom: 10 }}>
+                  {t('channel.edit.add_key') || '+ 添加密钥'}
+                </Button>
+                <Card.Group>
+                  {inputs.keys.map((k, index) => (
+                    <Card key={index} fluid>
+                      <Card.Content>
+                        <Form.Input
+                          label={t('channel.edit.key_value') || '密钥'}
+                          required
+                          value={k.key_value}
+                          onChange={(e, { value }) => updateKeyField(index, 'key_value', value)}
+                          autoComplete='new-password'
+                        />
+                        <Form.Group widths='equal'>
+                          <Form.Input
+                            label={t('channel.edit.key_remark') || '备注'}
+                            value={k.remark}
+                            onChange={(e, { value }) => updateKeyField(index, 'remark', value)}
+                          />
+                          <Form.Input
+                            label={t('channel.edit.key_priority') || '优先级'}
+                            type='number'
+                            value={k.priority}
+                            onChange={(e, { value }) => updateKeyField(index, 'priority', parseInt(value) || 0)}
+                          />
+                        </Form.Group>
+                        <Form.Group widths='equal'>
+                          <Form.Input
+                            label={t('channel.edit.key_daily_quota') || '每日配额(token)'}
+                            type='number'
+                            value={k.daily_quota_limit}
+                            onChange={(e, { value }) => updateKeyField(index, 'daily_quota_limit', parseInt(value) || 0)}
+                          />
+                          <Form.Dropdown
+                            label={t('channel.edit.key_reset_rule') || '重置时刻'}
+                            selection
+                            value={k.quota_reset_rule}
+                            onChange={(e, { value }) => updateKeyField(index, 'quota_reset_rule', value)}
+                            options={[
+                              { key: '', text: t('channel.edit.no_reset') || '不自动重置', value: '' },
+                              { key: '00:00', text: '00:00', value: '00:00' },
+                              { key: '06:00', text: '06:00', value: '06:00' },
+                              { key: '12:00', text: '12:00', value: '12:00' },
+                              { key: '18:00', text: '18:00', value: '18:00' },
+                            ]}
+                          />
+                        </Form.Group>
+                        <Button type='button' negative size='mini' onClick={() => removeKey(index)}>
+                          {t('channel.edit.remove_key') || '删除'}
+                        </Button>
+                      </Card.Content>
+                    </Card>
+                  ))}
+                </Card.Group>
+              </Form.Field>
+            )}
             {inputs.type !== 33 &&
               inputs.type !== 42 &&
+              inputs.multi_key_mode === 0 &&
               (batch ? (
                 <Form.Field>
                   <Form.TextArea
@@ -611,7 +750,7 @@ const EditChannel = () => {
                   />
                 </Form.Field>
               ))}
-            {inputs.type !== 33 && !isEdit && (
+            {inputs.type !== 33 && !isEdit && inputs.multi_key_mode === 0 && (
               <Form.Checkbox
                 checked={batch}
                 label={t('channel.edit.batch')}

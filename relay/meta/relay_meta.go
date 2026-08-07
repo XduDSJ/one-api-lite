@@ -16,6 +16,7 @@ type Meta struct {
 	Mode         int
 	ChannelType  int
 	ChannelId    int
+	ChannelKeyId int // 多 key 模式下选中的 key id，0 表示单 key 兼容
 	TokenId      int
 	TokenName    string
 	UserId       int
@@ -42,6 +43,7 @@ func GetByContext(c *gin.Context) *Meta {
 		Mode:               relaymode.GetByPath(c.Request.URL.Path),
 		ChannelType:        c.GetInt(ctxkey.Channel),
 		ChannelId:          c.GetInt(ctxkey.ChannelId),
+		ChannelKeyId:       c.GetInt(ctxkey.ChannelKeyId),
 		TokenId:            c.GetInt(ctxkey.TokenId),
 		TokenName:          c.GetString(ctxkey.TokenName),
 		UserId:             c.GetInt(ctxkey.Id),

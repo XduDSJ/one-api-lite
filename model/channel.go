@@ -38,6 +38,10 @@ type Channel struct {
 	Priority           *int64  `json:"priority" gorm:"bigint;default:0"`
 	Config             string  `json:"config"`
 	SystemPrompt       *string `json:"system_prompt" gorm:"type:text"`
+	// —— 多 Key 模式 ——
+	MultiKeyMode        int    `json:"multi_key_mode" gorm:"default:0"`        // 0单key兼容 1优先级 2前缀分片 3轮询 4LUR
+	KeyCooldownSec      int    `json:"key_cooldown_sec" gorm:"default:0"`      // 0用全局默认
+	KeyFailureThreshold int    `json:"key_failure_threshold" gorm:"default:0"` // 0用全局默认
 }
 
 type ChannelConfig struct {
@@ -172,7 +176,15 @@ func (channel *Channel) Delete() error {
 		return err
 	}
 	err = channel.DeleteAbilities()
-	return err
+	if err != nil {
+		return err
+	}
+	// 级联删除关联的 channel_keys，失败仅记录日志不阻断删渠道流程
+	err = DeleteChannelKeysByChannelId(channel.Id)
+	if err != nil {
+		logger.SysError(fmt.Sprintf("failed to delete channel keys for channel %d: %s", channel.Id, err.Error()))
+	}
+	return nil
 }
 
 func (channel *Channel) LoadConfig() (ChannelConfig, error) {

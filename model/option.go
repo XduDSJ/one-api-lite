@@ -53,6 +53,10 @@ func InitOptionMap() {
 	config.OptionMap["PreConsumedQuota"] = strconv.FormatInt(config.PreConsumedQuota, 10)
 	config.OptionMap["ChatLink"] = config.ChatLink
 	config.OptionMap["RetryTimes"] = strconv.Itoa(config.RetryTimes)
+	config.OptionMap["ChannelKeyCooldownSec"] = strconv.Itoa(config.ChannelKeyCooldownSec)
+	config.OptionMap["ChannelKeyFailureThreshold"] = strconv.Itoa(config.ChannelKeyFailureThreshold)
+	config.OptionMap["KeyRetryEnabled"] = strconv.FormatBool(config.KeyRetryEnabled)
+	config.OptionMap["AutomaticDisableKeyEnabled"] = strconv.FormatBool(config.AutomaticDisableKeyEnabled)
 	config.OptionMap["Theme"] = config.Theme
 	config.OptionMapRWMutex.Unlock()
 	loadOptionsFromDatabase()
@@ -113,6 +117,10 @@ func updateOptionMap(key string, value string) (err error) {
 			config.AutomaticDisableChannelEnabled = boolValue
 		case "AutomaticEnableChannelEnabled":
 			config.AutomaticEnableChannelEnabled = boolValue
+		case "KeyRetryEnabled":
+			config.KeyRetryEnabled = boolValue
+		case "AutomaticDisableKeyEnabled":
+			config.AutomaticDisableKeyEnabled = boolValue
 		case "ApproximateTokenEnabled":
 			config.ApproximateTokenEnabled = boolValue
 		case "LogConsumeEnabled":
@@ -153,6 +161,10 @@ func updateOptionMap(key string, value string) (err error) {
 		config.PreConsumedQuota, _ = strconv.ParseInt(value, 10, 64)
 	case "RetryTimes":
 		config.RetryTimes, _ = strconv.Atoi(value)
+	case "ChannelKeyCooldownSec":
+		config.ChannelKeyCooldownSec, _ = strconv.Atoi(value)
+	case "ChannelKeyFailureThreshold":
+		config.ChannelKeyFailureThreshold, _ = strconv.Atoi(value)
 	case "ChatLink":
 		config.ChatLink = value
 	case "ChannelDisableThreshold":

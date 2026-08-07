@@ -66,10 +66,16 @@ func RelayRerankHelper(c *gin.Context) *relaymodel.ErrorWithStatusCode {
 	// 处理响应
 	rerankResp, respErr := rerankAdaptor.DoRerankResponse(c, resp, meta)
 	if respErr != nil {
+		reportKeyResult(meta, respErr.StatusCode, 0, false)
 		return respErr
 	}
 
 	// 透传响应
+	var totalTokens int64
+	if rerankResp != nil && rerankResp.Usage != nil {
+		totalTokens = int64(rerankResp.Usage.TotalTokens)
+	}
+	reportKeyResult(meta, http.StatusOK, totalTokens, true)
 	c.JSON(http.StatusOK, rerankResp)
 	return nil
 }

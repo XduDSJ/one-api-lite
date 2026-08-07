@@ -231,8 +231,10 @@ func RelayImageHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatus
 	_, respErr := adaptor.DoResponse(c, resp, meta)
 	if respErr != nil {
 		logger.Errorf(ctx, "respErr is not nil: %+v", respErr)
+		reportKeyResult(meta, respErr.StatusCode, 0, false)
 		return respErr
 	}
 
+	reportKeyResult(meta, http.StatusOK, 0, true)
 	return nil
 }

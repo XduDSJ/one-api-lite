@@ -185,6 +185,7 @@ func RelayAudioHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatus
 		var openAIErr openai.SlimTextResponse
 		if err = json.Unmarshal(responseBody, &openAIErr); err == nil {
 			if openAIErr.Error.Message != "" {
+				reportKeyResult(meta, resp.StatusCode, 0, false)
 				return openai.ErrorWrapper(fmt.Errorf("type %s, code %v, message %s", openAIErr.Error.Type, openAIErr.Error.Code, openAIErr.Error.Message), "request_error", http.StatusInternalServerError)
 			}
 		}
@@ -211,9 +212,11 @@ func RelayAudioHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatus
 		resp.Body = io.NopCloser(bytes.NewBuffer(responseBody))
 	}
 	if resp.StatusCode != http.StatusOK {
+		reportKeyResult(meta, resp.StatusCode, 0, false)
 		return RelayErrorHandler(resp)
 	}
 	succeed = true
+	reportKeyResult(meta, http.StatusOK, 0, true)
 	quotaDelta := quota - preConsumedQuota
 	defer func(ctx context.Context) {
 		go billing.PostConsumeQuota(ctx, tokenId, quotaDelta, quota, userId, channelId, modelRatio, groupRatio, audioModel, tokenName)

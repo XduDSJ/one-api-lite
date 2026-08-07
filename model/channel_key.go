@@ -7,7 +7,10 @@ import (
 	"sort"
 	"time"
 
+	"github.com/songquanpeng/one-api/common/logger"
 	"github.com/songquanpeng/one-api/relay/breaker"
+
+	"gorm.io/gorm"
 )
 
 const (
@@ -205,5 +208,57 @@ func PickKey(channelId int, multiKeyMode int, model string, systemPrompt string)
 		return pickByLUR(usable), nil
 	default:
 		return pickByPriority(usable), nil
+	}
+}
+
+// IncrChannelKeyUsage 原子自增 key 的配额与请求计数，并以 EMA 更新平均 token 数。
+// EMA 公式：AvgTokensPerReq = AvgTokensPerReq*0.9 + tokens*0.1。
+// 仅在请求成功时调用，保证 key 配额计费幂等（失败请求上游通常未消耗 token，不计入）。
+func IncrChannelKeyUsage(keyId int64, tokens int64) {
+	err := DB.Model(&ChannelKey{}).Where("id = ?", keyId).Updates(
+		map[string]interface{}{
+			"daily_used_quota":   gorm.Expr("daily_used_quota + ?", tokens),
+			"total_used_quota":   gorm.Expr("total_used_quota + ?", tokens),
+			"total_requests":     gorm.Expr("total_requests + ?", 1),
+			"avg_tokens_per_req": gorm.Expr("avg_tokens_per_req * 0.9 + ? * 0.1", tokens),
+		},
+	).Error
+	if err != nil {
+		logger.SysError("failed to incr channel key usage: " + err.Error())
+	}
+}
+
+// CoolDownChannelKey 将 key 置为冷却状态，cooled_until = now + cooldownSec。
+// 冷却到期后由 filterUsableKeys 自动放行（CooledUntil <= now）。
+func CoolDownChannelKey(keyId int64, cooldownSec int64) {
+	cooledUntil := time.Now().Unix() + cooldownSec
+	err := DB.Model(&ChannelKey{}).Where("id = ?", keyId).Updates(
+		map[string]interface{}{
+			"status":       KeyStatusCooling,
+			"cooled_until": cooledUntil,
+		},
+	).Error
+	if err != nil {
+		logger.SysError("failed to cool down channel key: " + err.Error())
+	}
+}
+
+// DisableChannelKey 将 key 置为指定状态（通常 KeyStatusDisabled，需人工恢复）。
+func DisableChannelKey(keyId int64, status int) {
+	err := DB.Model(&ChannelKey{}).Where("id = ?", keyId).Update("status", status).Error
+	if err != nil {
+		logger.SysError("failed to disable channel key: " + err.Error())
+	}
+}
+
+// MarkChannelKeyExhaustedIfQuota 在配额已耗尽时将 key 标记为 Exhausted。
+// 带 condition 乐观锁：仅当 daily_quota_limit>0 且 daily_used_quota>=daily_quota_limit 时更新，
+// 避免并发自增导致误标记。
+func MarkChannelKeyExhaustedIfQuota(keyId int64) {
+	err := DB.Model(&ChannelKey{}).
+		Where("id = ? AND daily_quota_limit > 0 AND daily_used_quota >= daily_quota_limit", keyId).
+		Update("status", KeyStatusExhausted).Error
+	if err != nil {
+		logger.SysError("failed to mark channel key exhausted: " + err.Error())
 	}
 }

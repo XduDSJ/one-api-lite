@@ -72,6 +72,7 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 	}
 	if isErrorHappened(meta, resp) {
 		billing.ReturnPreConsumedQuota(ctx, preConsumedQuota, meta.TokenId)
+		reportKeyResult(meta, resp.StatusCode, 0, false)
 		return RelayErrorHandler(resp)
 	}
 
@@ -80,9 +81,15 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 	if respErr != nil {
 		logger.Errorf(ctx, "respErr is not nil: %+v", respErr)
 		billing.ReturnPreConsumedQuota(ctx, preConsumedQuota, meta.TokenId)
+		reportKeyResult(meta, respErr.StatusCode, 0, false)
 		return respErr
 	}
 	// post-consume quota
+	var totalTokens int64
+	if usage != nil {
+		totalTokens = int64(usage.TotalTokens)
+	}
+	reportKeyResult(meta, http.StatusOK, totalTokens, true)
 	go postConsumeQuota(ctx, usage, meta, textRequest, ratio, preConsumedQuota, modelRatio, groupRatio, systemPromptReset)
 	return nil
 }

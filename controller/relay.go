@@ -23,6 +23,71 @@ import (
 
 // https://platform.openai.com/docs/api-reference/chat
 
+// pickKeyAndInject 多 key 模式下从 ctx 读取 channelId/multiKeyMode/model/systemPrompt，
+// 调 model.PickKey 选 key 并注入 Authorization header。
+// 单 key 模式（MultiKeyMode==0）直接返回 nil, nil 不处理。
+// 重试时通过 ctxkey.FailedKeyIds 排除已失败 key：循环调用 PickKey 直到返回非失败 key 或达上限。
+func pickKeyAndInject(c *gin.Context) (*dbmodel.ChannelKey, error) {
+	channelId := c.GetInt(ctxkey.ChannelId)
+	multiKeyMode := c.GetInt(ctxkey.MultiKeyMode)
+	if multiKeyMode == dbmodel.MultiKeyModeOff {
+		return nil, nil
+	}
+	modelName := c.GetString(ctxkey.RequestModel)
+	systemPrompt := c.GetString(ctxkey.SystemPrompt)
+
+	// 查询启用 key 总数，作为循环上限（避免 PickKey 反复选中已失败 key）
+	keys, err := dbmodel.GetEnabledChannelKeys(channelId)
+	if err != nil {
+		return nil, err
+	}
+	if len(keys) == 0 {
+		return nil, fmt.Errorf("渠道 %d 无可用 key", channelId)
+	}
+
+	failedIds := getFailedKeyIds(c)
+	for i := 0; i < len(keys); i++ {
+		key, err := dbmodel.PickKey(channelId, multiKeyMode, modelName, systemPrompt)
+		if err != nil {
+			return nil, err
+		}
+		if !containsInt(failedIds, int(key.Id)) {
+			c.Set(ctxkey.ChannelKeyId, int(key.Id))
+			c.Request.Header.Set("Authorization", "Bearer "+key.KeyValue)
+			return key, nil
+		}
+	}
+	return nil, fmt.Errorf("渠道 %d 所有 key 已失败或不可用", channelId)
+}
+
+// getFailedKeyIds 从 ctx 读取 key 级重试已失败 key id 列表
+func getFailedKeyIds(c *gin.Context) []int {
+	val, ok := c.Get(ctxkey.FailedKeyIds)
+	if !ok {
+		return nil
+	}
+	ids, ok := val.([]int)
+	if !ok {
+		return nil
+	}
+	return ids
+}
+
+// addFailedKeyId 把 key id 加入失败列表
+func addFailedKeyId(c *gin.Context, keyId int) {
+	ids := getFailedKeyIds(c)
+	c.Set(ctxkey.FailedKeyIds, append(ids, keyId))
+}
+
+func containsInt(ids []int, id int) bool {
+	for _, v := range ids {
+		if v == id {
+			return true
+		}
+	}
+	return false
+}
+
 func relayHelper(c *gin.Context, relayMode int) *model.ErrorWithStatusCode {
 	var err *model.ErrorWithStatusCode
 	switch relayMode {
@@ -53,6 +118,25 @@ func Relay(c *gin.Context) {
 	}
 	channelId := c.GetInt(ctxkey.ChannelId)
 	userId := c.GetInt(ctxkey.Id)
+	// 多 key 模式：在 relayHelper 之前 PickKey 注入 Authorization；
+	// 单 key 模式 pickKeyAndInject 返回 nil, nil 不处理（Authorization 已由 distributor 注入）。
+	// 此处统一注入覆盖所有 relaymode（text/image/audio/rerank/proxy）。
+	if _, err := pickKeyAndInject(c); err != nil {
+		bizErr := &model.ErrorWithStatusCode{
+			StatusCode: http.StatusServiceUnavailable,
+			Error: model.Error{
+				Message: "渠道所有 key 不可用",
+				Type:    "one_api_error",
+				Code:    "all_keys_unavailable",
+			},
+		}
+		requestId := c.GetString(helper.RequestIdKey)
+		bizErr.Error.Message = helper.MessageWithRequestId(bizErr.Error.Message, requestId)
+		c.JSON(bizErr.StatusCode, gin.H{
+			"error": bizErr.Error,
+		})
+		return
+	}
 	bizErr := relayHelper(c, relayMode)
 	if bizErr == nil {
 		monitor.Emit(channelId, true)
@@ -69,6 +153,39 @@ func Relay(c *gin.Context) {
 		logger.Errorf(ctx, "relay error happen, status code is %d, won't retry in this case", bizErr.StatusCode)
 		retryTimes = 0
 	}
+	// key 级重试：多 key 模式下换同渠道可用 key 重试。
+	// 仅当 KeyRetryEnabled 且多 key 模式且应重试且流式响应未写出时进入。
+	if config.KeyRetryEnabled && c.GetInt(ctxkey.MultiKeyMode) != dbmodel.MultiKeyModeOff &&
+		shouldRetry(c, bizErr.StatusCode) && !c.Writer.Written() {
+		if failedKeyId := c.GetInt(ctxkey.ChannelKeyId); failedKeyId != 0 {
+			addFailedKeyId(c, failedKeyId)
+		}
+		// 循环上限 len(keys)-1（首个 key 已失败，剩余可重试）
+		if keys, err := dbmodel.GetEnabledChannelKeys(channelId); err == nil && len(keys) > 1 {
+			maxKeyRetry := len(keys) - 1
+			for i := 0; i < maxKeyRetry; i++ {
+				key, pickErr := pickKeyAndInject(c)
+				if pickErr != nil {
+					logger.Infof(ctx, "key 级重试：无可用 key，落入渠道级重试: %v", pickErr)
+					break
+				}
+				logger.Infof(ctx, "key 级重试：使用 key #%d 重试 (remain %d)", key.Id, maxKeyRetry-i-1)
+				requestBody, _ := common.GetRequestBody(c)
+				c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
+				bizErr = relayHelper(c, relayMode)
+				if bizErr == nil {
+					return
+				}
+				addFailedKeyId(c, int(key.Id))
+				channelId = c.GetInt(ctxkey.ChannelId)
+				channelName = c.GetString(ctxkey.ChannelName)
+				go processChannelRelayError(ctx, userId, channelId, channelName, *bizErr)
+				if !shouldRetry(c, bizErr.StatusCode) || c.Writer.Written() {
+					break
+				}
+			}
+		}
+	}
 	for i := retryTimes; i > 0; i-- {
 		channel, err := dbmodel.CacheGetRandomSatisfiedChannel(group, originalModel, i != retryTimes)
 		if err != nil {
@@ -80,6 +197,12 @@ func Relay(c *gin.Context) {
 			continue
 		}
 		middleware.SetupContextForSelectedChannel(c, channel, originalModel)
+		// 换渠道后清空 FailedKeyIds，并对多 key 渠道重新 PickKey 注入
+		c.Set(ctxkey.FailedKeyIds, []int{})
+		if _, err := pickKeyAndInject(c); err != nil {
+			logger.Infof(ctx, "渠道 #%d key 不可用，跳过: %v", channel.Id, err)
+			continue
+		}
 		requestBody, err := common.GetRequestBody(c)
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 		bizErr = relayHelper(c, relayMode)

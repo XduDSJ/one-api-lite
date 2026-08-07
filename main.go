@@ -43,6 +43,8 @@ func main() {
 	model.InitLogDB()
 	// 检测老格式 \n 多 key 渠道并打 warning（不依赖内存缓存）
 	model.WarnLegacyMultiKeyChannels()
+	// 启动配额重置与冷却恢复扫描 goroutine（操作 channel_keys DB 表，不依赖内存缓存）
+	go model.StartChannelKeyScanners()
 
 	var err error
 	err = model.CreateRootAccountIfNeed()
@@ -73,7 +75,6 @@ func main() {
 		logger.SysLog("memory cache enabled")
 		logger.SysLog(fmt.Sprintf("sync frequency: %d seconds", config.SyncFrequency))
 		model.InitChannelCache()
-		go model.StartChannelKeyScanners()
 	}
 	if config.MemoryCacheEnabled {
 		go model.SyncOptions(config.SyncFrequency)

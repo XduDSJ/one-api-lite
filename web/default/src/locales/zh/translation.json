@@ -169,7 +169,22 @@
         "spark": "按照如下格式输入：APPID|APISecret|APIKey",
         "fastgpt": "按照如下格式输入：APIKey-AppId，例如：fastgpt-0sp2gtvfdgyi4k30jwlgwf1i-64f335d84283f05518e9e041",
         "tencent": "按照如下格式输入：AppId|SecretId|SecretKey"
-      }
+      },
+      "multi_key_mode": "多 Key 模式",
+      "multi_key_off": "关闭（单 key 兼容）",
+      "multi_key_priority": "优先级 + 故障转移",
+      "multi_key_prefix_shard": "前缀分片",
+      "multi_key_polling": "轮询",
+      "multi_key_lur": "最少已用比例优先",
+      "keys_list": "密钥列表",
+      "add_key": "+ 添加密钥",
+      "key_value": "密钥",
+      "key_remark": "备注",
+      "key_priority": "优先级",
+      "key_daily_quota": "每日配额(token)",
+      "key_reset_rule": "重置时刻",
+      "no_reset": "不自动重置",
+      "remove_key": "删除"
     }
   },
   "token": {

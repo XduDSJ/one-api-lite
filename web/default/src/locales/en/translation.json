@@ -169,7 +169,22 @@
         "spark": "Enter in format: APPID|APISecret|APIKey",
         "fastgpt": "Enter in format: APIKey-AppId, e.g.: fastgpt-0sp2gtvfdgyi4k30jwlgwf1i-64f335d84283f05518e9e041",
         "tencent": "Enter in format: AppId|SecretId|SecretKey"
-      }
+      },
+      "multi_key_mode": "Multi-Key Mode",
+      "multi_key_off": "Off (single key compatible)",
+      "multi_key_priority": "Priority + Failover",
+      "multi_key_prefix_shard": "Prefix Shard",
+      "multi_key_polling": "Round Robin",
+      "multi_key_lur": "Least Used Ratio",
+      "keys_list": "Key List",
+      "add_key": "+ Add Key",
+      "key_value": "Key",
+      "key_remark": "Remark",
+      "key_priority": "Priority",
+      "key_daily_quota": "Daily Quota (tokens)",
+      "key_reset_rule": "Reset Time",
+      "no_reset": "No auto reset",
+      "remove_key": "Remove"
     }
   },
   "token": {

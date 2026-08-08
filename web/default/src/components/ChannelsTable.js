@@ -520,10 +520,10 @@ const ChannelsTable = () => {
               activePage * ITEMS_PER_PAGE
             )
             .map((channel, idx) => {
-              if (channel.deleted) return <></>;
+              if (channel.deleted) return null;
               return (
-                <>
-                <Table.Row key={channel.id}>
+                <React.Fragment key={channel.id}>
+                <Table.Row>
                   <Table.Cell>{channel.id}</Table.Cell>
                   <Table.Cell>
                     {channel.name ? channel.name : t('channel.table.no_name')}
@@ -685,7 +685,7 @@ const ChannelsTable = () => {
                     </Table.Cell>
                   </Table.Row>
                 )}
-              </>
+              </React.Fragment>
               );
             })}
         </Table.Body>

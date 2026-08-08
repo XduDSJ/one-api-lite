@@ -14,6 +14,7 @@ import {
 
 import {CHANNEL_OPTIONS, ITEMS_PER_PAGE} from '../constants';
 import {renderGroup, renderNumber} from '../helpers/render';
+import ChannelKeyList from './ChannelKeyList';
 
 function renderTimestamp(timestamp) {
   return <>{timestamp2string(timestamp)}</>;
@@ -86,6 +87,7 @@ const ChannelsTable = () => {
   const [updatingBalance, setUpdatingBalance] = useState(false);
   const [showPrompt, setShowPrompt] = useState(shouldShowPrompt(promptID));
   const [showDetail, setShowDetail] = useState(isShowDetail());
+  const [expandedChannelId, setExpandedChannelId] = useState(null);
 
   const processChannelData = (channel) => {
     if (channel.models === '') {
@@ -507,6 +509,7 @@ const ChannelsTable = () => {
               {t('channel.table.test_model')}
             </Table.HeaderCell>
             <Table.HeaderCell>{t('channel.table.actions')}</Table.HeaderCell>
+            <Table.HeaderCell>{t('channel.key_list.detail', '密钥详情')}</Table.HeaderCell>
           </Table.Row>
         </Table.Header>
 
@@ -519,6 +522,7 @@ const ChannelsTable = () => {
             .map((channel, idx) => {
               if (channel.deleted) return <></>;
               return (
+                <>
                 <Table.Row key={channel.id}>
                   <Table.Cell>{channel.id}</Table.Cell>
                   <Table.Cell>
@@ -526,7 +530,14 @@ const ChannelsTable = () => {
                   </Table.Cell>
                   <Table.Cell>{renderGroup(channel.group)}</Table.Cell>
                   <Table.Cell>{renderType(channel.type, t)}</Table.Cell>
-                  <Table.Cell>{renderStatus(channel.status, t)}</Table.Cell>
+                  <Table.Cell>
+                    {renderStatus(channel.status, t)}
+                    {channel.multi_key_mode && channel.multi_key_mode !== 0 && (
+                      <Label size='mini' color='blue' style={{ marginLeft: 4 }}>
+                        {t('channel.key_list.multi_key', '多Key')}
+                      </Label>
+                    )}
+                  </Table.Cell>
                   <Table.Cell>
                     <Popup
                       content={
@@ -655,14 +666,33 @@ const ChannelsTable = () => {
                       </Button>
                     </div>
                   </Table.Cell>
+                  <Table.Cell>
+                    <Button
+                      size='tiny'
+                      icon={expandedChannelId === channel.id ? 'angle up' : 'angle down'}
+                      onClick={() => {
+                        setExpandedChannelId(
+                          expandedChannelId === channel.id ? null : channel.id
+                        );
+                      }}
+                    />
+                  </Table.Cell>
                 </Table.Row>
+                {expandedChannelId === channel.id && (
+                  <Table.Row key={channel.id + '-expand'}>
+                    <Table.Cell colSpan={showDetail ? '11' : '9'} style={{ padding: '10px', backgroundColor: '#fafafa' }}>
+                      <ChannelKeyList channelId={channel.id} />
+                    </Table.Cell>
+                  </Table.Row>
+                )}
+              </>
               );
             })}
         </Table.Body>
 
         <Table.Footer>
           <Table.Row>
-            <Table.HeaderCell colSpan={showDetail ? '10' : '8'}>
+            <Table.HeaderCell colSpan={showDetail ? '11' : '9'}>
               <Button size='tiny' as={Link} to='/channel/add' loading={loading}>
                 {t('channel.buttons.add')}
               </Button>

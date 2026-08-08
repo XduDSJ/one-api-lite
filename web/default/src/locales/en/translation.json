@@ -185,6 +185,26 @@
       "key_reset_rule": "Reset Time",
       "no_reset": "No auto reset",
       "remove_key": "Remove"
+    },
+    "key_list": {
+      "status_enabled": "Enabled",
+      "status_disabled": "Manually Disabled",
+      "status_cooled": "Cooling",
+      "status_quota_exhausted": "Quota Exhausted",
+      "status_unknown": "Unknown",
+      "load_failed": "Load Failed",
+      "enable_success": "Enabled",
+      "loading": "Loading...",
+      "no_keys": "No Keys",
+      "col_key": "Key",
+      "col_status": "Status",
+      "col_priority": "Priority",
+      "col_quota": "Today's Quota",
+      "col_reset_rule": "Reset Rule",
+      "col_actions": "Actions",
+      "enable": "Enable",
+      "multi_key": "Multi-Key",
+      "detail": "Key Details"
     }
   },
   "token": {

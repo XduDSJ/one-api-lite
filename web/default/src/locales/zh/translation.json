@@ -185,6 +185,26 @@
       "key_reset_rule": "重置时刻",
       "no_reset": "不自动重置",
       "remove_key": "删除"
+    },
+    "key_list": {
+      "status_enabled": "启用",
+      "status_disabled": "手动禁用",
+      "status_cooled": "冷却中",
+      "status_quota_exhausted": "配额耗尽",
+      "status_unknown": "未知",
+      "load_failed": "加载失败",
+      "enable_success": "已启用",
+      "loading": "加载中...",
+      "no_keys": "无密钥",
+      "col_key": "密钥",
+      "col_status": "状态",
+      "col_priority": "优先级",
+      "col_quota": "今日配额",
+      "col_reset_rule": "重置规则",
+      "col_actions": "操作",
+      "enable": "启用",
+      "multi_key": "多Key",
+      "detail": "密钥详情"
     }
   },
   "token": {

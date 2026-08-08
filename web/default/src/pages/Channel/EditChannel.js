@@ -311,7 +311,7 @@ const EditChannel = () => {
     if (localInputs.multi_key_mode && localInputs.multi_key_mode !== 0 && localInputs.keys && localInputs.keys.length > 0) {
       let validKeys = localInputs.keys.filter((k) => k.key_value && k.key_value.trim() !== '');
       if (validKeys.length === 0 && !isEdit) {
-        showInfo(t('channel.edit.messages.name_required'));
+        showInfo(t('channel.edit.messages.keys_required', '请至少添加一个有效密钥！'));
         return;
       }
       localInputs.keys = validKeys.map((k) => ({

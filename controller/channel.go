@@ -243,13 +243,14 @@ func UpdateChannel(c *gin.Context) {
 			if k.KeyValue == "" {
 				continue
 			}
-			if existing, ok := existingMap[k.KeyValue]; ok {
-				// 复用：保留 Id 和运行时字段，只更新可编辑字段
-				existing.Remark = k.Remark
-				existing.Priority = k.Priority
-				existing.DailyQuotaLimit = k.DailyQuotaLimit
-				existing.QuotaResetRule = k.QuotaResetRule
-				existing.UpdatedTime = now
+		if existing, ok := existingMap[k.KeyValue]; ok {
+			// 复用：保留 Id 和运行时字段，只更新可编辑字段
+			existing.Remark = k.Remark
+			existing.Priority = k.Priority
+			existing.DailyQuotaLimit = k.DailyQuotaLimit
+			existing.QuotaResetRule = k.QuotaResetRule
+			existing.Status = model.KeyStatusEnabled // 撤销软删后重新启用
+			existing.UpdatedTime = now
 				err = model.UpdateChannelKey(existing)
 				if err != nil {
 					c.JSON(http.StatusOK, gin.H{

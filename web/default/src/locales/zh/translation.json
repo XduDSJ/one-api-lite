@@ -131,6 +131,7 @@
       },
       "messages": {
         "name_required": "请填写渠道名称和渠道密钥！",
+        "keys_required": "请至少添加一个有效密钥！",
         "models_required": "请至少选择一个模型！",
         "model_mapping_invalid": "模型映射必须是合法的 JSON 格式！",
         "update_success": "渠道更新成功！",

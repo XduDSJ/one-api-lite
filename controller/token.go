@@ -11,6 +11,7 @@ import (
 	"github.com/songquanpeng/one-api/model"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 func GetAllTokens(c *gin.Context) {
@@ -117,6 +118,17 @@ func validateToken(c *gin.Context, token model.Token) error {
 			return fmt.Errorf("无效的网段：%s", err.Error())
 		}
 	}
+	if token.ChannelIds != nil && *token.ChannelIds != "" {
+		for _, p := range strings.Split(*token.ChannelIds, ",") {
+			p = strings.TrimSpace(p)
+			if p == "" {
+				continue
+			}
+			if _, err := strconv.Atoi(p); err != nil {
+				return fmt.Errorf("无效的渠道 ID：%s", p)
+			}
+		}
+	}
 	return nil
 }
 
@@ -150,6 +162,7 @@ func AddToken(c *gin.Context) {
 		UnlimitedQuota: token.UnlimitedQuota,
 		Models:         token.Models,
 		Subnet:         token.Subnet,
+		ChannelIds:     token.ChannelIds,
 	}
 	err = cleanToken.Insert()
 	if err != nil {
@@ -239,6 +252,7 @@ func UpdateToken(c *gin.Context) {
 		cleanToken.UnlimitedQuota = token.UnlimitedQuota
 		cleanToken.Models = token.Models
 		cleanToken.Subnet = token.Subnet
+		cleanToken.ChannelIds = token.ChannelIds
 	}
 	err = cleanToken.Update()
 	if err != nil {

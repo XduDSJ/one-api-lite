@@ -6,6 +6,7 @@ import (
 	"github.com/songquanpeng/one-api/common"
 	"github.com/songquanpeng/one-api/common/helper"
 	"github.com/songquanpeng/one-api/common/logger"
+	"strconv"
 	"strings"
 )
 
@@ -53,6 +54,36 @@ func isModelInList(modelName string, models string) bool {
 	modelList := strings.Split(models, ",")
 	for _, model := range modelList {
 		if modelName == model {
+			return true
+		}
+	}
+	return false
+}
+
+// parseChannelIds 将逗号分隔的渠道 id 字符串解析为 []int。
+// 跳过空段；非法段记日志但不阻断（与 Subnet 校验的宽容度对齐）。
+func parseChannelIds(s string) []int {
+	parts := strings.Split(s, ",")
+	ids := make([]int, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		id, err := strconv.Atoi(p)
+		if err != nil {
+			logger.SysError("无效的渠道 ID 段已跳过：" + p)
+			continue
+		}
+		ids = append(ids, id)
+	}
+	return ids
+}
+
+// containsInt 判断 id 是否在 ids 切片中。
+func containsInt(id int, ids []int) bool {
+	for _, v := range ids {
+		if v == id {
 			return true
 		}
 	}

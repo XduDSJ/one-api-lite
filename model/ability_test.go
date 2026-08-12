@@ -54,12 +54,58 @@ func TestGetChannelModelsMap(t *testing.T) {
 		t.Fatalf("GetChannelModelsMap failed: %v", err)
 	}
 	if len(m) != 2 {
-		t.Fatalf("expected 2 channels, got %d", len(m))
+		t.Fatalf("expected 2 channels, got %d: %v", len(m), m)
 	}
 	if len(m[1]) != 2 {
 		t.Errorf("channel 1: expected 2 models, got %d", len(m[1]))
 	}
-	if len(m[2]) != 2 {
+	if len(m[2] ) != 2 {
 		t.Errorf("channel 2: expected 2 models, got %d", len(m[2]))
+	}
+}
+
+func TestGetRandomSatisfiedChannelWithChannelIds(t *testing.T) {
+	// TestMain 已建 channel 1、2，均在 default 组，均有 gpt-4o 模型。
+	// DB 路径（测试默认不启用 MemoryCacheEnabled）验证 channelIds 过滤。
+
+	// 传 channelIds=[1] 应只选 channel 1
+	for i := 0; i < 10; i++ {
+		ch, err := GetRandomSatisfiedChannel("default", "gpt-4o", true, []int{1})
+		if err != nil {
+			t.Fatalf("iter %d: GetRandomSatisfiedChannel failed: %v", i, err)
+		}
+		if ch.Id != 1 {
+			t.Errorf("iter %d: channelIds=[1] expected channel 1, got %d", i, ch.Id)
+		}
+	}
+
+	// 传 channelIds=[2] 应只选 channel 2
+	for i := 0; i < 10; i++ {
+		ch, err := GetRandomSatisfiedChannel("default", "gpt-4o", true, []int{2})
+		if err != nil {
+			t.Fatalf("iter %d: GetRandomSatisfiedChannel failed: %v", i, err)
+		}
+		if ch.Id != 2 {
+			t.Errorf("iter %d: channelIds=[2] expected channel 2, got %d", i, ch.Id)
+		}
+	}
+
+	// 传空 channelIds 应两者皆可（现有行为，不限制）
+	seen := map[int]bool{}
+	for i := 0; i < 20; i++ {
+		ch, err := GetRandomSatisfiedChannel("default", "gpt-4o", true, nil)
+		if err != nil {
+			t.Fatalf("iter %d: GetRandomSatisfiedChannel failed: %v", i, err)
+		}
+		seen[ch.Id] = true
+	}
+	if len(seen) < 2 {
+		t.Errorf("channelIds=nil expected both channels possible, only saw %v", seen)
+	}
+
+	// 传不存在的渠道 id 应报错（无可用渠道）
+	_, err := GetRandomSatisfiedChannel("default", "gpt-4o", true, []int{999})
+	if err == nil {
+		t.Errorf("channelIds=[999] expected error (no channel), got nil")
 	}
 }

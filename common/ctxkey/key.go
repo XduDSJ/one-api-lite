@@ -9,6 +9,7 @@ const (
 	Channel           = "channel"
 	ChannelId         = "channel_id"
 	SpecificChannelId = "specific_channel_id"
+	ChannelIds        = "channel_ids" // 令牌的渠道子集白名单（[]int，空为不限制）
 	RequestModel      = "request_model"
 	ConvertedRequest  = "converted_request"
 	OriginalModel     = "original_model"

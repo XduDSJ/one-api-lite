@@ -397,3 +397,27 @@ func GetChannelKeysStatus(c *gin.Context) {
 	})
 	return
 }
+
+// GetAccessibleChannels 返回所有启用渠道的精简信息（id + name），供普通用户在令牌编辑页选择渠道子集。
+// 不含 key/base_url 等敏感字段。
+func GetAccessibleChannels(c *gin.Context) {
+	type accessibleChannel struct {
+		Id   int    `json:"id"`
+		Name string `json:"name"`
+	}
+	var channels []accessibleChannel
+	err := model.DB.Model(&model.Channel{}).Select("id, name").Where("status = ?", model.ChannelStatusEnabled).Find(&channels).Error
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data":    channels,
+	})
+	return
+}

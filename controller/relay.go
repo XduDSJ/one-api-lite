@@ -186,8 +186,13 @@ func Relay(c *gin.Context) {
 			}
 		}
 	}
+	// 令牌渠道子集白名单：从 ctx 取一次，重试循环内持续生效（Context 跨重试持久）
+	var tokenChannelIds []int
+	if val, ok := c.Get(ctxkey.ChannelIds); ok {
+		tokenChannelIds, _ = val.([]int)
+	}
 	for i := retryTimes; i > 0; i-- {
-		channel, err := dbmodel.CacheGetRandomSatisfiedChannel(group, originalModel, i != retryTimes)
+		channel, err := dbmodel.CacheGetRandomSatisfiedChannel(group, originalModel, i != retryTimes, tokenChannelIds)
 		if err != nil {
 			logger.Errorf(ctx, "CacheGetRandomSatisfiedChannel failed: %+v", err)
 			break

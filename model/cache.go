@@ -223,9 +223,9 @@ func SyncChannelCache(frequency int) {
 	}
 }
 
-func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPriority bool) (*Channel, error) {
+func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPriority bool, channelIds []int) (*Channel, error) {
 	if !config.MemoryCacheEnabled {
-		return GetRandomSatisfiedChannel(group, model, ignoreFirstPriority)
+		return GetRandomSatisfiedChannel(group, model, ignoreFirstPriority, channelIds)
 	}
 	channelSyncLock.RLock()
 	channels := group2model2channels[group][model]
@@ -256,10 +256,13 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 	}
 	channelSyncLock.RUnlock()
 
-	// 多 key 渠道预过滤：跳过「该 model 全 key 不可用」的渠道（HasUsableKey 对单 key
-	// 兼容模式短路返回 true，老渠道不受影响）。预过滤为 hint，relay 阶段 PickKey 仍权威。
+	// 渠道子集白名单 + 多 key 预过滤：channelIds 非空时先按 ch.Id 过滤（白名单短路，
+	// 避免无谓的 HasUsableKey 查库），再跳过「该 model 全 key 不可用」的渠道。
 	var usable []*Channel
 	for _, ch := range candidates {
+		if len(channelIds) > 0 && !containsInt(ch.Id, channelIds) {
+			continue
+		}
 		if HasUsableKey(ch.Id, ch.MultiKeyMode, model) {
 			usable = append(usable, ch)
 		}
@@ -270,6 +273,9 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 		lowTail := append([]*Channel(nil), channels[endIdx:]...)
 		channelSyncLock.RUnlock()
 		for _, ch := range lowTail {
+			if len(channelIds) > 0 && !containsInt(ch.Id, channelIds) {
+				continue
+			}
 			if HasUsableKey(ch.Id, ch.MultiKeyMode, model) {
 				usable = append(usable, ch)
 			}
@@ -279,6 +285,16 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 		return nil, errors.New("no channel with usable key")
 	}
 	return usable[rand.Intn(len(usable))], nil
+}
+
+// containsInt 判断 id 是否在 ids 切片中。
+func containsInt(id int, ids []int) bool {
+	for _, v := range ids {
+		if v == id {
+			return true
+		}
+	}
+	return false
 }
 
 // InvalidateChannelCache 失效渠道缓存，CRUD 后主动调用以触发重新同步

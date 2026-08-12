@@ -41,10 +41,21 @@ func Distribute() func(c *gin.Context) {
 				abortWithMessage(c, http.StatusForbidden, "该渠道已被禁用")
 				return
 			}
+			// 令牌渠道子集校验：admin 用 sk-xxx-渠道id 指定渠道时，该渠道必须在令牌白名单内
+			if val, ok := c.Get(ctxkey.ChannelIds); ok {
+				if ids, ok := val.([]int); ok && len(ids) > 0 && !containsInt(id, ids) {
+					abortWithMessage(c, http.StatusForbidden, fmt.Sprintf("该令牌无权使用渠道：%d", id))
+					return
+				}
+			}
 		} else {
 			requestModel = c.GetString(ctxkey.RequestModel)
 			var err error
-			channel, err = model.CacheGetRandomSatisfiedChannel(userGroup, requestModel, false)
+			var channelIds []int
+			if val, ok := c.Get(ctxkey.ChannelIds); ok {
+				channelIds, _ = val.([]int)
+			}
+			channel, err = model.CacheGetRandomSatisfiedChannel(userGroup, requestModel, false, channelIds)
 			if err != nil {
 				message := fmt.Sprintf("当前分组 %s 下对于模型 %s 无可用渠道", userGroup, requestModel)
 				if channel != nil {

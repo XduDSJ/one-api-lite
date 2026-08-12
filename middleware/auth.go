@@ -129,6 +129,10 @@ func TokenAuth() func(c *gin.Context) {
 				return
 			}
 		}
+		// 解析令牌的渠道子集白名单，存入 ctx 供 distributor 选渠道时过滤
+		if token.ChannelIds != nil && *token.ChannelIds != "" {
+			c.Set(ctxkey.ChannelIds, parseChannelIds(*token.ChannelIds))
+		}
 		c.Set(ctxkey.Id, token.UserId)
 		c.Set(ctxkey.TokenId, token.Id)
 		c.Set(ctxkey.TokenName, token.Name)

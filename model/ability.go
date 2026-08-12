@@ -19,7 +19,7 @@ type Ability struct {
 	Priority  *int64 `json:"priority" gorm:"bigint;default:0;index"`
 }
 
-func GetRandomSatisfiedChannel(group string, model string, ignoreFirstPriority bool) (*Channel, error) {
+func GetRandomSatisfiedChannel(group string, model string, ignoreFirstPriority bool, channelIds []int) (*Channel, error) {
 	ability := Ability{}
 	groupCol := "`group`"
 	trueVal := "1"
@@ -35,6 +35,9 @@ func GetRandomSatisfiedChannel(group string, model string, ignoreFirstPriority b
 	} else {
 		maxPrioritySubQuery := DB.Model(&Ability{}).Select("MAX(priority)").Where(groupCol+" = ? and model = ? and enabled = "+trueVal, group, model)
 		channelQuery = DB.Where(groupCol+" = ? and model = ? and enabled = "+trueVal+" and priority = (?)", group, model, maxPrioritySubQuery)
+	}
+	if len(channelIds) > 0 {
+		channelQuery = channelQuery.Where("channel_id IN ?", channelIds)
 	}
 	if common.UsingSQLite || common.UsingPostgreSQL {
 		err = channelQuery.Order("RANDOM()").First(&ability).Error

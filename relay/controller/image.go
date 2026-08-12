@@ -214,6 +214,7 @@ func RelayImageHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatus
 			model.RecordConsumeLog(ctx, &model.Log{
 				UserId:           meta.UserId,
 				ChannelId:        meta.ChannelId,
+				ChannelKeyId:     meta.ChannelKeyId,
 				PromptTokens:     0,
 				CompletionTokens: 0,
 				ModelName:        imageRequest.Model,

@@ -126,19 +126,20 @@ func postConsumeQuota(ctx context.Context, usage *relaymodel.Usage, meta *meta.M
 		logger.Error(ctx, "error update user quota cache: "+err.Error())
 	}
 	logContent := fmt.Sprintf("倍率：%.2f × %.2f × %.2f", modelRatio, groupRatio, completionRatio)
-	model.RecordConsumeLog(ctx, &model.Log{
-		UserId:            meta.UserId,
-		ChannelId:         meta.ChannelId,
-		PromptTokens:      promptTokens,
-		CompletionTokens:  completionTokens,
-		ModelName:         textRequest.Model,
-		TokenName:         meta.TokenName,
-		Quota:             int(quota),
-		Content:           logContent,
-		IsStream:          meta.IsStream,
-		ElapsedTime:       helper.CalcElapsedTime(meta.StartTime),
-		SystemPromptReset: systemPromptReset,
-	})
+		model.RecordConsumeLog(ctx, &model.Log{
+			UserId:            meta.UserId,
+			ChannelId:         meta.ChannelId,
+			ChannelKeyId:      meta.ChannelKeyId,
+			PromptTokens:      promptTokens,
+			CompletionTokens:  completionTokens,
+			ModelName:         textRequest.Model,
+			TokenName:         meta.TokenName,
+			Quota:             int(quota),
+			Content:           logContent,
+			IsStream:          meta.IsStream,
+			ElapsedTime:       helper.CalcElapsedTime(meta.StartTime),
+			SystemPromptReset: systemPromptReset,
+		})
 	model.UpdateUserUsedQuotaAndRequestCount(meta.UserId, quota)
 	model.UpdateChannelUsedQuota(meta.ChannelId, quota)
 }

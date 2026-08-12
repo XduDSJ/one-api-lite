@@ -246,6 +246,8 @@
       "name_placeholder": "Please enter name",
       "models": "Model Scope",
       "models_placeholder": "Please select allowed models, leave empty for no restrictions",
+      "channel_ids": "Channel Scope",
+      "channel_ids_placeholder": "Leave empty for no limit; select multiple channels",
       "ip_limit": "IP Restriction",
       "ip_limit_placeholder": "Please enter allowed subnets, e.g.: 192.168.0.0/24, use commas to separate multiple subnets",
       "expire_time": "Expiry Time",

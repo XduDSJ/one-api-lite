@@ -246,6 +246,8 @@
       "name_placeholder": "请输入名称",
       "models": "模型范围",
       "models_placeholder": "请选择允许使用的模型，留空则不进行限制",
+      "channel_ids": "渠道范围",
+      "channel_ids_placeholder": "留空则不限制；可选择多个渠道",
       "ip_limit": "IP 限制",
       "ip_limit_placeholder": "请输入允许访问的网段，例如：192.168.0.0/24，请使用英文逗号分隔多个网段",
       "expire_time": "过期时间",

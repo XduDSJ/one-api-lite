@@ -8,7 +8,6 @@ import (
 	"github.com/songquanpeng/one-api/common"
 	"github.com/songquanpeng/one-api/common/config"
 	"github.com/songquanpeng/one-api/common/logger"
-	"github.com/songquanpeng/one-api/common/random"
 	"math/rand"
 	"sort"
 	"strconv"
@@ -229,9 +228,9 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 		return GetRandomSatisfiedChannel(group, model, ignoreFirstPriority)
 	}
 	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
 	channels := group2model2channels[group][model]
 	if len(channels) == 0 {
+		channelSyncLock.RUnlock()
 		return nil, errors.New("channel not found")
 	}
 	endIdx := len(channels)
@@ -245,17 +244,47 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 			}
 		}
 	}
-	idx := rand.Intn(endIdx)
+	// 浅拷贝候选区间后立即释放读锁，避免持锁跨 DB 查询（HasUsableKey 可能查 channel_keys）。
+	// []*Channel 是指针切片，浅拷贝只复制指针，不复制底层 Channel 对象，安全。
+	var candidates []*Channel
 	if ignoreFirstPriority {
 		if endIdx < len(channels) { // which means there are more than one priority
-			idx = random.RandRange(endIdx, len(channels))
+			candidates = append(candidates, channels[endIdx:]...)
+		}
+	} else {
+		candidates = append(candidates, channels[:endIdx]...)
+	}
+	channelSyncLock.RUnlock()
+
+	// 多 key 渠道预过滤：跳过「该 model 全 key 不可用」的渠道（HasUsableKey 对单 key
+	// 兼容模式短路返回 true，老渠道不受影响）。预过滤为 hint，relay 阶段 PickKey 仍权威。
+	var usable []*Channel
+	for _, ch := range candidates {
+		if HasUsableKey(ch.Id, ch.MultiKeyMode, model) {
+			usable = append(usable, ch)
 		}
 	}
-	return channels[idx], nil
+	// 普通路径下顶级优先级全死：降级到低优先级尾，避免直接报「无渠道」
+	if len(usable) == 0 && !ignoreFirstPriority && endIdx < len(channels) {
+		channelSyncLock.RLock()
+		lowTail := append([]*Channel(nil), channels[endIdx:]...)
+		channelSyncLock.RUnlock()
+		for _, ch := range lowTail {
+			if HasUsableKey(ch.Id, ch.MultiKeyMode, model) {
+				usable = append(usable, ch)
+			}
+		}
+	}
+	if len(usable) == 0 {
+		return nil, errors.New("no channel with usable key")
+	}
+	return usable[rand.Intn(len(usable))], nil
 }
 
 // InvalidateChannelCache 失效渠道缓存，CRUD 后主动调用以触发重新同步
 func InvalidateChannelCache(channelId int) {
+	// usable 预过滤缓存无论是否启用内存缓存都应清空（手动启用 key 等需近即时生效）
+	InvalidateChannelKeyUsableCache()
 	if !config.MemoryCacheEnabled {
 		return
 	}

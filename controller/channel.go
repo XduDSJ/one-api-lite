@@ -363,6 +363,8 @@ func EnableChannelKey(c *gin.Context) {
 	}
 	// 范围重置该 key 在所有 model 上的熔断状态，使其立即可被调度
 	breaker.GlobalBreaker.ResetByKey(channelId, int(keyId))
+	// 失效 usable 预过滤缓存，使该渠道在 distributor 阶段立即可被选中
+	model.InvalidateChannelCache(channelId)
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",

@@ -5,6 +5,7 @@ import (
 	"hash/fnv"
 	"math/rand"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/songquanpeng/one-api/common/logger"
@@ -346,4 +347,64 @@ func StartChannelKeyScanners() {
 	go StartQuotaResetScanner()
 	go StartCooldownScanner()
 	logger.SysLog("channel key scanners started")
+}
+
+// —— distributor 阶段预过滤：判断渠道是否有至少一个对 model 可用的 key ——
+//
+// distributor 选渠道时跳过「该 model 全 key 不可用」的多 key 渠道，避免选中后到 relay
+// 阶段才发现、浪费一次上游请求。本预过滤只是 hint，非最终裁决：relay 阶段 PickKey 仍为
+// 权威，其 all_keys_unavailable 兜底保留。3s TTL 远小于冷却扫描 10s / 配额扫描 30s 粒度，
+// breaker 惰性恢复在读时生效，陈旧窗口可接受。
+
+const channelKeyUsableTTL = 3 * time.Second
+
+type usableCacheEntry struct {
+	value     bool
+	expiredAt time.Time
+}
+
+var (
+	channelKeyUsableCache   = make(map[string]usableCacheEntry)
+	channelKeyUsableCacheMu sync.RWMutex
+)
+
+// usableCacheKey 拼接缓存键：channelId:model。model 维度隔离，因 breaker 是三维 channel:key:model。
+func usableCacheKey(channelId int, modelName string) string {
+	return fmt.Sprintf("%d:%s", channelId, modelName)
+}
+
+// HasUsableKey 判断渠道 channelId 是否有至少一个对 model 可用的 key。
+// 单 key 兼容模式（MultiKeyModeOff）直接返回 true（无 channel_keys 行，用 Channel.Key）。
+// 结果带 3s TTL 缓存，避免高 QPS 下每请求查库。
+func HasUsableKey(channelId int, multiKeyMode int, modelName string) bool {
+	// 单 key 兼容模式：无 channel_keys 行，用 channel.Key，不参与预过滤
+	if multiKeyMode == MultiKeyModeOff {
+		return true
+	}
+	cacheKey := usableCacheKey(channelId, modelName)
+	// 命中缓存直接返回
+	channelKeyUsableCacheMu.RLock()
+	if entry, ok := channelKeyUsableCache[cacheKey]; ok && time.Now().Before(entry.expiredAt) {
+		channelKeyUsableCacheMu.RUnlock()
+		return entry.value
+	}
+	channelKeyUsableCacheMu.RUnlock()
+	// 未命中：查库 + 五重过滤（复用 filterUsableKeys）
+	keys, err := GetEnabledChannelKeys(channelId)
+	usable := false
+	if err == nil && len(keys) > 0 {
+		usable = len(filterUsableKeys(channelId, keys, modelName)) > 0
+	}
+	// 回填缓存
+	channelKeyUsableCacheMu.Lock()
+	channelKeyUsableCache[cacheKey] = usableCacheEntry{value: usable, expiredAt: time.Now().Add(channelKeyUsableTTL)}
+	channelKeyUsableCacheMu.Unlock()
+	return usable
+}
+
+// InvalidateChannelKeyUsableCache 清空 usable 预过滤缓存。CRUD 后调用，使手动启用/冷却/禁用近即时生效。
+func InvalidateChannelKeyUsableCache() {
+	channelKeyUsableCacheMu.Lock()
+	channelKeyUsableCache = make(map[string]usableCacheEntry)
+	channelKeyUsableCacheMu.Unlock()
 }

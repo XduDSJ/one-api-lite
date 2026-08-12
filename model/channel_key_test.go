@@ -2,6 +2,9 @@ package model
 
 import (
 	"testing"
+	"time"
+
+	"github.com/songquanpeng/one-api/relay/breaker"
 )
 
 func TestChannelKeyCRUD(t *testing.T) {
@@ -122,5 +125,74 @@ func TestPickKeyNoUsable(t *testing.T) {
 	picked, err := PickKey(12, MultiKeyModePriority, "gpt-4o", "")
 	if err == nil {
 		t.Errorf("expected error when no usable key, got picked=%+v", picked)
+	}
+}
+
+func TestHasUsableKey(t *testing.T) {
+	// 用独立 channelId 避免与其他测试串扰
+	const chMulti = 20 // 多 key 模式渠道
+	const model = "gpt-4o"
+
+	// 场景 1：单 key 兼容模式（MultiKeyModeOff）短路返回 true，无需建 channel_keys 行
+	if !HasUsableKey(chMulti, MultiKeyModeOff, model) {
+		t.Errorf("MultiKeyModeOff 应短路返回 true（用 channel.Key，无 channel_keys 行）")
+	}
+
+	// 场景 2：多 key 全 Disabled → false
+	disabledKeys := []ChannelKey{
+		{ChannelId: chMulti, KeyValue: "sk-dis-1", Status: KeyStatusDisabled, Priority: 10},
+		{ChannelId: chMulti, KeyValue: "sk-dis-2", Status: KeyStatusDisabled, Priority: 5},
+	}
+	if err := BatchInsertChannelKeys(disabledKeys); err != nil {
+		t.Fatalf("BatchInsertChannelKeys failed: %v", err)
+	}
+	defer DeleteChannelKeysByChannelId(chMulti)
+	InvalidateChannelKeyUsableCache() // 清缓存避免串扰
+	if HasUsableKey(chMulti, MultiKeyModePriority, model) {
+		t.Errorf("全 Disabled 应返回 false")
+	}
+
+	// 场景 3：至少一个 Enabled/未冷却/有配额/熔断器闭 → true
+	// 把 sk-dis-1 改为 Enabled
+	disabledKeys[0].Status = KeyStatusEnabled
+	if err := UpdateChannelKey(&disabledKeys[0]); err != nil {
+		t.Fatalf("UpdateChannelKey failed: %v", err)
+	}
+	InvalidateChannelKeyUsableCache()
+	if !HasUsableKey(chMulti, MultiKeyModePriority, model) {
+		t.Errorf("至少一个 Enabled/未冷却 key 应返回 true")
+	}
+
+	// 场景 4：Enabled 但 breaker 对该 model open → false
+	// 取 sk-dis-1 的 id 触发熔断（阈值 5 次）
+	var enabledKey ChannelKey
+	allKeys, _ := GetChannelKeysByChannelId(chMulti)
+	for _, k := range allKeys {
+		if k.Status == KeyStatusEnabled {
+			enabledKey = k
+			break
+		}
+	}
+	for i := 0; i < 5; i++ {
+		breaker.GlobalBreaker.RecordFailure(chMulti, int(enabledKey.Id), model, 5, 60)
+	}
+	InvalidateChannelKeyUsableCache()
+	if HasUsableKey(chMulti, MultiKeyModePriority, model) {
+		t.Errorf("唯一 Enabled key 熔断打开时应返回 false")
+	}
+
+	// 清理：重置该 key 的熔断，避免污染其他测试
+	breaker.GlobalBreaker.ResetByKey(chMulti, int(enabledKey.Id))
+	InvalidateChannelKeyUsableCache()
+
+	// 场景 5：冷却中（CooledUntil 未到期）→ false
+	enabledKey.CooledUntil = time.Now().Unix() + 600
+	enabledKey.Status = KeyStatusCooling
+	if err := UpdateChannelKey(&enabledKey); err != nil {
+		t.Fatalf("UpdateChannelKey cooling failed: %v", err)
+	}
+	InvalidateChannelKeyUsableCache()
+	if HasUsableKey(chMulti, MultiKeyModePriority, model) {
+		t.Errorf("所有 key 冷却中应返回 false")
 	}
 }

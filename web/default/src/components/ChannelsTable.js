@@ -524,6 +524,7 @@ const ChannelsTable = () => {
               {t('channel.table.name')}
             </Table.HeaderCell>
             <Table.HeaderCell
+              hidden
               style={{ cursor: 'pointer' }}
               onClick={() => {
                 sortChannel('group');
@@ -579,7 +580,9 @@ const ChannelsTable = () => {
               {t('channel.table.test_model')}
             </Table.HeaderCell>
             <Table.HeaderCell>{t('channel.table.actions')}</Table.HeaderCell>
-            <Table.HeaderCell>{t('channel.key_list.detail', '密钥详情')}</Table.HeaderCell>
+            <Table.HeaderCell style={{ width: '44px', textAlign: 'center' }}>
+              {t('channel.key_list.detail', '密钥')}
+            </Table.HeaderCell>
           </Table.Row>
         </Table.Header>
 
@@ -598,7 +601,7 @@ const ChannelsTable = () => {
                   <Table.Cell>
                     {channel.name ? channel.name : t('channel.table.no_name')}
                   </Table.Cell>
-                  <Table.Cell>{renderGroup(channel.group)}</Table.Cell>
+                  <Table.Cell hidden>{renderGroup(channel.group)}</Table.Cell>
                   <Table.Cell>{renderType(channel.type, t)}</Table.Cell>
                   <Table.Cell>
                     {renderStatus(channel.status, t)}
@@ -747,7 +750,7 @@ const ChannelsTable = () => {
                 </Table.Row>
                 {expandedChannelId === channel.id && (
                   <Table.Row key={channel.id + '-expand'}>
-                    <Table.Cell colSpan={showDetail ? '12' : '10'} style={{ padding: 'var(--space-4)', backgroundColor: 'var(--color-bg-soft)' }}>
+                    <Table.Cell colSpan={showDetail ? '11' : '9'} style={{ padding: 'var(--space-4)', backgroundColor: 'var(--color-bg-soft)' }}>
                       <ChannelKeyList channelId={channel.id} />
                     </Table.Cell>
                   </Table.Row>
@@ -759,7 +762,7 @@ const ChannelsTable = () => {
 
         <Table.Footer>
           <Table.Row>
-            <Table.HeaderCell colSpan={showDetail ? '12' : '10'} style={{ textAlign: 'right' }}>
+            <Table.HeaderCell colSpan={showDetail ? '11' : '9'} style={{ textAlign: 'right' }}>
               <Pagination
                 activePage={activePage}
                 onPageChange={onPaginationChange}

@@ -204,14 +204,15 @@ func setSystemPrompt(ctx context.Context, request *relaymodel.GeneralOpenAIReque
 // reportKeyResult 向 key 状态机回写本次请求结果。
 // 单 key 兼容模式（ChannelKeyId==0）直接 return，不影响老渠道。
 // 成功：熔断器 RecordSuccess + 异步自增配额（仅成功请求才扣 key 配额，保证计费幂等）；
-// 失败：按状态码分级——401/403 禁用、429 冷却×2+MarkExhausted、5xx 熔断计数。
+// 失败：按状态码分级——401/403 禁用或短冷却兜底、429 冷却×2+MarkExhausted、5xx 熔断计数。
 // 失败时不自增配额（上游拒绝请求通常未消耗 token）。
+// 熔断器统一用 OriginModelName（映射前），与 PickKey→IsOpen 的检查维度一致。
 func reportKeyResult(meta *meta.Meta, statusCode int, tokens int64, success bool) {
 	if meta.ChannelKeyId == 0 {
 		return // 单 key 兼容模式不处理
 	}
 	if success {
-		breaker.GlobalBreaker.RecordSuccess(meta.ChannelId, meta.ChannelKeyId, meta.ActualModelName)
+		breaker.GlobalBreaker.RecordSuccess(meta.ChannelId, meta.ChannelKeyId, meta.OriginModelName)
 		go model.IncrChannelKeyUsage(int64(meta.ChannelKeyId), tokens)
 		return
 	}
@@ -219,9 +220,12 @@ func reportKeyResult(meta *meta.Meta, statusCode int, tokens int64, success bool
 	cooldownSec := config.ChannelKeyCooldownSec
 	switch {
 	case statusCode == 401 || statusCode == 403:
-		// 鉴权错：禁用 key（需人工恢复）
+		// 鉴权错：自动禁用时永久禁用 key（需人工恢复）；
+		// 关闭自动禁用时短冷却 60s 兜底退避，避免坏 key 被无限重选
 		if config.AutomaticDisableKeyEnabled {
 			go model.DisableChannelKey(int64(meta.ChannelKeyId), model.KeyStatusDisabled)
+		} else {
+			go model.CoolDownChannelKey(int64(meta.ChannelKeyId), 60)
 		}
 	case statusCode == 429:
 		// 限流：冷却 × 2
@@ -231,6 +235,6 @@ func reportKeyResult(meta *meta.Meta, statusCode int, tokens int64, success bool
 	case statusCode/100 == 5:
 		// 5xx：熔断计数
 		threshold := config.ChannelKeyFailureThreshold
-		breaker.GlobalBreaker.RecordFailure(meta.ChannelId, meta.ChannelKeyId, meta.ActualModelName, threshold, cooldownSec)
+		breaker.GlobalBreaker.RecordFailure(meta.ChannelId, meta.ChannelKeyId, meta.OriginModelName, threshold, cooldownSec)
 	}
 }

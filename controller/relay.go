@@ -179,7 +179,9 @@ func Relay(c *gin.Context) {
 				addFailedKeyId(c, int(key.Id))
 				channelId = c.GetInt(ctxkey.ChannelId)
 				channelName = c.GetString(ctxkey.ChannelName)
-				go processChannelRelayError(ctx, userId, channelId, channelName, *bizErr)
+				// key 级重试不调 processChannelRelayError——per-key 错误不应禁用整渠道。
+				// per-key 的禁用/冷却/熔断已由 reportKeyResult 在各 relay controller 内处理。
+				logger.Errorf(ctx, "key 级重试失败 (channel id %d, key id %d): %s", channelId, key.Id, bizErr.Error.Message)
 				if !shouldRetry(c, bizErr.StatusCode) || c.Writer.Written() {
 					break
 				}

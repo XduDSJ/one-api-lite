@@ -61,7 +61,7 @@ const Home = () => {
     <>
       {homePageContentLoaded && homePageContent === '' ? (
         <div className='dashboard-container'>
-          <Card fluid className='chart-card'>
+          <Card fluid className='page-card'>
             <Card.Content>
               <Card.Header className='header'>
                 {t('home.welcome.title')}
@@ -72,7 +72,7 @@ const Home = () => {
               </Card.Description>
             </Card.Content>
           </Card>
-          <Card fluid className='chart-card'>
+          <Card fluid className='page-card'>
             <Card.Content>
               <Card.Header>
                 <Header as='h3'>{t('home.system_status.title')}</Header>
@@ -81,8 +81,8 @@ const Home = () => {
                 <Grid.Column>
                   <Card
                     fluid
-                    className='chart-card'
-                    style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.12)' }}
+                    className='page-card'
+                    style={{ height: '100%' }}
                   >
                     <Card.Content>
                       <Card.Header>
@@ -161,8 +161,8 @@ const Home = () => {
                 <Grid.Column>
                   <Card
                     fluid
-                    className='chart-card'
-                    style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.12)' }}
+                    className='page-card'
+                    style={{ height: '100%' }}
                   >
                     <Card.Content>
                       <Card.Header>

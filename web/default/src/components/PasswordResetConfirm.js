@@ -74,8 +74,7 @@ const PasswordResetConfirm = () => {
       <Grid.Column style={{ maxWidth: 450 }}>
         <Card
           fluid
-          className='chart-card'
-          style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.12)' }}
+          className='page-card'
         >
           <Card.Content>
             <Card.Header>

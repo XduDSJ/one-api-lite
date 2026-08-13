@@ -224,7 +224,7 @@ func UpdateChannel(c *gin.Context) {
 	}
 	// 多 key 模式：按 key_value 做 diff 增量更新，保留已存在 key 的 Id 和运行时字段
 	// （DailyUsedQuota/CooledUntil/TotalUsedQuota/TotalRequests 等），避免先删后插重置运行时状态
-	if channel.MultiKeyMode != model.MultiKeyModeOff && len(req.Keys) > 0 {
+	if channel.MultiKeyMode != model.MultiKeyModeOff {
 		existingKeys, err := model.GetChannelKeysByChannelId(channel.Id)
 		if err != nil {
 			c.JSON(http.StatusOK, gin.H{
@@ -382,7 +382,7 @@ func GetChannelKeysStatus(c *gin.Context) {
 		})
 		return
 	}
-	keys, err := model.GetChannelKeysByChannelId(channelId)
+	keys, err := model.GetEnabledChannelKeys(channelId)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,

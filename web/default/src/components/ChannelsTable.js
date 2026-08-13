@@ -585,7 +585,7 @@ const ChannelsTable = () => {
                   <Table.Cell>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', alignItems: 'flex-start' }}>
                       {renderStatus(channel.status, t)}
-                      {channel.multi_key_mode && channel.multi_key_mode !== 0 && (
+                      {!!channel.multi_key_mode && channel.multi_key_mode !== 0 && (
                         <Label size='mini' className='multi-key-badge'>
                           {t('channel.key_list.multi_key', '多Key')}
                         </Label>

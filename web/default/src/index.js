@@ -6,6 +6,7 @@ import App from './App';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import 'semantic-ui-css/semantic.min.css';
+import './theme.css';
 import './index.css';
 import { UserProvider } from './context/User';
 import { ToastContainer } from 'react-toastify';

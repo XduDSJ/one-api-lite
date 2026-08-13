@@ -1,16 +1,16 @@
 .dashboard-container {
-    padding: 20px 24px 40px;
-    background-color: #ffffff;
-    margin-top: -15px; /* 减小与导航栏的间距 */
-    max-width: 1600px;        /* 设置最大宽度 */
-    margin-left: auto;        /* 水平居中 */
+    padding: var(--space-5) var(--space-6) var(--space-7);
+    background-color: transparent;
+    margin-top: 0;
+    max-width: 1440px;
+    margin-left: auto;
     margin-right: auto;
 }
 
 .stat-card {
-    background: linear-gradient(135deg, #2185d0 0%, #1678c2 100%) !important;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%) !important;
     color: white !important;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: var(--shadow-card) !important;
     transition: transform 0.2s ease !important;
     margin-bottom: 1rem !important;
 }
@@ -33,10 +33,10 @@
 
 .chart-card {
     height: 100%;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04) !important;
+    box-shadow: var(--shadow-card) !important;
     border: none !important;
-    border-radius: 16px !important;
-    padding: 8px!important;
+    border-radius: var(--radius) !important;
+    padding: var(--space-2) !important;
 }
 
 .chart-container {
@@ -47,25 +47,25 @@
 }
 
 .ui.card > .content > .header {
-    color: #2B3674;
+    color: var(--color-text);
     font-size: 1.2em;
-    margin-bottom: 15px;
+    margin-bottom: var(--space-4);
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-weight: 600;
-    gap: 12px; /* 增加标题和数值之间的间距 */
+    gap: var(--space-3);
 }
 
 .stat-value {
-    color: #4318FF;
+    color: var(--color-primary);
     font-weight: bold;
     font-size: 1.1em;
-    background: rgba(67, 24, 255, 0.1);
-    padding: 4px 12px;
-    border-radius: 8px;
-    white-space: nowrap; /* 防止数值换行 */
-    margin-left: 16px;
+    background: var(--color-primary-soft);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+    margin-left: var(--space-4);
 }
 
 /* 优化图表响应式布局 */
@@ -91,15 +91,15 @@
 }
 
 .settings-tab .item {
-    color: #000 !important;
+    color: var(--color-text) !important;
     font-weight: 500 !important;
-    padding: 0.8rem 1.2rem !important;
+    padding: var(--space-3) var(--space-4) !important;
 }
 
 .settings-tab .active.item {
-    color: #000 !important;
+    color: var(--color-primary) !important;
     font-weight: 600 !important;
-    border-color: #000 !important;
+    border-color: var(--color-primary) !important;
 }
 
 .ui.tab.segment {

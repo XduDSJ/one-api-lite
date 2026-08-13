@@ -1,0 +1,258 @@
+/* ============================================================
+   One API — Design Token Layer（靛紫主题）
+   引入顺序：semantic-ui-css → theme.css → index.css
+   仅覆写品牌色触点 + 复用组件类，不重写 Semantic UI 全量
+   ============================================================ */
+
+:root {
+  /* —— 配色（靛紫统一）—— */
+  --color-bg: #f7f8fc; /* 靛调页面底 */
+  --color-bg-soft: #f1f2f9; /* 展开行 / 次级底 */
+  --color-surface: #ffffff;
+  --color-text: #1b1f3b; /* 深靛黑，替代纯黑 */
+  --color-text-muted: #6b728e;
+  --color-border: #e9eaf2;
+  --color-primary: #4318ff;
+  --color-primary-hover: #3a0fe0;
+  --color-primary-soft: #eeecff; /* 徽章 / 选中底 */
+  --color-success: #16a34a;
+  --color-danger: #e5484d;
+  --color-warning: #f5a623;
+
+  /* —— 间距 scale —— */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* —— 形态 —— */
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow-card: 0 2px 12px rgba(27, 31, 59, 0.06);
+  --shadow-hover: 0 8px 24px rgba(27, 31, 59, 0.1);
+  --form-field-gap: 16px;
+}
+
+/* ============================================================
+   全局基础
+   ============================================================ */
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+a {
+  color: var(--color-primary);
+}
+a:hover {
+  color: var(--color-primary-hover);
+}
+
+/* 顶栏导航项 */
+.header-nav-item {
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  color: var(--color-text-muted) !important;
+  transition: color 0.15s ease;
+}
+.header-nav-item:hover {
+  color: var(--color-primary) !important;
+}
+
+/* ============================================================
+   Semantic UI 品牌色覆写（蓝 #2185d0 → 靛紫 #4318ff）
+   ============================================================ */
+
+/* 主按钮 */
+.ui.primary.button,
+.ui.primary.buttons .button {
+  background-color: var(--color-primary) !important;
+}
+.ui.primary.button:hover,
+.ui.primary.buttons .button:hover,
+.ui.primary.button:focus,
+.ui.primary.buttons .button:focus {
+  background-color: var(--color-primary-hover) !important;
+}
+
+/* 菜单激活项 */
+.ui.menu .active.item {
+  color: var(--color-primary) !important;
+}
+.ui.tabular.menu .active.item {
+  border-color: var(--color-primary) !important;
+}
+
+/* 蓝色标签 → 靛紫 */
+.ui.blue.label {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: #fff !important;
+}
+.ui.basic.blue.label {
+  color: var(--color-primary) !important;
+  background-color: var(--color-primary-soft) !important;
+  border-color: var(--color-primary) !important;
+}
+
+/* 表单输入聚焦 */
+.ui.form input:focus,
+.ui.form textarea:focus,
+.ui.input input:focus,
+.ui.input textarea:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 2px var(--color-primary-soft) !important;
+}
+
+/* 下拉框 */
+.ui.selection.dropdown:hover,
+.ui.selection.dropdown:focus {
+  border-color: var(--color-primary) !important;
+}
+.ui.selection.active.dropdown,
+.ui.selection.active.dropdown:hover {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 2px var(--color-primary-soft) !important;
+}
+.ui.selection.dropdown .menu .selected.item {
+  color: var(--color-primary) !important;
+}
+
+/* 复选框选中 */
+.ui.checkbox input:checked ~ .box:before,
+.ui.checkbox input:checked ~ label:before {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}
+
+/* 分页激活项 */
+.ui.pagination.menu .active.item {
+  background-color: var(--color-primary) !important;
+  color: #fff !important;
+  border-color: var(--color-primary) !important;
+}
+
+/* ============================================================
+   多选下拉高度限制（令牌编辑页等，纯 CSS）
+   关闭时限高 + 滚动；打开时（.active）解除以免裁剪选项面板
+   ============================================================ */
+.ui.form .ui.multiple.selection.dropdown:not(.active) {
+  max-height: 130px;
+  overflow-y: auto;
+}
+
+/* ============================================================
+   页面壳 .page-card（表单 / 列表页，替代 dashboard 专用 .chart-card）
+   ============================================================ */
+.ui.card.page-card {
+  border: none !important;
+  border-radius: var(--radius) !important;
+  box-shadow: var(--shadow-card) !important;
+  padding: var(--space-5) !important;
+}
+
+/* ============================================================
+   渠道页 — 工具栏（批量操作从表尾上移）
+   ============================================================ */
+.channel-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.channel-toolbar__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* 多 Key 紧凑徽章（状态格） */
+.multi-key-badge {
+  background: var(--color-primary-soft) !important;
+  color: var(--color-primary) !important;
+  border: 1px solid var(--color-primary) !important;
+  font-weight: 600 !important;
+}
+
+/* ============================================================
+   多 Key 紧凑编辑器（渠道编辑页）
+   ============================================================ */
+.key-editor-header-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+.key-editor-header-bar > label {
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.key-editor-list {
+  max-height: 360px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--color-bg-soft);
+}
+
+/* 单行 = 6 列网格：密钥 | 备注 | 优先级 | 配额 | 重置 | 删除 */
+.key-editor-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 80px 100px 120px 40px;
+  gap: var(--space-2);
+  align-items: end;
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+.key-editor-row .field {
+  margin: 0 !important;
+}
+.key-editor-row .field > label {
+  font-size: 0.72em !important;
+  color: var(--color-text-muted) !important;
+  margin: 0 0 2px 0 !important;
+  font-weight: 500 !important;
+}
+.key-editor-row .ui.input input,
+.key-editor-row .ui.selection.dropdown {
+  padding: 0.45em 0.6em !important;
+  font-size: 0.88em !important;
+  min-height: auto !important;
+}
+.key-editor-row .ui.selection.dropdown .text {
+  font-size: 0.88em !important;
+}
+.key-editor-row .key-field-delete {
+  margin: 0 !important;
+  padding: 0.5em !important;
+}
+
+/* 窄屏：密钥独占一行，其余 2 列，删除独占 */
+@media screen and (max-width: 768px) {
+  .key-editor-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .key-editor-row .key-field-key {
+    grid-column: 1 / -1;
+  }
+  .key-editor-row .key-field-delete {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}

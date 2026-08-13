@@ -114,11 +114,7 @@ const Header = () => {
           key={button.name}
           as={Link}
           to={button.to}
-          style={{
-            fontSize: '15px',
-            fontWeight: '400',
-            color: '#666',
-          }}
+          className='header-nav-item'
         >
           <Icon name={button.icon} style={{ marginRight: '4px' }} />
           {t(button.name)}
@@ -194,7 +190,7 @@ const Header = () => {
               </Menu.Item>
               <Menu.Item>
                 {userState.user ? (
-                  <Button onClick={logout} style={{ color: '#666666' }}>
+                  <Button onClick={logout} style={{ color: 'var(--color-text-muted)' }}>
                     {t('header.logout')}
                   </Button>
                 ) : (
@@ -233,7 +229,7 @@ const Header = () => {
         borderless
         style={{
           borderTop: 'none',
-          boxShadow: 'rgba(0, 0, 0, 0.04) 0px 2px 12px 0px',
+          boxShadow: 'var(--shadow-card)',
           border: 'none',
         }}
       >
@@ -250,7 +246,7 @@ const Header = () => {
               style={{
                 fontSize: '18px',
                 fontWeight: '500',
-                color: '#333',
+                color: 'var(--color-text)',
               }}
             >
               {systemName}
@@ -269,7 +265,7 @@ const Header = () => {
               style={{
                 fontSize: '16px',
                 fontWeight: '400',
-                color: '#666',
+                color: 'var(--color-text-muted)',
                 padding: '0 10px',
               }}
             />
@@ -281,7 +277,7 @@ const Header = () => {
                 style={{
                   fontSize: '15px',
                   fontWeight: '400',
-                  color: '#666',
+                  color: 'var(--color-text-muted)',
                 }}
               >
                 <Dropdown.Menu>
@@ -290,7 +286,7 @@ const Header = () => {
                     style={{
                       fontSize: '15px',
                       fontWeight: '400',
-                      color: '#666',
+                      color: 'var(--color-text-muted)',
                     }}
                   >
                     {t('header.logout')}
@@ -306,7 +302,7 @@ const Header = () => {
                 style={{
                   fontSize: '15px',
                   fontWeight: '400',
-                  color: '#666',
+                  color: 'var(--color-text-muted)',
                 }}
               />
             )}

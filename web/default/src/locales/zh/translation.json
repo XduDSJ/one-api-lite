@@ -185,7 +185,9 @@
       "key_daily_quota": "每日配额(token)",
       "key_reset_rule": "重置时刻",
       "no_reset": "不自动重置",
-      "remove_key": "删除"
+      "remove_key": "删除",
+      "key_count": "共",
+      "no_key_hint": "暂无密钥，点击「添加密钥」新建"
     },
     "key_list": {
       "status_enabled": "启用",
@@ -256,6 +258,7 @@
       "quota": "额度",
       "quota_placeholder": "请输入额度",
       "buttons": {
+        "quick_expire": "快捷设置",
         "never_expire": "永不过期",
         "expire_1_month": "一个月后过期",
         "expire_1_day": "一天后过期",

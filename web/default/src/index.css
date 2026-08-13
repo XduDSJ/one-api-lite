@@ -17,7 +17,7 @@ code {
 }
 
 .main-content {
-    padding: 4px;
+    padding: var(--space-5) var(--space-4);
 }
 
 .small-icon .icon {
@@ -82,13 +82,14 @@ code {
   }
 }
 
-/* 大屏幕 */
+/* 大屏幕：放宽内容区，让表格页有呼吸空间 */
 @media screen and (min-width: 1367px) {
   .ui.container {
-    width: 1200px !important;
+    width: 100% !important;
+    max-width: 1440px !important;
     margin-left: auto !important;
     margin-right: auto !important;
-    padding: 0 !important;
+    padding: 0 var(--space-5) !important;
   }
 }
 

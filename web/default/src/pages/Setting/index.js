@@ -32,7 +32,7 @@ const Setting = () => {
 
   return (
     <div className='dashboard-container'>
-      <Card fluid className='chart-card'>
+      <Card fluid className='page-card'>
         <Card.Content>
           <Card.Header className='header'>{t('setting.title')}</Card.Header>
           <Tab

@@ -412,17 +412,68 @@ const ChannelsTable = () => {
 
   return (
     <>
-      <Form onSubmit={searchChannels}>
-        <Form.Input
-          icon='search'
-          fluid
-          iconPosition='left'
-          placeholder={t('channel.search')}
-          value={searchKeyword}
-          loading={searching}
-          onChange={handleKeywordChange}
-        />
-      </Form>
+      <div className='channel-toolbar'>
+        <div className='channel-toolbar__actions'>
+          <Button size='tiny' as={Link} to='/channel/add' loading={loading}>
+            {t('channel.buttons.add')}
+          </Button>
+          <Button
+            size='tiny'
+            loading={loading}
+            onClick={() => {
+              testChannels('all');
+            }}
+          >
+            {t('channel.buttons.test_all')}
+          </Button>
+          <Button
+            size='tiny'
+            loading={loading}
+            onClick={() => {
+              testChannels('disabled');
+            }}
+          >
+            {t('channel.buttons.test_disabled')}
+          </Button>
+          <Popup
+            trigger={
+              <Button size='tiny' loading={loading}>
+                {t('channel.buttons.delete_disabled')}
+              </Button>
+            }
+            on='click'
+            flowing
+            hoverable
+          >
+            <Button
+              size='tiny'
+              negative
+              onClick={deleteAllDisabledChannels}
+            >
+              {t('channel.buttons.confirm_delete_disabled')}
+            </Button>
+          </Popup>
+          <Button size='tiny' onClick={refresh} loading={loading}>
+            {t('channel.buttons.refresh')}
+          </Button>
+          <Button size='tiny' onClick={toggleShowDetail}>
+            {showDetail
+              ? t('channel.buttons.hide_detail')
+              : t('channel.buttons.show_detail')}
+          </Button>
+        </div>
+        <Form onSubmit={searchChannels} style={{ margin: 0, minWidth: 260 }}>
+          <Form.Input
+            icon='search'
+            fluid
+            iconPosition='left'
+            placeholder={t('channel.search')}
+            value={searchKeyword}
+            loading={searching}
+            onChange={handleKeywordChange}
+          />
+        </Form>
+      </div>
       {showPrompt && (
         <Message
           onDismiss={() => {
@@ -437,6 +488,7 @@ const ChannelsTable = () => {
           {t('channel.detail_notice')}
         </Message>
       )}
+      <div style={{ overflowX: 'auto' }}>
       <Table basic={'very'} compact size='small'>
         <Table.Header>
           <Table.Row>
@@ -531,12 +583,14 @@ const ChannelsTable = () => {
                   <Table.Cell>{renderGroup(channel.group)}</Table.Cell>
                   <Table.Cell>{renderType(channel.type, t)}</Table.Cell>
                   <Table.Cell>
-                    {renderStatus(channel.status, t)}
-                    {channel.multi_key_mode && channel.multi_key_mode !== 0 && (
-                      <Label size='mini' color='blue' style={{ marginLeft: 4 }}>
-                        {t('channel.key_list.multi_key', '多Key')}
-                      </Label>
-                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', alignItems: 'flex-start' }}>
+                      {renderStatus(channel.status, t)}
+                      {channel.multi_key_mode && channel.multi_key_mode !== 0 && (
+                        <Label size='mini' className='multi-key-badge'>
+                          {t('channel.key_list.multi_key', '多Key')}
+                        </Label>
+                      )}
+                    </div>
                   </Table.Cell>
                   <Table.Cell>
                     <Popup
@@ -602,15 +656,14 @@ const ChannelsTable = () => {
                   <Table.Cell>
                     <div
                       style={{
-                        display: 'flex',
+                        display: 'inline-flex',
                         alignItems: 'center',
-                        flexWrap: 'wrap',
-                        gap: '2px',
-                        rowGap: '6px',
+                        flexWrap: 'nowrap',
+                        gap: 'var(--space-1)',
                       }}
                     >
                       <Button
-                        size={'tiny'}
+                        size={'mini'}
                         positive
                         onClick={() => {
                           testChannel(
@@ -625,7 +678,7 @@ const ChannelsTable = () => {
                       </Button>
                       <Popup
                         trigger={
-                          <Button size='tiny' negative>
+                          <Button size='mini' negative>
                             {t('channel.buttons.delete')}
                           </Button>
                         }
@@ -634,7 +687,7 @@ const ChannelsTable = () => {
                         hoverable
                       >
                         <Button
-                          size={'tiny'}
+                          size={'mini'}
                           negative
                           onClick={() => {
                             manageChannel(channel.id, 'delete', idx);
@@ -644,7 +697,7 @@ const ChannelsTable = () => {
                         </Button>
                       </Popup>
                       <Button
-                        size={'tiny'}
+                        size={'mini'}
                         onClick={() => {
                           manageChannel(
                             channel.id,
@@ -658,7 +711,7 @@ const ChannelsTable = () => {
                           : t('channel.buttons.enable')}
                       </Button>
                       <Button
-                        size={'tiny'}
+                        size={'mini'}
                         as={Link}
                         to={'/channel/edit/' + channel.id}
                       >
@@ -680,7 +733,7 @@ const ChannelsTable = () => {
                 </Table.Row>
                 {expandedChannelId === channel.id && (
                   <Table.Row key={channel.id + '-expand'}>
-                    <Table.Cell colSpan={showDetail ? '11' : '9'} style={{ padding: '10px', backgroundColor: '#fafafa' }}>
+                    <Table.Cell colSpan={showDetail ? '11' : '9'} style={{ padding: 'var(--space-4)', backgroundColor: 'var(--color-bg-soft)' }}>
                       <ChannelKeyList channelId={channel.id} />
                     </Table.Cell>
                   </Table.Row>
@@ -692,49 +745,8 @@ const ChannelsTable = () => {
 
         <Table.Footer>
           <Table.Row>
-            <Table.HeaderCell colSpan={showDetail ? '11' : '9'}>
-              <Button size='tiny' as={Link} to='/channel/add' loading={loading}>
-                {t('channel.buttons.add')}
-              </Button>
-              <Button
-                size='tiny'
-                loading={loading}
-                onClick={() => {
-                  testChannels('all');
-                }}
-              >
-                {t('channel.buttons.test_all')}
-              </Button>
-              <Button
-                size='tiny'
-                loading={loading}
-                onClick={() => {
-                  testChannels('disabled');
-                }}
-              >
-                {t('channel.buttons.test_disabled')}
-              </Button>
-              <Popup
-                trigger={
-                  <Button size='tiny' loading={loading}>
-                    {t('channel.buttons.delete_disabled')}
-                  </Button>
-                }
-                on='click'
-                flowing
-                hoverable
-              >
-                <Button
-                  size='tiny'
-                  loading={loading}
-                  negative
-                  onClick={deleteAllDisabledChannels}
-                >
-                  {t('channel.buttons.confirm_delete_disabled')}
-                </Button>
-              </Popup>
+            <Table.HeaderCell colSpan={showDetail ? '11' : '9'} style={{ textAlign: 'right' }}>
               <Pagination
-                floated='right'
                 activePage={activePage}
                 onPageChange={onPaginationChange}
                 size='tiny'
@@ -744,18 +756,11 @@ const ChannelsTable = () => {
                   (channels.length % ITEMS_PER_PAGE === 0 ? 1 : 0)
                 }
               />
-              <Button size='tiny' onClick={refresh} loading={loading}>
-                {t('channel.buttons.refresh')}
-              </Button>
-              <Button size='tiny' onClick={toggleShowDetail}>
-                {showDetail
-                  ? t('channel.buttons.hide_detail')
-                  : t('channel.buttons.show_detail')}
-              </Button>
             </Table.HeaderCell>
           </Table.Row>
         </Table.Footer>
       </Table>
+      </div>
     </>
   );
 };

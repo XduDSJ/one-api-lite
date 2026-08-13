@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Button, Card, Form, Input, Message, Table} from 'semantic-ui-react';
+import {Button, Card, Form, Input, Label, Message, Table} from 'semantic-ui-react';
 import {useNavigate, useParams} from 'react-router-dom';
 import {API, copy, showError, showInfo, showSuccess, verifyJSON,} from '../../helpers';
 import {CHANNEL_OPTIONS} from '../../constants';
@@ -446,7 +446,7 @@ const EditChannel = () => {
 
   return (
     <div className='dashboard-container'>
-      <Card fluid className='chart-card'>
+      <Card fluid className='page-card'>
         <Card.Content>
           <Card.Header className='header'>
             {isEdit
@@ -660,65 +660,78 @@ const EditChannel = () => {
                 />
               </Form.Field>
             )}
-            {/* 多 Key 动态列表 */}
+            {/* 多 Key 动态列表 —— 紧凑单行编辑器 */}
             {inputs.type !== 33 && inputs.type !== 42 && inputs.multi_key_mode !== 0 && (
               <Form.Field>
-                <label>{t('channel.edit.keys_list', '密钥列表')}</label>
-                <Button type='button' primary size='small' onClick={addKey} style={{ marginBottom: 10 }}>
-                  {t('channel.edit.add_key', '+ 添加密钥')}
-                </Button>
-                <Card.Group>
-                  {inputs.keys.map((k, index) => (
-                    <Card key={index + '_' + k.key_value} fluid>
-                      <Card.Content>
+                <div className='key-editor-header-bar'>
+                  <label>{t('channel.edit.keys_list', '密钥列表')}</label>
+                  <Label size='tiny' className='multi-key-badge'>
+                    {t('channel.edit.key_count', '共')} {inputs.keys.length}
+                  </Label>
+                  <Button type='button' primary size='mini' onClick={addKey}>
+                    {t('channel.edit.add_key', '+ 添加密钥')}
+                  </Button>
+                </div>
+                {inputs.keys.length === 0 && (
+                  <Message size='tiny' style={{ marginTop: 0 }}>
+                    {t('channel.edit.no_key_hint', '暂无密钥，点击「添加密钥」新建')}
+                  </Message>
+                )}
+                {inputs.keys.length > 0 && (
+                  <div className='key-editor-list'>
+                    {inputs.keys.map((k, index) => (
+                      <div className='key-editor-row' key={index + '_' + k.key_value}>
                         <Form.Input
+                          className='key-field-key'
                           label={t('channel.edit.key_value', '密钥')}
                           required
                           value={k.key_value}
                           onChange={(e, { value }) => updateKeyField(index, 'key_value', value)}
                           autoComplete='new-password'
                         />
-                        <Form.Group widths='equal'>
-                          <Form.Input
-                            label={t('channel.edit.key_remark', '备注')}
-                            value={k.remark}
-                            onChange={(e, { value }) => updateKeyField(index, 'remark', value)}
-                          />
-                          <Form.Input
-                            label={t('channel.edit.key_priority', '优先级')}
-                            type='number'
-                            value={k.priority}
-                            onChange={(e, { value }) => updateKeyField(index, 'priority', parseInt(value) || 0)}
-                          />
-                        </Form.Group>
-                        <Form.Group widths='equal'>
-                          <Form.Input
-                            label={t('channel.edit.key_daily_quota', '每日配额(token)')}
-                            type='number'
-                            value={k.daily_quota_limit}
-                            onChange={(e, { value }) => updateKeyField(index, 'daily_quota_limit', parseInt(value) || 0)}
-                          />
-                          <Form.Dropdown
-                            label={t('channel.edit.key_reset_rule', '重置时刻')}
-                            selection
-                            value={k.quota_reset_rule}
-                            onChange={(e, { value }) => updateKeyField(index, 'quota_reset_rule', value)}
-                            options={[
-                              { key: '', text: t('channel.edit.no_reset', '不自动重置'), value: '' },
-                              { key: '00:00', text: '00:00', value: '00:00' },
-                              { key: '06:00', text: '06:00', value: '06:00' },
-                              { key: '12:00', text: '12:00', value: '12:00' },
-                              { key: '18:00', text: '18:00', value: '18:00' },
-                            ]}
-                          />
-                        </Form.Group>
-                        <Button type='button' negative size='mini' onClick={() => removeKey(index)}>
-                          {t('channel.edit.remove_key', '删除')}
-                        </Button>
-                      </Card.Content>
-                    </Card>
-                  ))}
-                </Card.Group>
+                        <Form.Input
+                          label={t('channel.edit.key_remark', '备注')}
+                          value={k.remark}
+                          onChange={(e, { value }) => updateKeyField(index, 'remark', value)}
+                        />
+                        <Form.Input
+                          label={t('channel.edit.key_priority', '优先级')}
+                          type='number'
+                          value={k.priority}
+                          onChange={(e, { value }) => updateKeyField(index, 'priority', parseInt(value) || 0)}
+                        />
+                        <Form.Input
+                          label={t('channel.edit.key_daily_quota', '每日配额(token)')}
+                          type='number'
+                          value={k.daily_quota_limit}
+                          onChange={(e, { value }) => updateKeyField(index, 'daily_quota_limit', parseInt(value) || 0)}
+                        />
+                        <Form.Dropdown
+                          label={t('channel.edit.key_reset_rule', '重置时刻')}
+                          selection
+                          value={k.quota_reset_rule}
+                          onChange={(e, { value }) => updateKeyField(index, 'quota_reset_rule', value)}
+                          options={[
+                            { key: '', text: t('channel.edit.no_reset', '不自动重置'), value: '' },
+                            { key: '00:00', text: '00:00', value: '00:00' },
+                            { key: '06:00', text: '06:00', value: '06:00' },
+                            { key: '12:00', text: '12:00', value: '12:00' },
+                            { key: '18:00', text: '18:00', value: '18:00' },
+                          ]}
+                        />
+                        <Button
+                          className='key-field-delete'
+                          type='button'
+                          negative
+                          size='mini'
+                          icon='trash'
+                          aria-label={t('channel.edit.remove_key', '删除')}
+                          onClick={() => removeKey(index)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </Form.Field>
             )}
             {inputs.type !== 33 &&

@@ -275,9 +275,11 @@ const EditToken = () => {
             </Form.Field>
             <Form.Field>
               <label>{t('token.edit.buttons.quick_expire', '快捷设置')}</label>
-              <Button.Group basic size='small' style={{ flexWrap: 'wrap', gap: '0' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
                 <Button
                   type={'button'}
+                  basic
+                  size='small'
                   onClick={() => {
                     setExpiredTime(0, 0, 0, 0);
                   }}
@@ -286,6 +288,8 @@ const EditToken = () => {
                 </Button>
                 <Button
                   type={'button'}
+                  basic
+                  size='small'
                   onClick={() => {
                     setExpiredTime(1, 0, 0, 0);
                   }}
@@ -294,6 +298,8 @@ const EditToken = () => {
                 </Button>
                 <Button
                   type={'button'}
+                  basic
+                  size='small'
                   onClick={() => {
                     setExpiredTime(0, 1, 0, 0);
                   }}
@@ -302,6 +308,8 @@ const EditToken = () => {
                 </Button>
                 <Button
                   type={'button'}
+                  basic
+                  size='small'
                   onClick={() => {
                     setExpiredTime(0, 0, 1, 0);
                   }}
@@ -310,13 +318,15 @@ const EditToken = () => {
                 </Button>
                 <Button
                   type={'button'}
+                  basic
+                  size='small'
                   onClick={() => {
                     setExpiredTime(0, 0, 0, 1);
                   }}
                 >
                   {t('token.edit.buttons.expire_1_minute')}
                 </Button>
-              </Button.Group>
+              </div>
             </Form.Field>
             <Message>{t('token.edit.quota_notice')}</Message>
             <Form.Field>

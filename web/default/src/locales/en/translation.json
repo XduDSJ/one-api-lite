@@ -185,7 +185,9 @@
       "key_daily_quota": "Daily Quota (tokens)",
       "key_reset_rule": "Reset Time",
       "no_reset": "No auto reset",
-      "remove_key": "Remove"
+      "remove_key": "Remove",
+      "key_count": "Total",
+      "no_key_hint": "No keys yet. Click \"Add Key\" to create one."
     },
     "key_list": {
       "status_enabled": "Enabled",
@@ -256,6 +258,7 @@
       "quota": "Quota",
       "quota_placeholder": "Please enter quota",
       "buttons": {
+        "quick_expire": "Quick Set",
         "never_expire": "Never Expire",
         "expire_1_month": "Expire in 1 Month",
         "expire_1_day": "Expire in 1 Day",

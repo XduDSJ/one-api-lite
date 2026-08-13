@@ -8,7 +8,7 @@ const Token = () => {
 
   return (
     <div className='dashboard-container'>
-      <Card fluid className='chart-card'>
+      <Card fluid className='page-card'>
         <Card.Content>
           <Card.Header className='header'>{t('token.title')}</Card.Header>
           <TokensTable />

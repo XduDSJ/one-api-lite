@@ -35,7 +35,7 @@ const About = () => {
     <>
       {aboutLoaded && about === '' ? (
         <div className='dashboard-container'>
-          <Card fluid className='chart-card'>
+          <Card fluid className='page-card'>
             <Card.Content>
               <Card.Header className='header'>{t('about.title')}</Card.Header>
               <p>{t('about.description')}</p>
@@ -55,7 +55,7 @@ const About = () => {
             />
           ) : (
             <div className='dashboard-container'>
-              <Card fluid className='chart-card'>
+              <Card fluid className='page-card'>
                 <Card.Content>
                   <div
                     style={{ fontSize: 'larger' }}

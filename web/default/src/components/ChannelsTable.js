@@ -583,7 +583,7 @@ const ChannelsTable = () => {
                   <Table.Cell>{renderGroup(channel.group)}</Table.Cell>
                   <Table.Cell>{renderType(channel.type, t)}</Table.Cell>
                   <Table.Cell>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', flexDirection: 'row', gap: 'var(--space-1)', alignItems: 'center', flexWrap: 'wrap' }}>
                       {renderStatus(channel.status, t)}
                       {!!channel.multi_key_mode && channel.multi_key_mode !== 0 && (
                         <Label size='mini' className='multi-key-badge'>

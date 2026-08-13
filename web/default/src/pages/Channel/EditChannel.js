@@ -726,6 +726,7 @@ const EditChannel = () => {
                           size='mini'
                           icon='trash'
                           aria-label={t('channel.edit.remove_key', '删除')}
+                          title={t('channel.edit.remove_key', '删除')}
                           onClick={() => removeKey(index)}
                         />
                       </div>

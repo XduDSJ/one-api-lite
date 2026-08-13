@@ -504,7 +504,7 @@ const ChannelsTable = () => {
         </Message>
       )}
       <div style={{ overflowX: 'auto' }}>
-      <Table basic={'very'} compact size='small'>
+      <Table className='channel-table' basic={'very'} compact size='small'>
         <Table.Header>
           <Table.Row>
             <Table.HeaderCell

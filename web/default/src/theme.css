@@ -183,6 +183,42 @@ a:hover {
 }
 
 /* ============================================================
+   渠道列表表格 — 紧凑化
+   ============================================================ */
+.channel-table.ui.table {
+  font-size: 0.82em !important;
+}
+.channel-table.ui.table th,
+.channel-table.ui.table td {
+  padding: 0.4em 0.5em !important;
+  white-space: nowrap;
+}
+.channel-table .ui.label {
+  font-size: 0.85em !important;
+  padding: 0.3em 0.5em !important;
+  margin: 0 !important;
+}
+.channel-table .ui.mini.button {
+  font-size: 0.85em !important;
+  padding: 0.4em 0.7em !important;
+  margin: 0 !important;
+}
+.channel-table .ui.tiny.button {
+  padding: 0.3em !important;
+  margin: 0 !important;
+}
+.channel-table .ui.selection.dropdown {
+  min-width: 0 !important;
+  padding: 0.3em 0.5em !important;
+  font-size: 0.85em !important;
+}
+.channel-table .ui.input input {
+  padding: 0.3em 0.5em !important;
+  font-size: 0.85em !important;
+  width: 60px !important;
+}
+
+/* ============================================================
    多 Key 紧凑编辑器（渠道编辑页）
    ============================================================ */
 .key-editor-header-bar {

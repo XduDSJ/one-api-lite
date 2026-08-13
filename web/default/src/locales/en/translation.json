@@ -671,6 +671,18 @@
         "buttons": {
           "save": "Save General Settings"
         }
+      },
+      "key": {
+        "title": "Multi-Key Settings",
+        "key_retry": "Enable Key-level Retry",
+        "key_auto_disable": "Auto-disable Key on Auth Failure",
+        "key_cooldown_sec": "Key Cooldown (seconds)",
+        "key_cooldown_sec_placeholder": "Cooldown seconds on 429 rate limit, 0 for global default",
+        "key_failure_threshold": "Key Circuit Breaker Threshold",
+        "key_failure_threshold_placeholder": "Consecutive 5xx failures before tripping breaker, 0 for global default",
+        "buttons": {
+          "save": "Save Multi-Key Settings"
+        }
       }
     },
     "other": {

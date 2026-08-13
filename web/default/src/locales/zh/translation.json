@@ -671,6 +671,18 @@
         "buttons": {
           "save": "保存通用设置"
         }
+      },
+      "key": {
+        "title": "多 Key 配置",
+        "key_retry": "启用 Key 级重试",
+        "key_auto_disable": "鉴权失败自动禁用 Key",
+        "key_cooldown_sec": "Key 冷却秒数",
+        "key_cooldown_sec_placeholder": "429 限流时冷却的秒数，0 用全局默认",
+        "key_failure_threshold": "Key 熔断阈值",
+        "key_failure_threshold_placeholder": "5xx 连续失败次数达到此阈值后熔断，0 用全局默认",
+        "buttons": {
+          "save": "保存多 Key 配置"
+        }
       }
     },
     "other": {

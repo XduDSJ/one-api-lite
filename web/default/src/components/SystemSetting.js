@@ -51,6 +51,11 @@ const SystemSetting = () => {
     AutomaticDisableChannelEnabled: '',
     AutomaticEnableChannelEnabled: '',
     ChannelDisableThreshold: 0,
+    // 多 Key 配置
+    KeyRetryEnabled: '',
+    AutomaticDisableKeyEnabled: '',
+    ChannelKeyCooldownSec: 0,
+    ChannelKeyFailureThreshold: 0,
     // 日志
     LogConsumeEnabled: '',
     // 内容
@@ -546,6 +551,51 @@ const SystemSetting = () => {
           </Form.Group>
           <Form.Button onClick={() => submitOption('ChannelDisableThreshold')}>
             {t('setting.operation.monitor.buttons.save')}
+          </Form.Button>
+
+          <Divider />
+          {/* 5b. 多 Key 配置 */}
+          <Header as='h3'>{t('setting.operation.key.title')}</Header>
+          <Form.Group inline>
+            <Form.Checkbox
+              checked={inputs.KeyRetryEnabled === 'true'}
+              label={t('setting.operation.key.key_retry')}
+              name='KeyRetryEnabled'
+              onChange={handleInputChange}
+            />
+            <Form.Checkbox
+              checked={inputs.AutomaticDisableKeyEnabled === 'true'}
+              label={t('setting.operation.key.key_auto_disable')}
+              name='AutomaticDisableKeyEnabled'
+              onChange={handleInputChange}
+            />
+          </Form.Group>
+          <Form.Group widths='equal'>
+            <Form.Input
+              label={t('setting.operation.key.key_cooldown_sec')}
+              name='ChannelKeyCooldownSec'
+              onChange={handleInputChange}
+              autoComplete='new-password'
+              value={inputs.ChannelKeyCooldownSec}
+              type='number'
+              min='0'
+              placeholder={t('setting.operation.key.key_cooldown_sec_placeholder')}
+            />
+            <Form.Input
+              label={t('setting.operation.key.key_failure_threshold')}
+              name='ChannelKeyFailureThreshold'
+              onChange={handleInputChange}
+              autoComplete='new-password'
+              value={inputs.ChannelKeyFailureThreshold}
+              type='number'
+              min='0'
+              placeholder={t(
+                'setting.operation.key.key_failure_threshold_placeholder'
+              )}
+            />
+          </Form.Group>
+          <Form.Button onClick={() => { submitOption('ChannelKeyCooldownSec'); submitOption('ChannelKeyFailureThreshold'); }}>
+            {t('setting.operation.key.buttons.save')}
           </Form.Button>
 
           <Divider />

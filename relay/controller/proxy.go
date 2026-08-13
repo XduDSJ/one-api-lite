@@ -38,6 +38,9 @@ func RelayProxyHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatus
 		return respErr
 	}
 
+	// proxy 模式无法准确计量 token 数，传 0——IncrChannelKeyUsage 仍会自增
+	// total_requests 和 avg_tokens_per_req，但 daily_used_quota 不增长，
+	// 因此 DailyQuotaLimit 对 proxy 模式的 key 不会触发（已知限制）。
 	reportKeyResult(meta, http.StatusOK, 0, true)
 	return nil
 }

@@ -230,11 +230,11 @@ func reportKeyResult(meta *meta.Meta, statusCode int, tokens int64, success bool
 	switch {
 	case statusCode == 401 || statusCode == 403:
 		// 鉴权错：自动禁用时永久禁用 key（需人工恢复）；
-		// 关闭自动禁用时短冷却 60s 兜底退避，避免坏 key 被无限重选
+		// 关闭自动禁用时用配置的冷却秒数兜底退避，避免坏 key 被无限重选
 		if config.AutomaticDisableKeyEnabled {
 			go model.DisableChannelKey(int64(meta.ChannelKeyId), model.KeyStatusDisabled)
 		} else {
-			go model.CoolDownChannelKey(int64(meta.ChannelKeyId), 60)
+			go model.CoolDownChannelKey(int64(meta.ChannelKeyId), int64(cooldownSec))
 		}
 	case statusCode == 429:
 		// 限流：冷却 × 2

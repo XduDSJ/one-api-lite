@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Button,
@@ -41,6 +41,22 @@ const EditToken = () => {
   const handleInputChange = (e, { name, value }) => {
     setInputs((inputs) => ({ ...inputs, [name]: value }));
   };
+
+  // Merge: ensure every model in inputs.models has a visible Dropdown option,
+  // even if it no longer exists in any channel (stale/orphaned names).
+  // Without this, Semantic UI Dropdown silently hides items not in `options`,
+  // making them impossible to remove — the root cause of "清空保存不生效".
+  const mergedModelOptions = useMemo(() => {
+    const existing = new Set(modelOptions.map((o) => o.value));
+    const extras = (inputs.models || []).filter((m) => !existing.has(m)).map((m) => ({ key: m, text: m, value: m }));
+    return extras.length ? [...modelOptions, ...extras] : modelOptions;
+  }, [modelOptions, inputs.models]);
+
+  const mergedChannelOptions = useMemo(() => {
+    const existing = new Set(channelOptions.map((o) => o.value));
+    const extras = (inputs.channel_ids || []).filter((id) => !existing.has(id)).map((id) => ({ key: id, text: String(id), value: id }));
+    return extras.length ? [...channelOptions, ...extras] : channelOptions;
+  }, [channelOptions, inputs.channel_ids]);
   const handleCancel = () => {
     navigate('/token');
   };
@@ -71,12 +87,12 @@ const EditToken = () => {
         if (data.expired_time !== -1) {
           data.expired_time = timestamp2string(data.expired_time);
         }
-        if (data.models === '') {
+        if (!data.models) {
           data.models = [];
         } else {
           data.models = data.models.split(',');
         }
-        if (data.channel_ids === '' || data.channel_ids == null) {
+        if (!data.channel_ids) {
           data.channel_ids = [];
         } else {
           data.channel_ids = data.channel_ids.split(',').map((id) => parseInt(id));
@@ -150,7 +166,7 @@ const EditToken = () => {
 
   const submit = async () => {
     if (!isEdit && inputs.name === '') return;
-    let localInputs = inputs;
+    let localInputs = { ...inputs, models: [...inputs.models], channel_ids: [...inputs.channel_ids] };
     localInputs.remain_quota = parseInt(localInputs.remain_quota);
     if (localInputs.expired_time !== -1) {
       let time = Date.parse(localInputs.expired_time);
@@ -186,7 +202,7 @@ const EditToken = () => {
 
   return (
     <div className='dashboard-container'>
-      <Card fluid className='chart-card'>
+      <Card fluid className='page-card'>
         <Card.Content>
           <Card.Header className='header'>
             {isEdit ? t('token.edit.title_edit') : t('token.edit.title_create')}
@@ -218,7 +234,7 @@ const EditToken = () => {
                 onChange={handleInputChange}
                 value={inputs.models}
                 autoComplete='new-password'
-                options={modelOptions}
+                options={mergedModelOptions}
               />
             </Form.Field>
             <Form.Field>
@@ -233,7 +249,7 @@ const EditToken = () => {
                 onChange={handleInputChange}
                 value={inputs.channel_ids}
                 autoComplete='new-password'
-                options={channelOptions}
+                options={mergedChannelOptions}
               />
             </Form.Field>
             <Form.Field>
@@ -257,48 +273,51 @@ const EditToken = () => {
                 type='datetime-local'
               />
             </Form.Field>
-            <div style={{ lineHeight: '40px' }}>
-              <Button
-                type={'button'}
-                onClick={() => {
-                  setExpiredTime(0, 0, 0, 0);
-                }}
-              >
-                {t('token.edit.buttons.never_expire')}
-              </Button>
-              <Button
-                type={'button'}
-                onClick={() => {
-                  setExpiredTime(1, 0, 0, 0);
-                }}
-              >
-                {t('token.edit.buttons.expire_1_month')}
-              </Button>
-              <Button
-                type={'button'}
-                onClick={() => {
-                  setExpiredTime(0, 1, 0, 0);
-                }}
-              >
-                {t('token.edit.buttons.expire_1_day')}
-              </Button>
-              <Button
-                type={'button'}
-                onClick={() => {
-                  setExpiredTime(0, 0, 1, 0);
-                }}
-              >
-                {t('token.edit.buttons.expire_1_hour')}
-              </Button>
-              <Button
-                type={'button'}
-                onClick={() => {
-                  setExpiredTime(0, 0, 0, 1);
-                }}
-              >
-                {t('token.edit.buttons.expire_1_minute')}
-              </Button>
-            </div>
+            <Form.Field>
+              <label>{t('token.edit.buttons.quick_expire', '快捷设置')}</label>
+              <Button.Group basic size='small' style={{ flexWrap: 'wrap', gap: '0' }}>
+                <Button
+                  type={'button'}
+                  onClick={() => {
+                    setExpiredTime(0, 0, 0, 0);
+                  }}
+                >
+                  {t('token.edit.buttons.never_expire')}
+                </Button>
+                <Button
+                  type={'button'}
+                  onClick={() => {
+                    setExpiredTime(1, 0, 0, 0);
+                  }}
+                >
+                  {t('token.edit.buttons.expire_1_month')}
+                </Button>
+                <Button
+                  type={'button'}
+                  onClick={() => {
+                    setExpiredTime(0, 1, 0, 0);
+                  }}
+                >
+                  {t('token.edit.buttons.expire_1_day')}
+                </Button>
+                <Button
+                  type={'button'}
+                  onClick={() => {
+                    setExpiredTime(0, 0, 1, 0);
+                  }}
+                >
+                  {t('token.edit.buttons.expire_1_hour')}
+                </Button>
+                <Button
+                  type={'button'}
+                  onClick={() => {
+                    setExpiredTime(0, 0, 0, 1);
+                  }}
+                >
+                  {t('token.edit.buttons.expire_1_minute')}
+                </Button>
+              </Button.Group>
+            </Form.Field>
             <Message>{t('token.edit.quota_notice')}</Message>
             <Form.Field>
               <Form.Input

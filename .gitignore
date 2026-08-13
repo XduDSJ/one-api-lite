@@ -2,9 +2,10 @@
 .vscode
 upload
 *.exe
+*.exe~
 *.db
-build
 *.db-journal
+build
 logs
 data
 /web/node_modules
@@ -15,3 +16,8 @@ temp
 .DS_Store
 .zcode/
 Snipaste_*
+todo.md
+.ai/
+
+# 本地运行时产物统一归入 .local/
+.local/

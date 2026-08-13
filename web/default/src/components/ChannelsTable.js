@@ -41,6 +41,21 @@ function renderType(type, t) {
   );
 }
 
+function renderKeyMode(mode, t) {
+  if (mode && mode !== 0) {
+    return (
+      <Label basic color='purple'>
+        {t('channel.key_list.multi_key', '多Key')}
+      </Label>
+    );
+  }
+  return (
+    <Label basic color='grey'>
+      {t('channel.key_list.single_key', '单Key')}
+    </Label>
+  );
+}
+
 function renderBalance(type, balance, t) {
   switch (type) {
     case 1: // OpenAI
@@ -532,6 +547,9 @@ const ChannelsTable = () => {
             >
               {t('channel.table.status')}
             </Table.HeaderCell>
+            <Table.HeaderCell>
+              {t('channel.table.key_mode', '密钥模式')}
+            </Table.HeaderCell>
             <Table.HeaderCell
               style={{ cursor: 'pointer' }}
               onClick={() => {
@@ -583,14 +601,10 @@ const ChannelsTable = () => {
                   <Table.Cell>{renderGroup(channel.group)}</Table.Cell>
                   <Table.Cell>{renderType(channel.type, t)}</Table.Cell>
                   <Table.Cell>
-                    <div style={{ display: 'flex', flexDirection: 'row', gap: 'var(--space-1)', alignItems: 'center', flexWrap: 'wrap' }}>
-                      {renderStatus(channel.status, t)}
-                      {!!channel.multi_key_mode && channel.multi_key_mode !== 0 && (
-                        <Label size='mini' className='multi-key-badge'>
-                          {t('channel.key_list.multi_key', '多Key')}
-                        </Label>
-                      )}
-                    </div>
+                    {renderStatus(channel.status, t)}
+                  </Table.Cell>
+                  <Table.Cell>
+                    {renderKeyMode(channel.multi_key_mode, t)}
                   </Table.Cell>
                   <Table.Cell>
                     <Popup
@@ -733,7 +747,7 @@ const ChannelsTable = () => {
                 </Table.Row>
                 {expandedChannelId === channel.id && (
                   <Table.Row key={channel.id + '-expand'}>
-                    <Table.Cell colSpan={showDetail ? '11' : '9'} style={{ padding: 'var(--space-4)', backgroundColor: 'var(--color-bg-soft)' }}>
+                    <Table.Cell colSpan={showDetail ? '12' : '10'} style={{ padding: 'var(--space-4)', backgroundColor: 'var(--color-bg-soft)' }}>
                       <ChannelKeyList channelId={channel.id} />
                     </Table.Cell>
                   </Table.Row>
@@ -745,7 +759,7 @@ const ChannelsTable = () => {
 
         <Table.Footer>
           <Table.Row>
-            <Table.HeaderCell colSpan={showDetail ? '11' : '9'} style={{ textAlign: 'right' }}>
+            <Table.HeaderCell colSpan={showDetail ? '12' : '10'} style={{ textAlign: 'right' }}>
               <Pagination
                 activePage={activePage}
                 onPageChange={onPaginationChange}

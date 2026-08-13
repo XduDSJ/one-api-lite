@@ -18,8 +18,8 @@ import (
 	"github.com/songquanpeng/one-api/common/logger"
 	"github.com/songquanpeng/one-api/model"
 	"github.com/songquanpeng/one-api/relay/adaptor/openai"
-	"github.com/songquanpeng/one-api/relay/breaker"
 	billingratio "github.com/songquanpeng/one-api/relay/billing/ratio"
+	"github.com/songquanpeng/one-api/relay/breaker"
 	"github.com/songquanpeng/one-api/relay/channeltype"
 	"github.com/songquanpeng/one-api/relay/controller/validator"
 	"github.com/songquanpeng/one-api/relay/meta"
@@ -126,20 +126,20 @@ func postConsumeQuota(ctx context.Context, usage *relaymodel.Usage, meta *meta.M
 		logger.Error(ctx, "error update user quota cache: "+err.Error())
 	}
 	logContent := fmt.Sprintf("倍率：%.2f × %.2f × %.2f", modelRatio, groupRatio, completionRatio)
-		model.RecordConsumeLog(ctx, &model.Log{
-			UserId:            meta.UserId,
-			ChannelId:         meta.ChannelId,
-			ChannelKeyId:      meta.ChannelKeyId,
-			PromptTokens:      promptTokens,
-			CompletionTokens:  completionTokens,
-			ModelName:         textRequest.Model,
-			TokenName:         meta.TokenName,
-			Quota:             int(quota),
-			Content:           logContent,
-			IsStream:          meta.IsStream,
-			ElapsedTime:       helper.CalcElapsedTime(meta.StartTime),
-			SystemPromptReset: systemPromptReset,
-		})
+	model.RecordConsumeLog(ctx, &model.Log{
+		UserId:            meta.UserId,
+		ChannelId:         meta.ChannelId,
+		ChannelKeyId:      meta.ChannelKeyId,
+		PromptTokens:      promptTokens,
+		CompletionTokens:  completionTokens,
+		ModelName:         textRequest.Model,
+		TokenName:         meta.TokenName,
+		Quota:             int(quota),
+		Content:           logContent,
+		IsStream:          meta.IsStream,
+		ElapsedTime:       helper.CalcElapsedTime(meta.StartTime),
+		SystemPromptReset: systemPromptReset,
+	})
 	model.UpdateUserUsedQuotaAndRequestCount(meta.UserId, quota)
 	model.UpdateChannelUsedQuota(meta.ChannelId, quota)
 }
@@ -205,6 +205,7 @@ func setSystemPrompt(ctx context.Context, request *relaymodel.GeneralOpenAIReque
 // 单 key 兼容模式（ChannelKeyId==0）直接 return，不影响老渠道。
 // 成功：熔断器 RecordSuccess + 异步自增配额（仅成功请求才扣 key 配额，保证计费幂等）；
 // 失败：按状态码分级——401/403 禁用或短冷却兜底、429 冷却×2+MarkExhausted、5xx 熔断计数。
+// 冷却秒数与熔断阈值优先读每渠道配置（meta.KeyCooldownSec/KeyFailureThreshold），0 回退全局默认。
 // 失败时不自增配额（上游拒绝请求通常未消耗 token）。
 // 熔断器统一用 OriginModelName（映射前），与 PickKey→IsOpen 的检查维度一致。
 func reportKeyResult(meta *meta.Meta, statusCode int, tokens int64, success bool) {
@@ -217,7 +218,15 @@ func reportKeyResult(meta *meta.Meta, statusCode int, tokens int64, success bool
 		return
 	}
 	// 失败：按状态码分级
-	cooldownSec := config.ChannelKeyCooldownSec
+	// 每渠道 key 配置优先，0 用全局默认
+	cooldownSec := meta.KeyCooldownSec
+	if cooldownSec == 0 {
+		cooldownSec = config.ChannelKeyCooldownSec
+	}
+	threshold := meta.KeyFailureThreshold
+	if threshold == 0 {
+		threshold = config.ChannelKeyFailureThreshold
+	}
 	switch {
 	case statusCode == 401 || statusCode == 403:
 		// 鉴权错：自动禁用时永久禁用 key（需人工恢复）；
@@ -229,12 +238,11 @@ func reportKeyResult(meta *meta.Meta, statusCode int, tokens int64, success bool
 		}
 	case statusCode == 429:
 		// 限流：冷却 × 2
-		cooldownSec = config.ChannelKeyCooldownSec * 2
+		cooldownSec *= 2
 		go model.CoolDownChannelKey(int64(meta.ChannelKeyId), int64(cooldownSec))
 		go model.MarkChannelKeyExhaustedIfQuota(int64(meta.ChannelKeyId))
 	case statusCode/100 == 5:
 		// 5xx：熔断计数
-		threshold := config.ChannelKeyFailureThreshold
 		breaker.GlobalBreaker.RecordFailure(meta.ChannelId, meta.ChannelKeyId, meta.OriginModelName, threshold, cooldownSec)
 	}
 }

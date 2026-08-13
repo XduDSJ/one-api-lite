@@ -236,6 +236,6 @@ func RelayImageHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatus
 		return respErr
 	}
 
-	reportKeyResult(meta, http.StatusOK, 0, true)
+	reportKeyResult(meta, http.StatusOK, quota, true)
 	return nil
 }

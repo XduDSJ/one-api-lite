@@ -36,6 +36,9 @@ type Meta struct {
 	PromptTokens       int // only for DoResponse
 	ForcedSystemPrompt string
 	StartTime          time.Time
+	// 每渠道 key 配置（0 用全局默认）
+	KeyCooldownSec      int
+	KeyFailureThreshold int
 }
 
 func GetByContext(c *gin.Context) *Meta {
@@ -60,6 +63,8 @@ func GetByContext(c *gin.Context) *Meta {
 	if ok {
 		meta.Config = cfg.(model.ChannelConfig)
 	}
+	meta.KeyCooldownSec = c.GetInt(ctxkey.KeyCooldownSec)
+	meta.KeyFailureThreshold = c.GetInt(ctxkey.KeyFailureThreshold)
 	if meta.BaseURL == "" {
 		meta.BaseURL = channeltype.ChannelBaseURLs[meta.ChannelType]
 	}

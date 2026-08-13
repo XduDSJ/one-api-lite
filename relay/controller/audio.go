@@ -218,7 +218,7 @@ func RelayAudioHelper(c *gin.Context, relayMode int) *relaymodel.ErrorWithStatus
 		return RelayErrorHandler(resp)
 	}
 	succeed = true
-	reportKeyResult(meta, http.StatusOK, 0, true)
+	reportKeyResult(meta, http.StatusOK, quota, true)
 	quotaDelta := quota - preConsumedQuota
 	defer func(ctx context.Context) {
 		go billing.PostConsumeQuota(ctx, tokenId, quotaDelta, quota, userId, channelId, modelRatio, groupRatio, audioModel, tokenName, meta.ChannelKeyId)

@@ -1,13 +1,12 @@
 import React from 'react';
-import { Message } from 'semantic-ui-react';
+import { Link } from 'react-router-dom';
 
 const NotFound = () => (
-  <>
-    <Message negative>
-      <Message.Header>页面不存在</Message.Header>
-      <p>请检查你的浏览器地址是否正确</p>
-    </Message>
-  </>
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 16 }}>
+    <div style={{ fontSize: 64, fontWeight: 800, color: '#FFFFFF' }}>404</div>
+    <div style={{ fontSize: 16, color: '#A1A1AA' }}>页面不存在</div>
+    <Link to='/' className='aurora-btn aurora-btn-primary' style={{ marginTop: 8 }}>返回首页</Link>
+  </div>
 );
 
 export default NotFound;

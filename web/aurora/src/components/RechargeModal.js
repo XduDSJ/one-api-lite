@@ -1,217 +1,92 @@
 import React, { useState } from 'react';
-import { Modal, Button, Form, Label, Segment, Header } from 'semantic-ui-react';
-import { API, showError, showSuccess } from '../helpers';
 import { useTranslation } from 'react-i18next';
+import { API, showError, showSuccess } from '../helpers';
 import { renderQuota, renderNumber } from '../helpers/render';
 
-const RechargeModal = ({ open, onClose, user, onSuccess }) => {
+const RechargeModal = ({ user, onClose, onSuccess }) => {
   const { t } = useTranslation();
-  const [addAmount, setAddAmount] = useState('');
+  const [amount, setAmount] = useState('');
   const [remark, setRemark] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const displayInCurrency =
-    localStorage.getItem('display_in_currency') === 'true';
+  const displayInCurrency = localStorage.getItem('display_in_currency') === 'true';
   const quotaPerUnit = parseFloat(localStorage.getItem('quota_per_unit') || '1');
-
-  // 快捷金额：货币模式用美元，原始模式用 quota 数值
-  const quickAmounts = displayInCurrency
-    ? [100, 500, 1000, 5000]
-    : [1000000, 5000000, 10000000, 50000000];
-
-  const parsedAmount = parseFloat(addAmount) || 0;
-  const addQuota = displayInCurrency
-    ? Math.round(parsedAmount * quotaPerUnit)
-    : Math.round(parsedAmount);
-  const currentQuota = user ? user.quota : 0;
-  const newQuota = currentQuota + addQuota;
-
-  const handleQuickAdd = (amount) => {
-    setAddAmount(String(amount));
-  };
-
-  const handleClose = () => {
-    setAddAmount('');
-    setRemark('');
-    onClose();
-  };
+  const parsed = parseFloat(amount) || 0;
+  const addQuota = displayInCurrency ? Math.round(parsed * quotaPerUnit) : Math.round(parsed);
+  const newQuota = (user?.quota || 0) + addQuota;
+  const quickAmounts = displayInCurrency ? [100, 500, 1000, 5000] : [1000000, 5000000, 10000000, 50000000];
 
   const handleSubmit = async () => {
-    if (!addAmount || parsedAmount <= 0) {
-      showError(t('user.recharge.messages.amount_invalid'));
-      return;
-    }
+    if (!amount || parsed <= 0) { showError('请输入有效金额'); return; }
     setSubmitting(true);
     try {
-      // 先获取用户完整数据，避免 PUT 覆写时丢失其他字段
       const res = await API.get(`/api/user/${user.id}`);
       const { success, data, message } = res.data;
-      if (!success) {
-        showError(message);
-        setSubmitting(false);
-        return;
-      }
-      // 计算新额度 = 当前额度 + 增加量
-      const calculatedNewQuota = data.quota + addQuota;
-      // 覆写式更新 quota
-      const updateRes = await API.put('/api/user/', {
-        ...data,
-        quota: calculatedNewQuota,
-      });
-      const {
-        success: updateSuccess,
-        message: updateMessage,
-      } = updateRes.data;
-      if (updateSuccess) {
-        showSuccess(t('user.recharge.messages.success'));
-        if (onSuccess) onSuccess(user.id, calculatedNewQuota);
-        handleClose();
-      } else {
-        showError(updateMessage);
-      }
-    } catch (error) {
-      showError(error.message || String(error));
-    }
+      if (!success) { showError(message); setSubmitting(false); return; }
+      const calculated = data.quota + addQuota;
+      const updateRes = await API.put('/api/user/', { ...data, quota: calculated });
+      if (updateRes.data.success) {
+        showSuccess(t('user.recharge.messages.success', '充值成功'));
+        if (onSuccess) onSuccess(user.id, calculated);
+        onClose();
+      } else showError(updateRes.data.message);
+    } catch (e) { showError(e.message); }
     setSubmitting(false);
   };
 
   if (!user) return null;
 
+  const inputStyle = { width: '100%', height: 44, background: '#0D0D12', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: '#FFFFFF', fontSize: 13, padding: '0 14px' };
+
   return (
-    <Modal open={open} onClose={handleClose} size='small' className='aurora-recharge-modal'>
-      <Header className='aurora-modal-header'>{t('user.recharge.title')}</Header>
-      <Modal.Content>
-        <Form>
-          {/* 用户信息 */}
-          <Segment secondary>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                marginBottom: '4px',
-              }}
-            >
-              <span>
-                <strong>{t('user.recharge.user')}:</strong> {user.username}
-                {user.display_name ? ` (${user.display_name})` : ''}
-              </span>
-              <span>
-                <strong>{t('user.recharge.current_quota')}:</strong>{' '}
-                {renderQuota(user.quota, t)}
-              </span>
-            </div>
-          </Segment>
-
-          {/* 充值金额输入 */}
-          <Form.Input
-            label={
-              displayInCurrency
-                ? t('user.recharge.amount_label_currency')
-                : t('user.recharge.amount_label_raw')
-            }
-            placeholder={
-              displayInCurrency
-                ? t('user.recharge.amount_placeholder_currency')
-                : t('user.recharge.amount_placeholder_raw')
-            }
-            value={addAmount}
-            onChange={(e, { value }) => setAddAmount(value)}
-            type='number'
-            min='0'
-          />
-
-          {/* 快捷金额按钮 */}
-          <div style={{ marginBottom: '16px' }}>
-            <label
-              style={{ marginBottom: '8px', display: 'block', fontWeight: 'bold' }}
-            >
-              {t('user.recharge.quick_add')}
-            </label>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {quickAmounts.map((amount) => (
-                <Button
-                  key={amount}
-                  size='small'
-                  basic
-                  onClick={() => handleQuickAdd(amount)}
-                >
-                  {displayInCurrency
-                    ? `+$${amount}`
-                    : `+${renderNumber(amount)}`}
-                </Button>
+    <div className='aurora-modal-overlay' onClick={onClose}>
+      <div className='aurora-modal' style={{ width: 480 }} onClick={(e) => e.stopPropagation()}>
+        <div className='aurora-modal-header'>
+          <span className='aurora-modal-title'>{t('user.recharge.title', '用户充值')}</span>
+          <button className='aurora-modal-close' onClick={onClose}>✕</button>
+        </div>
+        <div className='aurora-modal-body' style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 16, display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: '#A1A1AA', fontSize: 13 }}>用户: <strong style={{ color: '#FFFFFF' }}>{user.username}</strong></span>
+            <span style={{ color: '#A1A1AA', fontSize: 13 }}>当前额度: <strong style={{ color: '#FFFFFF' }}>{renderQuota(user.quota, t)}</strong></span>
+          </div>
+          <div>
+            <label style={{ fontSize: 13, color: '#A1A1AA', marginBottom: 8, display: 'block' }}>{displayInCurrency ? '充值金额 ($)' : '充值额度'}</label>
+            <input type='number' min='0' value={amount} onChange={(e) => setAmount(e.target.value)} placeholder='输入金额' style={inputStyle} />
+          </div>
+          <div>
+            <label style={{ fontSize: 13, color: '#A1A1AA', marginBottom: 8, display: 'block' }}>快捷金额</label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {quickAmounts.map((a) => (
+                <button key={a} className='aurora-btn aurora-btn-ghost aurora-btn-sm' onClick={() => setAmount(String(a))}>
+                  {displayInCurrency ? `+$${a}` : `+${renderNumber(a)}`}
+                </button>
               ))}
             </div>
           </div>
-
-          {/* 实时预览 */}
-          {addAmount && parsedAmount > 0 && (
-            <Segment>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <span style={{ fontWeight: 'bold' }}>
-                  {t('user.recharge.preview')}
-                </span>
-                <span>
-                  <Label basic>{renderQuota(currentQuota, t)}</Label>
-                  <span style={{ margin: '0 8px' }}>+</span>
-                  <Label basic color='green'>
-                    {renderQuota(addQuota, t)}
-                  </Label>
-                  <span style={{ margin: '0 8px' }}>=</span>
-                  <Label basic color='blue'>
-                    {renderQuota(newQuota, t)}
-                  </Label>
-                </span>
-              </div>
-              {displayInCurrency && (
-                <div
-                  style={{ marginTop: '8px', color: 'var(--aurora-text-muted)', fontSize: '12px' }}
-                >
-                  {t('user.recharge.raw_quota_hint', {
-                    count: renderNumber(addQuota),
-                  })}
-                </div>
-              )}
-              {!displayInCurrency && quotaPerUnit > 0 && (
-                <div
-                  style={{ marginTop: '8px', color: 'var(--aurora-text-muted)', fontSize: '12px' }}
-                >
-                  {t('user.recharge.equivalent', {
-                    amount: (addQuota / quotaPerUnit).toFixed(2),
-                  })}
-                </div>
-              )}
-            </Segment>
+          {amount && parsed > 0 && (
+            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+              <span className='aurora-badge aurora-badge-gray'>{renderQuota(user.quota, t)}</span>
+              <span style={{ color: '#A1A1AA' }}>+</span>
+              <span className='aurora-badge aurora-badge-cyan'>{renderQuota(addQuota, t)}</span>
+              <span style={{ color: '#A1A1AA' }}>=</span>
+              <span className='aurora-badge aurora-badge-gold'>{renderQuota(newQuota, t)}</span>
+            </div>
           )}
-
-          {/* 备注 */}
-          <Form.Input
-            label={t('user.recharge.remark_label')}
-            placeholder={t('user.recharge.remark_placeholder')}
-            value={remark}
-            onChange={(e, { value }) => setRemark(value)}
-          />
-        </Form>
-      </Modal.Content>
-      <Modal.Actions>
-        <Button onClick={handleClose} disabled={submitting}>
-          {t('user.recharge.buttons.cancel')}
-        </Button>
-        <Button
-          positive
-          onClick={handleSubmit}
-          loading={submitting}
-          disabled={!addAmount || parsedAmount <= 0}
-        >
-          {t('user.recharge.buttons.confirm')}
-        </Button>
-      </Modal.Actions>
-    </Modal>
+          <div>
+            <label style={{ fontSize: 13, color: '#A1A1AA', marginBottom: 8, display: 'block' }}>备注</label>
+            <input value={remark} onChange={(e) => setRemark(e.target.value)} placeholder='可选备注' style={inputStyle} />
+          </div>
+        </div>
+        <div className='aurora-modal-footer'>
+          <span style={{ fontSize: 12, color: '#52525B' }}>修改后需重新确认用户额度</span>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button className='aurora-btn aurora-btn-ghost' onClick={onClose} disabled={submitting}>取消</button>
+            <button className='aurora-btn aurora-btn-primary' onClick={handleSubmit} disabled={submitting || !amount || parsed <= 0}>{submitting ? '处理中…' : '确认充值'}</button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

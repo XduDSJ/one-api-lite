@@ -1,4 +1,3 @@
-import { Label, Message } from 'semantic-ui-react';
 import { getChannelOption } from './helper';
 import React from 'react';
 
@@ -10,112 +9,56 @@ export function renderText(text, limit) {
 }
 
 export function renderGroup(group) {
-  if (group === '') {
-    return <Label>default</Label>;
-  }
-  let groups = group.split(',');
+  if (!group) return <span style={{ fontSize: 12, color: '#A1A1AA' }}>default</span>;
+  const groups = group.split(',');
   groups.sort();
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '2px',
-        rowGap: '6px',
-      }}
-    >
-      {groups.map((group) => {
-        if (group === 'vip' || group === 'pro') {
-          return <Label color='yellow'>{group}</Label>;
-        } else if (group === 'svip' || group === 'premium') {
-          return <Label color='red'>{group}</Label>;
-        }
-        return <Label>{group}</Label>;
+    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+      {groups.map((g) => {
+        const color = (g === 'vip' || g === 'pro') ? '#B86F05' : (g === 'svip' || g === 'premium') ? '#EF4444' : '#A1A1AA';
+        return <span key={g} style={{ display: 'inline-flex', alignItems: 'center', height: 20, padding: '0 8px', borderRadius: 4, fontSize: 11, fontWeight: 500, background: `${color}22`, color }}>{g}</span>;
       })}
     </div>
   );
 }
 
 export function renderNumber(num) {
-  if (num >= 1000000000) {
-    return (num / 1000000000).toFixed(1) + 'B';
-  } else if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + 'M';
-  } else if (num >= 10000) {
-    return (num / 1000).toFixed(1) + 'k';
-  } else {
-    return num;
-  }
+  if (num >= 1000000000) return (num / 1000000000).toFixed(1) + 'B';
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+  if (num >= 10000) return (num / 1000).toFixed(1) + 'k';
+  return num;
 }
 
 export function renderQuota(quota, t, precision = 2) {
-  const displayInCurrency =
-    localStorage.getItem('display_in_currency') === 'true';
-  const quotaPerUnit = parseFloat(
-    localStorage.getItem('quota_per_unit') || '1'
-  );
-
+  const displayInCurrency = localStorage.getItem('display_in_currency') === 'true';
+  const quotaPerUnit = parseFloat(localStorage.getItem('quota_per_unit') || '1');
   if (displayInCurrency) {
     const amount = (quota / quotaPerUnit).toFixed(precision);
-    return t('common.quota.display_short', { amount });
+    return `$${amount}`;
   }
-
   return renderNumber(quota);
 }
 
 export function renderQuotaWithPrompt(quota, t) {
-  const displayInCurrency =
-    localStorage.getItem('display_in_currency') === 'true';
-  const quotaPerUnit = parseFloat(
-    localStorage.getItem('quota_per_unit') || '1'
-  );
-
+  const displayInCurrency = localStorage.getItem('display_in_currency') === 'true';
+  const quotaPerUnit = parseFloat(localStorage.getItem('quota_per_unit') || '1');
   if (displayInCurrency) {
     const amount = (quota / quotaPerUnit).toFixed(2);
-    return ` (${t('common.quota.display', { amount })})`;
+    return ` ($${amount})`;
   }
-
   return '';
 }
 
-const colors = [
-  'red',
-  'orange',
-  'yellow',
-  'olive',
-  'green',
-  'teal',
-  'blue',
-  'violet',
-  'purple',
-  'pink',
-  'brown',
-  'grey',
-  'black',
-];
-
 export function renderColorLabel(text) {
+  const colors = ['#EF4444', '#B86F05', '#2DD4BF', '#9F7AEA', '#60A5FA', '#A1A1AA'];
   let hash = 0;
-  for (let i = 0; i < text.length; i++) {
-    hash = text.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  let index = Math.abs(hash % colors.length);
-  return (
-    <Label basic color={colors[index]}>
-      {text}
-    </Label>
-  );
+  for (let i = 0; i < text.length; i++) hash = text.charCodeAt(i) + ((hash << 5) - hash);
+  const color = colors[Math.abs(hash % colors.length)];
+  return <span style={{ display: 'inline-flex', alignItems: 'center', height: 20, padding: '0 8px', borderRadius: 4, fontSize: 11, fontWeight: 500, background: `${color}22`, color }}>{text}</span>;
 }
 
 export function renderChannelTip(channelId) {
-  let channel = getChannelOption(channelId);
-  if (channel === undefined || channel.tip === undefined) {
-    return <></>;
-  }
-  return (
-    <Message>
-      <div dangerouslySetInnerHTML={{ __html: channel.tip }}></div>
-    </Message>
-  );
+  const channel = getChannelOption(channelId);
+  if (!channel || !channel.tip) return null;
+  return <div style={{ padding: 12, background: 'rgba(255,255,255,0.03)', borderRadius: 8, fontSize: 13, color: '#A1A1AA' }} dangerouslySetInnerHTML={{ __html: channel.tip }} />;
 }

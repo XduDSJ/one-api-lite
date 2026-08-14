@@ -1,588 +1,126 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Button,
-  Dropdown,
-  Form,
-  Label,
-  Pagination,
-  Popup,
-  Table,
-} from 'semantic-ui-react';
 import { Link } from 'react-router-dom';
-import {
-  API,
-  copy,
-  showError,
-  showSuccess,
-  showWarning,
-  timestamp2string,
-} from '../helpers';
-
+import { API, showError, showSuccess, copy } from '../helpers';
 import { ITEMS_PER_PAGE } from '../constants';
-import { renderQuota } from '../helpers/render';
-
-function renderTimestamp(timestamp) {
-  return <>{timestamp2string(timestamp)}</>;
-}
-
-function renderStatus(status, t) {
-  switch (status) {
-    case 1:
-      return (
-        <Label basic color='green'>
-          {t('token.table.status_enabled')}
-        </Label>
-      );
-    case 2:
-      return (
-        <Label basic color='red'>
-          {t('token.table.status_disabled')}
-        </Label>
-      );
-    case 3:
-      return (
-        <Label basic color='yellow'>
-          {t('token.table.status_expired')}
-        </Label>
-      );
-    case 4:
-      return (
-        <Label basic color='grey'>
-          {t('token.table.status_depleted')}
-        </Label>
-      );
-    default:
-      return (
-        <Label basic color='black'>
-          {t('token.table.status_unknown')}
-        </Label>
-      );
-  }
-}
+import { renderQuota, renderNumber } from '../helpers/render';
 
 const TokensTable = () => {
   const { t } = useTranslation();
-
-  const COPY_OPTIONS = [
-    { key: 'raw', text: t('token.copy_options.raw'), value: '' },
-    { key: 'next', text: t('token.copy_options.next'), value: 'next' },
-    { key: 'ama', text: t('token.copy_options.ama'), value: 'ama' },
-    { key: 'opencat', text: t('token.copy_options.opencat'), value: 'opencat' },
-    { key: 'lobe', text: t('token.copy_options.lobe'), value: 'lobechat' },
-  ];
-
-  const OPEN_LINK_OPTIONS = [
-    { key: 'next', text: t('token.copy_options.next'), value: 'next' },
-    { key: 'ama', text: t('token.copy_options.ama'), value: 'ama' },
-    { key: 'opencat', text: t('token.copy_options.opencat'), value: 'opencat' },
-    { key: 'lobe', text: t('token.copy_options.lobe'), value: 'lobechat' },
-  ];
-
   const [tokens, setTokens] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activePage, setActivePage] = useState(1);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searching, setSearching] = useState(false);
-  const [targetTokenIdx, setTargetTokenIdx] = useState(0);
-  const [orderBy, setOrderBy] = useState('');
 
-  const loadTokens = async (startIdx) => {
-    const res = await API.get(`/api/token/?p=${startIdx}&order=${orderBy}`);
-    const { success, message, data } = res.data;
-    if (success) {
-      if (startIdx === 0) {
-        setTokens(data);
-      } else {
-        let newTokens = [...tokens];
-        newTokens.splice(startIdx * ITEMS_PER_PAGE, data.length, ...data);
-        setTokens(newTokens);
-      }
-    } else {
-      showError(message);
-    }
-    setLoading(false);
-  };
+  useEffect(() => { loadTokens(); }, []);
 
-  const onPaginationChange = (e, { activePage }) => {
-    (async () => {
-      if (activePage === Math.ceil(tokens.length / ITEMS_PER_PAGE) + 1) {
-        // In this case we have to load more data and then append them.
-        await loadTokens(activePage - 1, orderBy);
-      }
-      setActivePage(activePage);
-    })();
-  };
-
-  const refresh = async () => {
+  const loadTokens = async () => {
     setLoading(true);
-    await loadTokens(activePage - 1);
-  };
-
-  const onCopy = async (type, key) => {
-    let status = localStorage.getItem('status');
-    let serverAddress = '';
-    if (status) {
-      status = JSON.parse(status);
-      serverAddress = status.server_address;
-    }
-    if (serverAddress === '') {
-      serverAddress = window.location.origin;
-    }
-    let encodedServerAddress = encodeURIComponent(serverAddress);
-    const nextLink = localStorage.getItem('chat_link');
-    let nextUrl;
-
-    if (nextLink) {
-      nextUrl =
-        nextLink + `/#/?settings={"key":"sk-${key}","url":"${serverAddress}"}`;
-    } else {
-      nextUrl = `https://app.nextchat.dev/#/?settings={"key":"sk-${key}","url":"${serverAddress}"}`;
-    }
-
-    let url;
-    switch (type) {
-      case 'ama':
-        url = `ama://set-api-key?server=${encodedServerAddress}&key=sk-${key}`;
-        break;
-      case 'opencat':
-        url = `opencat://team/join?domain=${encodedServerAddress}&token=sk-${key}`;
-        break;
-      case 'next':
-        url = nextUrl;
-        break;
-      case 'lobechat':
-        url =
-          nextLink +
-          `/?settings={"keyVaults":{"openai":{"apiKey":"sk-${key}","baseURL":"${serverAddress}/v1"}}}`;
-        break;
-      default:
-        url = `sk-${key}`;
-    }
-    if (await copy(url)) {
-      showSuccess(t('token.messages.copy_success'));
-    } else {
-      showWarning(t('token.messages.copy_failed'));
-      setSearchKeyword(url);
-    }
-  };
-
-  const onOpenLink = async (type, key) => {
-    let status = localStorage.getItem('status');
-    let serverAddress = '';
-    if (status) {
-      status = JSON.parse(status);
-      serverAddress = status.server_address;
-    }
-    if (serverAddress === '') {
-      serverAddress = window.location.origin;
-    }
-    let encodedServerAddress = encodeURIComponent(serverAddress);
-    const chatLink = localStorage.getItem('chat_link');
-    let defaultUrl;
-
-    if (chatLink) {
-      defaultUrl =
-        chatLink + `/#/?settings={"key":"sk-${key}","url":"${serverAddress}"}`;
-    } else {
-      defaultUrl = `https://app.nextchat.dev/#/?settings={"key":"sk-${key}","url":"${serverAddress}"}`;
-    }
-    let url;
-    switch (type) {
-      case 'ama':
-        url = `ama://set-api-key?server=${encodedServerAddress}&key=sk-${key}`;
-        break;
-
-      case 'opencat':
-        url = `opencat://team/join?domain=${encodedServerAddress}&token=sk-${key}`;
-        break;
-
-      case 'lobechat':
-        url =
-          chatLink +
-          `/?settings={"keyVaults":{"openai":{"apiKey":"sk-${key}","baseURL":"${serverAddress}/v1"}}}`;
-        break;
-
-      default:
-        url = defaultUrl;
-    }
-
-    window.open(url, '_blank');
-  };
-
-  useEffect(() => {
-    loadTokens(0, orderBy)
-      .then()
-      .catch((reason) => {
-        showError(reason);
-      });
-  }, [orderBy]);
-
-  const manageToken = async (id, action, idx) => {
-    let data = { id };
-    let res;
-    switch (action) {
-      case 'delete':
-        res = await API.delete(`/api/token/${id}/`);
-        break;
-      case 'enable':
-        data.status = 1;
-        res = await API.put('/api/token/?status_only=true', data);
-        break;
-      case 'disable':
-        data.status = 2;
-        res = await API.put('/api/token/?status_only=true', data);
-        break;
-    }
-    const { success, message } = res.data;
-    if (success) {
-      showSuccess(t('token.messages.operation_success'));
-      let token = res.data.data;
-      let newTokens = [...tokens];
-      let realIdx = (activePage - 1) * ITEMS_PER_PAGE + idx;
-      if (action === 'delete') {
-        newTokens[realIdx].deleted = true;
-      } else {
-        newTokens[realIdx].status = token.status;
-      }
-      setTokens(newTokens);
-    } else {
-      showError(message);
-    }
+    try {
+      const res = await API.get('/api/token/?p=0');
+      if (res.data.success) setTokens(res.data.data);
+    } catch (e) { showError(e); }
+    setLoading(false);
   };
 
   const searchTokens = async () => {
-    if (searchKeyword === '') {
-      // if keyword is blank, load files instead.
-      await loadTokens(0);
-      setActivePage(1);
-      setOrderBy('');
-      return;
-    }
+    if (!searchKeyword) { loadTokens(); return; }
     setSearching(true);
-    const res = await API.get(`/api/token/search?keyword=${searchKeyword}`);
-    const { success, message, data } = res.data;
-    if (success) {
-      setTokens(data);
-      setActivePage(1);
-    } else {
-      showError(message);
-    }
+    try {
+      const res = await API.get(`/api/token/search?keyword=${searchKeyword}`);
+      if (res.data.success) setTokens(res.data.data);
+    } catch (e) { showError(e); }
     setSearching(false);
   };
 
-  const handleKeywordChange = async (e, { value }) => {
-    setSearchKeyword(value.trim());
-  };
-
-  const sortToken = (key) => {
-    if (tokens.length === 0) return;
-    setLoading(true);
-    let sortedTokens = [...tokens];
-    sortedTokens.sort((a, b) => {
-      if (!isNaN(a[key])) {
-        // If the value is numeric, subtract to sort
-        return a[key] - b[key];
-      } else {
-        // If the value is not numeric, sort as strings
-        return ('' + a[key]).localeCompare(b[key]);
-      }
-    });
-    if (sortedTokens[0].id === tokens[0].id) {
-      sortedTokens.reverse();
+  const manageToken = async (id, action, idx) => {
+    let res;
+    if (action === 'delete') {
+      res = await API.delete(`/api/token/${id}`);
+    } else {
+      res = await API.put('/api/token/', { id, status: action === 'enable' ? 1 : 2 });
     }
-    setTokens(sortedTokens);
-    setLoading(false);
+    if (res.data.success) {
+      showSuccess(t('token.messages.operation_success', '操作成功'));
+      const newTokens = [...tokens];
+      newTokens[idx].status = action === 'enable' ? 1 : action === 'disable' ? 2 : newTokens[idx].status;
+      if (action === 'delete') newTokens[idx].deleted = true;
+      setTokens(newTokens);
+    } else showError(res.data.message);
   };
 
-  const handleOrderByChange = (e, { value }) => {
-    setOrderBy(value);
-    setActivePage(1);
-  };
+  const totalPages = Math.ceil(tokens.length / ITEMS_PER_PAGE) || 1;
+  const pageTokens = tokens.slice((activePage - 1) * ITEMS_PER_PAGE, activePage * ITEMS_PER_PAGE);
+  const enabledCount = tokens.filter((tk) => tk.status === 1).length;
 
   return (
-    <>
-      {/* 顶部工具栏：搜索 + 排序 + 添加按钮（设计稿布局） */}
-      <div className='aurora-channel-toolbar'>
-        <div className='aurora-channel-toolbar__left'>
-          <Form onSubmit={searchTokens} style={{ margin: 0, flex: 1, maxWidth: 320 }}>
-            <Form.Input
-              icon='search'
-              fluid
-              iconPosition='left'
-              placeholder={t('token.search')}
-              value={searchKeyword}
-              loading={searching}
-              onChange={handleKeywordChange}
-            />
-          </Form>
-          <Dropdown
-            selection
-            compact
-            value={orderBy}
-            onChange={handleOrderByChange}
-            options={[
-              { key: 'default', value: '', text: t('token.sort.placeholder', '排序方式') },
-              { key: 'remain', value: 'remain_quota', text: t('token.sort.by_remain', '按剩余额度排序') },
-              { key: 'used', value: 'used_quota', text: t('token.sort.by_used', '按已用额度排序') },
-            ]}
-            style={{ minWidth: 180 }}
-          />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className='aurora-toolbar'>
+        <div className='aurora-toolbar-left'>
+          <input className='aurora-input' style={{ maxWidth: 320 }} placeholder={t('token.search', '搜索令牌名称…')} value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') searchTokens(); }} />
         </div>
-        <div className='aurora-channel-toolbar__right'>
-          <Button
-            size='small'
-            as={Link}
-            to='/token/add'
-            className='aurora-btn-primary'
-            style={{
-              background: 'var(--aurora-accent)',
-              color: '#fff',
-              borderColor: 'var(--aurora-accent)',
-            }}
-            loading={loading}
-          >
-            + {t('token.buttons.add')}
-          </Button>
+        <div className='aurora-toolbar-right'>
+          <Link to='/token/add' className='aurora-btn aurora-btn-primary aurora-btn-sm'>+ {t('token.buttons.add', '添加令牌')}</Link>
         </div>
       </div>
 
-      {/* 状态条：汇总统计 */}
       <div className='aurora-status-bar'>
-        <span>
-          {t('token.status_bar.summary', {
-            total: tokens.length,
-            enabled: tokens.filter((tk) => tk.status === 1).length,
-          })}
-        </span>
-        <span>{t('token.status_bar.tip')}</span>
+        <span>{t('token.status_bar.summary', { total: tokens.length, enabled: enabledCount, defaultValue: `共 ${tokens.length} 个令牌 · ${enabledCount} 个启用` })}</span>
+        <span>{t('token.status_bar.tip', { defaultValue: '最后更新: 刚刚' })}</span>
       </div>
 
-      <div className='aurora-channel-table-card' style={{ padding: 0 }}>
-      <Table basic={'very'} compact size='small' className='aurora-inset-table'>
-        <Table.Header>
-          <Table.Row>
-            <Table.HeaderCell
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                sortToken('name');
-              }}
-            >
-              {t('token.table.name')}
-            </Table.HeaderCell>
-            <Table.HeaderCell
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                sortToken('status');
-              }}
-            >
-              {t('token.table.status')}
-            </Table.HeaderCell>
-            <Table.HeaderCell
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                sortToken('used_quota');
-              }}
-            >
-              {t('token.table.used_quota')}
-            </Table.HeaderCell>
-            <Table.HeaderCell
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                sortToken('remain_quota');
-              }}
-            >
-              {t('token.table.remain_quota')}
-            </Table.HeaderCell>
-            <Table.HeaderCell
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                sortToken('created_time');
-              }}
-            >
-              {t('token.table.created_time')}
-            </Table.HeaderCell>
-            <Table.HeaderCell
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                sortToken('expired_time');
-              }}
-            >
-              {t('token.table.expired_time')}
-            </Table.HeaderCell>
-            <Table.HeaderCell>{t('token.table.actions')}</Table.HeaderCell>
-          </Table.Row>
-        </Table.Header>
-
-        <Table.Body>
-          {tokens
-            .slice(
-              (activePage - 1) * ITEMS_PER_PAGE,
-              activePage * ITEMS_PER_PAGE
-            )
-            .map((token, idx) => {
-              if (token.deleted) return <></>;
-
-              const copyOptionsWithHandlers = COPY_OPTIONS.map((option) => ({
-                ...option,
-                onClick: async () => {
-                  await onCopy(option.value, token.key);
-                },
-              }));
-
-              const openLinkOptionsWithHandlers = OPEN_LINK_OPTIONS.map(
-                (option) => ({
-                  ...option,
-                  onClick: async () => {
-                    await onOpenLink(option.value, token.key);
-                  },
-                })
-              );
-
-              return (
-                <Table.Row key={token.id}>
-                  <Table.Cell>
-                    {token.name ? token.name : t('token.table.no_name')}
-                  </Table.Cell>
-                  <Table.Cell>{renderStatus(token.status, t)}</Table.Cell>
-                  <Table.Cell>{renderQuota(token.used_quota, t)}</Table.Cell>
-                  <Table.Cell>
-                    {token.unlimited_quota
-                      ? t('token.table.unlimited')
-                      : renderQuota(token.remain_quota, t, 2)}
-                  </Table.Cell>
-                  <Table.Cell>{renderTimestamp(token.created_time)}</Table.Cell>
-                  <Table.Cell>
-                    {token.expired_time === -1
-                      ? t('token.table.never_expire')
-                      : renderTimestamp(token.expired_time)}
-                  </Table.Cell>
-                  <Table.Cell>
-                    <div>
-                      <Button.Group color='green' size={'tiny'}>
-                        <Button
-                          size={'tiny'}
-                          positive
-                          onClick={async () => await onCopy('', token.key)}
-                        >
-                          {t('token.buttons.copy')}
-                        </Button>
-                        <Dropdown
-                          className='button icon'
-                          floating
-                          options={copyOptionsWithHandlers}
-                          trigger={<></>}
-                        />
-                      </Button.Group>{' '}
-                      <Button.Group color='olive' size={'tiny'}>
-                        <Button
-                          size={'tiny'}
-                          positive
-                          onClick={() => onOpenLink('', token.key)}
-                        >
-                          {t('token.buttons.chat')}
-                        </Button>
-                        <Dropdown
-                          className='button icon'
-                          floating
-                          options={openLinkOptionsWithHandlers}
-                          trigger={<></>}
-                        />
-                      </Button.Group>{' '}
-                      <Popup
-                        trigger={
-                          <Button size='mini' negative>
-                            {t('token.buttons.delete')}
-                          </Button>
-                        }
-                        on='click'
-                        flowing
-                        hoverable
-                      >
-                        <Button
-                          size={'tiny'}
-                          negative
-                          onClick={() => {
-                            manageToken(token.id, 'delete', idx);
-                          }}
-                        >
-                          {t('token.buttons.confirm_delete')} {token.name}
-                        </Button>
-                      </Popup>
-                      <Button
-                        size={'tiny'}
-                        onClick={() => {
-                          manageToken(
-                            token.id,
-                            token.status === 1 ? 'disable' : 'enable',
-                            idx
-                          );
-                        }}
-                      >
-                        {token.status === 1
-                          ? t('token.buttons.disable')
-                          : t('token.buttons.enable')}
-                      </Button>
-                      <Button
-                        size={'tiny'}
-                        as={Link}
-                        to={'/token/edit/' + token.id}
-                      >
-                        {t('token.buttons.edit')}
-                      </Button>
-                    </div>
-                  </Table.Cell>
-                </Table.Row>
-              );
-            })}
-        </Table.Body>
-
-        <Table.Footer>
-          <Table.Row>
-            <Table.HeaderCell colSpan='7'>
-              <Button size='small' as={Link} to='/token/add' loading={loading}>
-                {t('token.buttons.add')}
-              </Button>
-              <Button size='small' onClick={refresh} loading={loading}>
-                {t('token.buttons.refresh')}
-              </Button>
-              <Dropdown
-                placeholder={t('token.sort.placeholder')}
-                selection
-                options={[
-                  { key: '', text: t('token.sort.default'), value: '' },
-                  {
-                    key: 'remain_quota',
-                    text: t('token.sort.by_remain'),
-                    value: 'remain_quota',
-                  },
-                  {
-                    key: 'used_quota',
-                    text: t('token.sort.by_used'),
-                    value: 'used_quota',
-                  },
-                ]}
-                value={orderBy}
-                onChange={handleOrderByChange}
-                style={{ marginLeft: '10px' }}
-              />
-              <Pagination
-                floated='right'
-                activePage={activePage}
-                onPageChange={onPaginationChange}
-                size='small'
-                siblingRange={1}
-                totalPages={
-                  Math.ceil(tokens.length / ITEMS_PER_PAGE) +
-                  (tokens.length % ITEMS_PER_PAGE === 0 ? 1 : 0)
-                }
-              />
-            </Table.HeaderCell>
-          </Table.Row>
-        </Table.Footer>
-      </Table>
+      <div className='aurora-table'>
+        <div className='aurora-table-header'>
+          <span style={{ width: 40 }}>ID</span>
+          <span style={{ width: 150 }}>名称</span>
+          <span style={{ width: 80 }}>状态</span>
+          <span style={{ width: 120 }}>已用额度</span>
+          <span style={{ width: 120 }}>剩余额度</span>
+          <span style={{ width: 150 }}>创建时间</span>
+          <span style={{ width: 150 }}>过期时间</span>
+          <span style={{ flex: 1, textAlign: 'right' }}>操作</span>
+        </div>
+        {pageTokens.map((tk, idx) => {
+          if (tk.deleted) return null;
+          const statusInfo = tk.status === 1 ? { dot: 'on', label: '启用', color: '#2DD4BF' } : { dot: 'off', label: '禁用', color: '#EF4444' };
+          return (
+            <div className='aurora-table-row' key={tk.id}>
+              <span style={{ width: 40, color: '#6B7280' }}>{tk.id}</span>
+              <span style={{ width: 150, color: '#FFFFFF', fontWeight: 500 }}>{tk.name || '—'}</span>
+              <span style={{ width: 80 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <span className={`aurora-status-dot aurora-status-dot-${statusInfo.dot}`} />
+                  <span style={{ fontSize: 12, fontWeight: 500, color: statusInfo.color }}>{statusInfo.label}</span>
+                </span>
+              </span>
+              <span style={{ width: 120, color: '#D1D5DB' }}>{renderQuota(tk.used_quota, t)}</span>
+              <span style={{ width: 120, color: '#D1D5DB' }}>{tk.unlimited_quota ? '无限' : renderQuota(tk.remain_quota, t)}</span>
+              <span style={{ width: 150, color: '#A1A1AA', fontSize: 12 }}>{new Date(tk.created_time * 1000).toLocaleString('zh-CN')}</span>
+              <span style={{ width: 150, color: '#A1A1AA', fontSize: 12 }}>{tk.expired_time === -1 ? '永不过期' : new Date(tk.expired_time * 1000).toLocaleString('zh-CN')}</span>
+              <span style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                <span onClick={() => copy(tk.key)} style={{ fontSize: 12, color: '#2DD4BF', fontWeight: 500, cursor: 'pointer' }}>复制</span>
+                <Link to={`/token/edit/${tk.id}`} style={{ fontSize: 12, color: '#B86F05', fontWeight: 500, cursor: 'pointer' }}>编辑</Link>
+                <span onClick={() => manageToken(tk.id, tk.status === 1 ? 'disable' : 'enable', idx)} style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 500, cursor: 'pointer' }}>{tk.status === 1 ? '禁用' : '启用'}</span>
+                <span onClick={() => manageToken(tk.id, 'delete', idx)} style={{ fontSize: 12, color: '#EF4444', fontWeight: 500, cursor: 'pointer' }}>删除</span>
+              </span>
+            </div>
+          );
+        })}
+        {pageTokens.length === 0 && <div style={{ padding: 48, textAlign: 'center', color: '#71717A' }}>暂无令牌</div>}
       </div>
-    </>
+
+      <div className='aurora-pagination'>
+        <span className='aurora-pagi-info'>第 {activePage} 页 / 共 {totalPages} 页 · {tokens.length} 条</span>
+        <div className='aurora-pagi-btns'>
+          <button className='aurora-pagi-btn' onClick={() => setActivePage(activePage - 1)} disabled={activePage <= 1}>‹</button>
+          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => i + 1).map((p) => (
+            <button key={p} className={`aurora-pagi-btn ${activePage === p ? 'active' : ''}`} onClick={() => setActivePage(p)}>{p}</button>
+          ))}
+          <button className='aurora-pagi-btn' onClick={() => setActivePage(activePage + 1)} disabled={activePage >= totalPages}>›</button>
+        </div>
+      </div>
+    </div>
   );
 };
 

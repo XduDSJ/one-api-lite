@@ -1,209 +1,57 @@
 import React, { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Button, Form, Card } from 'semantic-ui-react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { API, showError, showSuccess } from '../../helpers';
-import { renderQuota, renderQuotaWithPrompt } from '../../helpers/render';
+import { renderQuota } from '../../helpers/render';
 
 const EditUser = () => {
-  const { t } = useTranslation();
-  const params = useParams();
-  const userId = params.id;
-  const [loading, setLoading] = useState(true);
-  const [inputs, setInputs] = useState({
-    username: '',
-    display_name: '',
-    password: '',
-    github_id: '',
-    wechat_id: '',
-    email: '',
-    quota: 0,
-    group: 'default',
-  });
-  const [groupOptions, setGroupOptions] = useState([]);
-  const {
-    username,
-    display_name,
-    password,
-    github_id,
-    wechat_id,
-    email,
-    quota,
-    group,
-  } = inputs;
-  const handleInputChange = (e, { name, value }) => {
-    setInputs((inputs) => ({ ...inputs, [name]: value }));
-  };
-  const fetchGroups = async () => {
-    try {
-      let res = await API.get(`/api/group/`);
-      setGroupOptions(
-        res.data.data.map((group) => ({
-          key: group,
-          text: group,
-          value: group,
-        }))
-      );
-    } catch (error) {
-      showError(error.message);
-    }
-  };
+  const { id } = useParams();
+  const isEdit = id !== undefined;
+  const [inputs, setInputs] = useState({ username: '', display_name: '', password: '', quota: 0, group: 'default' });
+  const [loading, setLoading] = useState(isEdit);
   const navigate = useNavigate();
-  const handleCancel = () => {
-    navigate('/setting');
-  };
-  const loadUser = async () => {
-    let res = undefined;
-    if (userId) {
-      res = await API.get(`/api/user/${userId}`);
-    } else {
-      res = await API.get(`/api/user/self`);
-    }
-    const { success, message, data } = res.data;
-    if (success) {
-      data.password = '';
-      setInputs(data);
-    } else {
-      showError(message);
-    }
-    setLoading(false);
-  };
+
   useEffect(() => {
-    loadUser().then();
-    if (userId) {
-      fetchGroups().then();
+    if (isEdit) {
+      API.get(`/api/user/${id}`).then((res) => {
+        if (res.data.success) setInputs(res.data.data);
+        setLoading(false);
+      });
     }
   }, []);
 
-  const submit = async () => {
-    let res = undefined;
-    if (userId) {
-      let data = { ...inputs, id: parseInt(userId) };
-      if (typeof data.quota === 'string') {
-        data.quota = parseInt(data.quota);
-      }
-      res = await API.put(`/api/user/`, data);
-    } else {
-      res = await API.put(`/api/user/self`, inputs);
-    }
-    const { success, message } = res.data;
-    if (success) {
-      showSuccess(t('user.messages.update_success'));
-    } else {
-      showError(message);
-    }
+  const handleSubmit = async () => {
+    if (!inputs.username) { showError('请输入用户名'); return; }
+    const payload = { ...inputs };
+    if (isEdit) payload.id = parseInt(id);
+    if (!payload.password) delete payload.password;
+    const res = await (isEdit ? API.put('/api/user/', payload) : API.post('/api/user/', payload));
+    if (res.data.success) {
+      showSuccess(isEdit ? '更新成功' : '创建成功');
+      navigate('/user');
+    } else showError(res.data.message);
   };
 
+  const inputStyle = { width: '100%', height: 44, background: '#0D0D12', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: '#FFFFFF', fontSize: 13, padding: '0 14px' };
+  const labelStyle = { fontSize: 13, color: '#A1A1AA', marginBottom: 8, display: 'block' };
+
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#71717A' }}>加载中…</div>;
+
   return (
-    <div className='dashboard-container'>
-      <Card fluid className='page-card'>
-        <Card.Content>
-          <Card.Header className='header'>{t('user.edit.title')}</Card.Header>
-          <Form loading={loading} autoComplete='new-password'>
-            <Form.Field>
-              <Form.Input
-                label={t('user.edit.username')}
-                name='username'
-                placeholder={t('user.edit.username_placeholder')}
-                onChange={handleInputChange}
-                value={username}
-                autoComplete='new-password'
-              />
-            </Form.Field>
-            <Form.Field>
-              <Form.Input
-                label={t('user.edit.password')}
-                name='password'
-                type={'password'}
-                placeholder={t('user.edit.password_placeholder')}
-                onChange={handleInputChange}
-                value={password}
-                autoComplete='new-password'
-              />
-            </Form.Field>
-            <Form.Field>
-              <Form.Input
-                label={t('user.edit.display_name')}
-                name='display_name'
-                placeholder={t('user.edit.display_name_placeholder')}
-                onChange={handleInputChange}
-                value={display_name}
-                autoComplete='new-password'
-              />
-            </Form.Field>
-            {userId && (
-              <>
-                <Form.Field>
-                  <Form.Dropdown
-                    label={t('user.edit.group')}
-                    placeholder={t('user.edit.group_placeholder')}
-                    name='group'
-                    fluid
-                    search
-                    selection
-                    allowAdditions
-                    additionLabel={t('user.edit.group_addition')}
-                    onChange={handleInputChange}
-                    value={inputs.group}
-                    autoComplete='new-password'
-                    options={groupOptions}
-                  />
-                </Form.Field>
-                <Form.Field>
-                  <Form.Input
-                    label={`${t('user.edit.quota')}${renderQuotaWithPrompt(
-                      quota,
-                      t
-                    )}`}
-                    name='quota'
-                    placeholder={t('user.edit.quota_placeholder')}
-                    onChange={handleInputChange}
-                    value={quota}
-                    type={'number'}
-                    autoComplete='new-password'
-                  />
-                </Form.Field>
-              </>
-            )}
-            <Form.Field>
-              <Form.Input
-                label={t('user.edit.github_id')}
-                name='github_id'
-                value={github_id}
-                autoComplete='new-password'
-                placeholder={t('user.edit.github_id_placeholder')}
-                readOnly
-              />
-            </Form.Field>
-            <Form.Field>
-              <Form.Input
-                label={t('user.edit.wechat_id')}
-                name='wechat_id'
-                value={wechat_id}
-                autoComplete='new-password'
-                placeholder={t('user.edit.wechat_id_placeholder')}
-                readOnly
-              />
-            </Form.Field>
-            <Form.Field>
-              <Form.Input
-                label={t('user.edit.email')}
-                name='email'
-                value={email}
-                autoComplete='new-password'
-                placeholder={t('user.edit.email_placeholder')}
-                readOnly
-              />
-            </Form.Field>
-            <Button onClick={handleCancel}>
-              {t('user.edit.buttons.cancel')}
-            </Button>
-            <Button positive onClick={submit}>
-              {t('user.edit.buttons.submit')}
-            </Button>
-          </Form>
-        </Card.Content>
-      </Card>
+    <div style={{ maxWidth: 600, margin: '0 auto' }}>
+      <div className='aurora-card' style={{ padding: 24 }}>
+        <div className='aurora-section-header'><span className='aurora-section-title'>{isEdit ? '编辑用户' : '创建用户'}</span></div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div><label style={labelStyle}>用户名</label><input value={inputs.username} onChange={(e) => setInputs({ ...inputs, username: e.target.value })} placeholder='输入用户名' style={inputStyle} /></div>
+          <div><label style={labelStyle}>显示名称</label><input value={inputs.display_name} onChange={(e) => setInputs({ ...inputs, display_name: e.target.value })} placeholder='可选' style={inputStyle} /></div>
+          <div><label style={labelStyle}>密码{isEdit ? '（留空不修改）' : ''}</label><input type='password' value={inputs.password} onChange={(e) => setInputs({ ...inputs, password: e.target.value })} placeholder='输入密码' style={inputStyle} /></div>
+          <div><label style={labelStyle}>额度</label><input type='number' value={inputs.quota} onChange={(e) => setInputs({ ...inputs, quota: parseInt(e.target.value) || 0 })} style={inputStyle} /></div>
+          <div><label style={labelStyle}>分组</label><input value={inputs.group} onChange={(e) => setInputs({ ...inputs, group: e.target.value })} placeholder='default' style={inputStyle} /></div>
+          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            <Link to='/user' className='aurora-btn aurora-btn-ghost'>取消</Link>
+            <button className='aurora-btn aurora-btn-primary' onClick={handleSubmit}>{isEdit ? '保存' : '创建'}</button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

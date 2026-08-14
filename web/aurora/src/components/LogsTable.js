@@ -1,644 +1,117 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Button,
-  Dropdown,
-  Form,
-  Header,
-  Label,
-  Pagination,
-  Segment,
-  Select,
-  Table,
-  Popup,
-} from 'semantic-ui-react';
-import {
-  API,
-  copy,
-  isAdmin,
-  showError,
-  showSuccess,
-  showWarning,
-  timestamp2string,
-} from '../helpers';
 import { useTranslation } from 'react-i18next';
-
+import { API, showError, isAdmin, copy, timestamp2string } from '../helpers';
+import { renderQuota, renderNumber } from '../helpers/render';
 import { ITEMS_PER_PAGE } from '../constants';
-import { renderColorLabel, renderQuota } from '../helpers/render';
-import { Link } from 'react-router-dom';
-
-function renderTimestamp(timestamp, request_id) {
-  return (
-    <code
-      onClick={async () => {
-        if (await copy(request_id)) {
-          showSuccess(`已复制请求 ID：${request_id}`);
-        } else {
-          showWarning(`请求 ID 复制失败：${request_id}`);
-        }
-      }}
-      style={{ cursor: 'pointer' }}
-    >
-      {timestamp2string(timestamp)}
-    </code>
-  );
-}
-
-const MODE_OPTIONS = [
-  { key: 'all', text: '全部用户', value: 'all' },
-  { key: 'self', text: '当前用户', value: 'self' },
-];
-
-function renderType(type) {
-  switch (type) {
-    case 1:
-      return (
-        <Label basic color='green'>
-          充值
-        </Label>
-      );
-    case 2:
-      return (
-        <Label basic color='olive'>
-          消费
-        </Label>
-      );
-    case 3:
-      return (
-        <Label basic color='orange'>
-          管理
-        </Label>
-      );
-    case 4:
-      return (
-        <Label basic color='purple'>
-          系统
-        </Label>
-      );
-    case 5:
-      return (
-        <Label basic color='violet'>
-          测试
-        </Label>
-      );
-    default:
-      return (
-        <Label basic color='black'>
-          未知
-        </Label>
-      );
-  }
-}
-
-function getColorByElapsedTime(elapsedTime) {
-  if (elapsedTime === undefined || 0) return 'black';
-  if (elapsedTime < 1000) return 'green';
-  if (elapsedTime < 3000) return 'olive';
-  if (elapsedTime < 5000) return 'yellow';
-  if (elapsedTime < 10000) return 'orange';
-  return 'red';
-}
-
-function renderDetail(log) {
-  return (
-    <>
-      {log.content}
-      <br />
-      {log.elapsed_time && (
-        <Label
-          basic
-          size={'mini'}
-          color={getColorByElapsedTime(log.elapsed_time)}
-        >
-          {log.elapsed_time} ms
-        </Label>
-      )}
-      {log.is_stream && (
-        <>
-          <Label size={'mini'} color='pink'>
-            Stream
-          </Label>
-        </>
-      )}
-      {log.system_prompt_reset && (
-        <>
-          <Label basic size={'mini'} color='red'>
-            System Prompt Reset
-          </Label>
-        </>
-      )}
-    </>
-  );
-}
 
 const LogsTable = () => {
   const { t } = useTranslation();
   const [logs, setLogs] = useState([]);
-  const [showStat, setShowStat] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activePage, setActivePage] = useState(1);
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [searching, setSearching] = useState(false);
+  const [showStat, setShowStat] = useState(false);
+  const [stat, setStat] = useState({ quota: 0, token: 0 });
   const [logType, setLogType] = useState(0);
-  const isAdminUser = isAdmin();
-  let now = new Date();
-  const [inputs, setInputs] = useState({
-    username: '',
-    token_name: '',
-    model_name: '',
-    start_timestamp: timestamp2string(0),
-    end_timestamp: timestamp2string(now.getTime() / 1000 + 3600),
-    channel: '',
-  });
-  const {
-    username,
-    token_name,
-    model_name,
-    start_timestamp,
-    end_timestamp,
-    channel,
-  } = inputs;
+  const admin = isAdmin();
+  const [inputs, setInputs] = useState({ token_name: '', model_name: '', start_timestamp: '', end_timestamp: '', channel: '' });
 
-  const [stat, setStat] = useState({
-    quota: 0,
-    token: 0,
-  });
+  useEffect(() => { loadLogs(); }, []);
 
-  const LOG_OPTIONS = [
-    { key: '0', text: t('log.type.all'), value: 0 },
-    { key: '1', text: t('log.type.topup'), value: 1 },
-    { key: '2', text: t('log.type.usage'), value: 2 },
-    { key: '3', text: t('log.type.admin'), value: 3 },
-    { key: '4', text: t('log.type.system'), value: 4 },
-    { key: '5', text: t('log.type.test'), value: 5 },
-  ];
-
-  const handleInputChange = (e, { name, value }) => {
-    setInputs((inputs) => ({ ...inputs, [name]: value }));
-  };
-
-  const getLogSelfStat = async () => {
-    let localStartTimestamp = Date.parse(start_timestamp) / 1000;
-    let localEndTimestamp = Date.parse(end_timestamp) / 1000;
-    let res = await API.get(
-      `/api/log/self/stat?type=${logType}&token_name=${token_name}&model_name=${model_name}&start_timestamp=${localStartTimestamp}&end_timestamp=${localEndTimestamp}`
-    );
-    const { success, message, data } = res.data;
-    if (success) {
-      setStat(data);
-    } else {
-      showError(message);
-    }
-  };
-
-  const getLogStat = async () => {
-    let localStartTimestamp = Date.parse(start_timestamp) / 1000;
-    let localEndTimestamp = Date.parse(end_timestamp) / 1000;
-    let res = await API.get(
-      `/api/log/stat?type=${logType}&username=${username}&token_name=${token_name}&model_name=${model_name}&start_timestamp=${localStartTimestamp}&end_timestamp=${localEndTimestamp}&channel=${channel}`
-    );
-    const { success, message, data } = res.data;
-    if (success) {
-      setStat(data);
-    } else {
-      showError(message);
-    }
-  };
-
-  const handleEyeClick = async () => {
-    if (!showStat) {
-      if (isAdminUser) {
-        await getLogStat();
-      } else {
-        await getLogSelfStat();
+  const loadLogs = async (page = 0) => {
+    setLoading(true);
+    try {
+      let url = `/api/log/self/?p=${page}&type=${logType}`;
+      if (admin) url = `/api/log/?p=${page}&type=${logType}`;
+      if (inputs.token_name) url += `&token_name=${inputs.token_name}`;
+      if (inputs.model_name) url += `&model_name=${inputs.model_name}`;
+      const res = await API.get(url);
+      if (res.data.success) {
+        setLogs(res.data.data.items || res.data.data);
+        if (res.data.data?.stat) { setStat(res.data.data.stat); setShowStat(true); }
       }
-    }
-    setShowStat(!showStat);
-  };
-
-  const showUserTokenQuota = () => {
-    return logType !== 5;
-  };
-
-  const loadLogs = async (startIdx) => {
-    let url = '';
-    let localStartTimestamp = Date.parse(start_timestamp) / 1000;
-    let localEndTimestamp = Date.parse(end_timestamp) / 1000;
-    if (isAdminUser) {
-      url = `/api/log/?p=${startIdx}&type=${logType}&username=${username}&token_name=${token_name}&model_name=${model_name}&start_timestamp=${localStartTimestamp}&end_timestamp=${localEndTimestamp}&channel=${channel}`;
-    } else {
-      url = `/api/log/self/?p=${startIdx}&type=${logType}&token_name=${token_name}&model_name=${model_name}&start_timestamp=${localStartTimestamp}&end_timestamp=${localEndTimestamp}`;
-    }
-    const res = await API.get(url);
-    const { success, message, data } = res.data;
-    if (success) {
-      if (startIdx === 0) {
-        setLogs(data);
-      } else {
-        let newLogs = [...logs];
-        newLogs.splice(startIdx * ITEMS_PER_PAGE, data.length, ...data);
-        setLogs(newLogs);
-      }
-    } else {
-      showError(message);
-    }
+    } catch (e) { showError(e); }
     setLoading(false);
   };
 
-  const onPaginationChange = (e, { activePage }) => {
-    (async () => {
-      if (activePage === Math.ceil(logs.length / ITEMS_PER_PAGE) + 1) {
-        // In this case we have to load more data and then append them.
-        await loadLogs(activePage - 1);
-      }
-      setActivePage(activePage);
-    })();
+  const totalPages = Math.ceil(logs.length / ITEMS_PER_PAGE) || 1;
+  const pageLogs = logs.slice((activePage - 1) * ITEMS_PER_PAGE, activePage * ITEMS_PER_PAGE);
+
+  const typeLabel = (type) => {
+    const map = { 1: { text: '测试', badge: 'gray' }, 2: { text: '充值', badge: 'gold' }, 3: { text: '消费', badge: 'cyan' }, 4: { text: '管理', badge: 'purple' }, 5: { text: '系统', badge: 'red' } };
+    return map[type] || { text: '其他', badge: 'gray' };
   };
 
-  const refresh = async () => {
-    setLoading(true);
-    setActivePage(1);
-    await loadLogs(0);
-  };
-
-  useEffect(() => {
-    refresh().then();
-  }, [logType]);
-
-  const searchLogs = async () => {
-    if (searchKeyword === '') {
-      // if keyword is blank, load files instead.
-      await loadLogs(0);
-      setActivePage(1);
-      return;
-    }
-    setSearching(true);
-    const res = await API.get(`/api/log/self/search?keyword=${searchKeyword}`);
-    const { success, message, data } = res.data;
-    if (success) {
-      setLogs(data);
-      setActivePage(1);
-    } else {
-      showError(message);
-    }
-    setSearching(false);
-  };
-
-  const handleKeywordChange = async (e, { value }) => {
-    setSearchKeyword(value.trim());
-  };
-
-  const sortLog = (key) => {
-    if (logs.length === 0) return;
-    setLoading(true);
-    let sortedLogs = [...logs];
-    if (typeof sortedLogs[0][key] === 'string') {
-      sortedLogs.sort((a, b) => {
-        return ('' + a[key]).localeCompare(b[key]);
-      });
-    } else {
-      sortedLogs.sort((a, b) => {
-        if (a[key] === b[key]) return 0;
-        if (a[key] > b[key]) return -1;
-        if (a[key] < b[key]) return 1;
-      });
-    }
-    if (sortedLogs[0].id === logs[0].id) {
-      sortedLogs.reverse();
-    }
-    setLogs(sortedLogs);
-    setLoading(false);
-  };
+  const inputStyle = { height: 36, background: '#0D0D12', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#FFFFFF', fontSize: 13, padding: '0 12px' };
 
   return (
-    <>
-      {/* 顶部工具栏：类型筛选 + 总消费统计 */}
-      <div className='aurora-channel-toolbar'>
-        <div className='aurora-channel-toolbar__left'>
-          <Dropdown
-            selection
-            compact
-            value={logType}
-            onChange={(_, { value }) => {
-              setLogType(value);
-              loadLogs(0);
-            }}
-            options={[
-              { key: 0, value: 0, text: t('log.type.all') },
-              { key: 1, value: 2, text: t('log.type.topup') },
-              { key: 2, value: 3, text: t('log.type.usage') },
-              { key: 3, value: 4, text: t('log.type.admin') },
-              { key: 4, value: 5, text: t('log.type.system') },
-              { key: 5, value: 1, text: t('log.type.test') },
-            ]}
-            style={{ minWidth: 160 }}
-          />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Toolbar */}
+      <div className='aurora-toolbar'>
+        <div className='aurora-toolbar-left' style={{ gap: 8, flexWrap: 'wrap' }}>
+          <select value={logType} onChange={(e) => { setLogType(parseInt(e.target.value)); loadLogs(); }} style={{ ...inputStyle, width: 120 }}>
+            <option value={0}>全部类型</option>
+            <option value={2}>充值</option>
+            <option value={3}>消费</option>
+            <option value={4}>管理</option>
+            <option value={5}>系统</option>
+            <option value={1}>测试</option>
+          </select>
+          <input placeholder='令牌名称' value={inputs.token_name} onChange={(e) => setInputs({ ...inputs, token_name: e.target.value })} style={{ ...inputStyle, width: 140 }} />
+          <input placeholder='模型名称' value={inputs.model_name} onChange={(e) => setInputs({ ...inputs, model_name: e.target.value })} style={{ ...inputStyle, width: 140 }} />
+          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => loadLogs()}>查询</button>
         </div>
       </div>
 
-      {/* 状态条：总消费统计 */}
+      {/* Status bar */}
       <div className='aurora-status-bar'>
-        <span>
-          {t('log.usage_details')}（{t('log.total_quota')}：
-          {showStat && renderQuota(stat.quota, t)}
-          {!showStat && (
-            <span
-              onClick={handleEyeClick}
-              style={{ cursor: 'pointer' }}
-            >
-              {t('log.click_to_view')}
-            </span>
-          )}
-          ）
-        </span>
-        <span>{t('log.status_bar.tip', '最近查询: 刚刚')}</span>
+        <span>总消费额度: {showStat ? renderQuota(stat.quota, t) : '—'}</span>
+        <span>共 {logs.length} 条日志</span>
       </div>
 
-      <Form>
-        <Form.Group>
-          <Form.Input
-            fluid
-            label={t('log.table.token_name')}
-            size={'small'}
-            width={3}
-            value={token_name}
-            placeholder={t('log.table.token_name_placeholder')}
-            name='token_name'
-            onChange={handleInputChange}
-          />
-          <Form.Input
-            fluid
-            label={t('log.table.model_name')}
-            size={'small'}
-            width={3}
-            value={model_name}
-            placeholder={t('log.table.model_name_placeholder')}
-            name='model_name'
-            onChange={handleInputChange}
-          />
-          <Form.Input
-            fluid
-            label={t('log.table.start_time')}
-            size={'small'}
-            width={4}
-            value={start_timestamp}
-            type='datetime-local'
-            name='start_timestamp'
-            onChange={handleInputChange}
-          />
-          <Form.Input
-            fluid
-            label={t('log.table.end_time')}
-            size={'small'}
-            width={4}
-            value={end_timestamp}
-            type='datetime-local'
-            name='end_timestamp'
-            onChange={handleInputChange}
-          />
-          <Form.Button
-            fluid
-            label={t('log.buttons.query')}
-            size={'small'}
-            width={2}
-            onClick={refresh}
-          >
-            {t('log.buttons.submit')}
-          </Form.Button>
-        </Form.Group>
-        {isAdminUser && (
-          <>
-            <Form.Group>
-              <Form.Input
-                fluid
-                label={t('log.table.channel_id')}
-                size={'small'}
-                width={3}
-                value={channel}
-                placeholder={t('log.table.channel_id_placeholder')}
-                name='channel'
-                onChange={handleInputChange}
-              />
-              <Form.Input
-                fluid
-                label={t('log.table.username')}
-                size={'small'}
-                width={3}
-                value={username}
-                placeholder={t('log.table.username_placeholder')}
-                name='username'
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-          </>
-        )}
-        <Form.Input
-          icon='search'
-          placeholder={t('log.search')}
-          value={searchKeyword}
-          onChange={(e, { value }) => setSearchKeyword(value)}
-        />
-      </Form>
-      <div className='aurora-channel-table-card' style={{ padding: 0 }}>
-      <Table basic={'very'} compact size='small' className='aurora-inset-table'>
-        <Table.Header>
-          <Table.Row>
-            <Table.HeaderCell
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                sortLog('created_time');
-              }}
-              width={3}
-            >
-              {t('log.table.time')}
-            </Table.HeaderCell>
-            {isAdminUser && (
-              <Table.HeaderCell
-                style={{ cursor: 'pointer' }}
-                onClick={() => {
-                  sortLog('channel');
-                }}
-                width={1}
-              >
-                {t('log.table.channel')}
-              </Table.HeaderCell>
-            )}
-            <Table.HeaderCell
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                sortLog('type');
-              }}
-              width={1}
-            >
-              {t('log.table.type')}
-            </Table.HeaderCell>
-            <Table.HeaderCell
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                sortLog('model_name');
-              }}
-              width={2}
-            >
-              {t('log.table.model')}
-            </Table.HeaderCell>
-            {showUserTokenQuota() && (
-              <>
-                {isAdminUser && (
-                  <Table.HeaderCell
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => {
-                      sortLog('username');
-                    }}
-                    width={2}
-                  >
-                    {t('log.table.username')}
-                  </Table.HeaderCell>
-                )}
-                <Table.HeaderCell
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => {
-                    sortLog('token_name');
-                  }}
-                  width={2}
-                >
-                  {t('log.table.token_name')}
-                </Table.HeaderCell>
-                <Table.HeaderCell
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => {
-                    sortLog('prompt_tokens');
-                  }}
-                  width={1}
-                >
-                  {t('log.table.prompt_tokens')}
-                </Table.HeaderCell>
-                <Table.HeaderCell
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => {
-                    sortLog('completion_tokens');
-                  }}
-                  width={1}
-                >
-                  {t('log.table.completion_tokens')}
-                </Table.HeaderCell>
-                <Table.HeaderCell
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => {
-                    sortLog('quota');
-                  }}
-                  width={1}
-                >
-                  {t('log.table.quota')}
-                </Table.HeaderCell>
-              </>
-            )}
-            <Table.HeaderCell>{t('log.table.detail')}</Table.HeaderCell>
-          </Table.Row>
-        </Table.Header>
-
-        <Table.Body>
-          {logs
-            .slice(
-              (activePage - 1) * ITEMS_PER_PAGE,
-              activePage * ITEMS_PER_PAGE
-            )
-            .map((log, idx) => {
-              if (log.deleted) return <></>;
-              return (
-                <Table.Row key={log.id}>
-                  <Table.Cell>
-                    {renderTimestamp(log.created_at, log.request_id)}
-                  </Table.Cell>
-                  {isAdminUser && (
-                    <Table.Cell>
-                      {log.channel ? (
-                        <Label
-                          basic
-                          as={Link}
-                          to={`/channel/edit/${log.channel}`}
-                        >
-                          {log.channel}
-                        </Label>
-                      ) : (
-                        ''
-                      )}
-                    </Table.Cell>
-                  )}
-                  <Table.Cell>{renderType(log.type)}</Table.Cell>
-                  <Table.Cell>
-                    {log.model_name ? renderColorLabel(log.model_name) : ''}
-                  </Table.Cell>
-                  {showUserTokenQuota() && (
-                    <>
-                      {isAdminUser && (
-                        <Table.Cell>
-                          {log.username ? (
-                            <Label
-                              basic
-                              as={Link}
-                              to={`/user/edit/${log.user_id}`}
-                            >
-                              {log.username}
-                            </Label>
-                          ) : (
-                            ''
-                          )}
-                        </Table.Cell>
-                      )}
-                      <Table.Cell>
-                        {log.token_name ? renderColorLabel(log.token_name) : ''}
-                      </Table.Cell>
-
-                      <Table.Cell>
-                        {log.prompt_tokens ? log.prompt_tokens : ''}
-                      </Table.Cell>
-                      <Table.Cell>
-                        {log.completion_tokens ? log.completion_tokens : ''}
-                      </Table.Cell>
-                      <Table.Cell>
-                        {log.quota ? renderQuota(log.quota, t, 6) : ''}
-                      </Table.Cell>
-                    </>
-                  )}
-
-                  <Table.Cell>{renderDetail(log)}</Table.Cell>
-                </Table.Row>
-              );
-            })}
-        </Table.Body>
-
-        <Table.Footer>
-          <Table.Row>
-            <Table.HeaderCell colSpan={'10'}>
-              <Select
-                placeholder={t('log.type.select')}
-                options={LOG_OPTIONS}
-                style={{ marginRight: '8px' }}
-                name='logType'
-                value={logType}
-                onChange={(e, { name, value }) => {
-                  setLogType(value);
-                }}
-              />
-              <Button size='small' onClick={refresh} loading={loading}>
-                {t('log.buttons.refresh')}
-              </Button>
-              <Pagination
-                floated='right'
-                activePage={activePage}
-                onPageChange={onPaginationChange}
-                size='small'
-                siblingRange={1}
-                totalPages={
-                  Math.ceil(logs.length / ITEMS_PER_PAGE) +
-                  (logs.length % ITEMS_PER_PAGE === 0 ? 1 : 0)
-                }
-              />
-            </Table.HeaderCell>
-          </Table.Row>
-        </Table.Footer>
-      </Table>
+      {/* Table */}
+      <div className='aurora-table'>
+        <div className='aurora-table-header'>
+          <span style={{ width: 60 }}>时间</span>
+          <span style={{ width: 80 }}>类型</span>
+          <span style={{ width: 120 }}>令牌</span>
+          <span style={{ width: 150 }}>模型</span>
+          {admin && <span style={{ width: 60 }}>渠道</span>}
+          <span style={{ width: 80 }}>耗时</span>
+          <span style={{ width: 100 }}>额度</span>
+          <span style={{ flex: 1, textAlign: 'right' }}>详情</span>
+        </div>
+        {pageLogs.map((log, idx) => {
+          const tp = typeLabel(log.type);
+          return (
+            <div className='aurora-table-row' key={idx}>
+              <span style={{ width: 60, color: '#A1A1AA', fontSize: 11 }}>{timestamp2string(log.created_at, true)}</span>
+              <span style={{ width: 80 }}><span className={`aurora-badge aurora-badge-${tp.badge}`}>{tp.text}</span></span>
+              <span style={{ width: 120, color: '#D1D5DB', fontSize: 12 }}>{log.token_name || '—'}</span>
+              <span style={{ width: 150, color: '#D1D5DB', fontSize: 12 }}>{log.model_name || '—'}</span>
+              {admin && <span style={{ width: 60, color: '#6B7280' }}>{log.channel_id || '—'}</span>}
+              <span style={{ width: 80, color: '#A1A1AA' }}>{log.use_time ? `${log.use_time}s` : '—'}</span>
+              <span style={{ width: 100, color: '#D1D5DB' }}>{renderQuota(log.quota, t)}</span>
+              <span style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+                <span onClick={() => copy(JSON.stringify(log, null, 2))} style={{ fontSize: 12, color: '#9CA3AF', cursor: 'pointer' }}>复制</span>
+              </span>
+            </div>
+          );
+        })}
+        {pageLogs.length === 0 && <div style={{ padding: 48, textAlign: 'center', color: '#71717A' }}>暂无日志</div>}
       </div>
-    </>
+
+      {/* Pagination */}
+      <div className='aurora-pagination'>
+        <span className='aurora-pagi-info'>第 {activePage} 页 / 共 {totalPages} 页 · {logs.length} 条</span>
+        <div className='aurora-pagi-btns'>
+          <button className='aurora-pagi-btn' onClick={() => setActivePage(activePage - 1)} disabled={activePage <= 1}>‹</button>
+          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => i + 1).map((p) => (
+            <button key={p} className={`aurora-pagi-btn ${activePage === p ? 'active' : ''}`} onClick={() => setActivePage(p)}>{p}</button>
+          ))}
+          <button className='aurora-pagi-btn' onClick={() => setActivePage(activePage + 1)} disabled={activePage >= totalPages}>›</button>
+        </div>
+      </div>
+    </div>
   );
 };
 

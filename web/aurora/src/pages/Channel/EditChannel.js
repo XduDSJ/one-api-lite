@@ -99,9 +99,11 @@ const EditChannel = () => {
         res = await API.get(`/api/channel/fetch_models/${id}`);
       } else {
         // 新建模式：用 type + base_url + key 请求
+        // 多 Key 模式下用第一个 key
+        const apiKey = inputs.multi_key_mode !== 0 && keys.length > 0 ? keys[0].key_value : inputs.key;
         res = await API.post('/api/channel/fetch_models', {
           type: parseInt(inputs.type),
-          key: inputs.key,
+          key: apiKey,
           base_url: inputs.base_url,
         });
       }
@@ -211,7 +213,7 @@ const EditChannel = () => {
               <input name='name' value={inputs.name} onChange={handleInputChange} placeholder='输入渠道名称' style={inputStyle} />
             </div>
             <div>
-              <label style={labelStyle}>代理地址（可选）</label>
+              <label style={labelStyle}>API 地址（OpenAI 兼容类型填上游地址，如 https://api.openai.com）</label>
               <input name='base_url' value={inputs.base_url || ''} onChange={handleInputChange} placeholder='https://api.openai.com' style={inputStyle} />
             </div>
           </div>

@@ -47,7 +47,7 @@ const Dashboard = () => {
     { badge: 'T', label: '活跃令牌', value: tokenCount || 0, trend: '', trendUp: true, sub: '已创建令牌', shadow: 'rgba(99,77,147,0.15)' },
   ];
 
-  // 7天趋势 — 如果后端没数据用模拟
+  // 7天趋势 — 真实数据，空就显示7天0
   let trendData = (overview?.daily_trend || []).map((d) => ({
     label: new Date(d.Day).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' }),
     requests: d.RequestCount || 0,
@@ -57,21 +57,11 @@ const Dashboard = () => {
     trendData = days.map((d) => ({ label: d, requests: 0 }));
   }
 
-  // 模型消耗分布 — 后端 model_distribution
+  // 模型消耗分布 — 真实数据，空就空
   let modelData = (overview?.model_distribution || []).slice(0, 5).map((m) => ({
     name: (m.ModelName || m.model_name || '?').split('-').slice(0, 2).join('-'),
     count: m.RequestCount || m.request_count || 0,
   }));
-  // 如果没数据用模拟展示
-  if (modelData.length === 0) {
-    modelData = [
-      { name: 'GPT-4o', count: 0 },
-      { name: 'Claude', count: 0 },
-      { name: 'Gemini', count: 0 },
-      { name: 'DALL-E', count: 0 },
-      { name: 'Other', count: 0 },
-    ];
-  }
 
   // 渠道状态分布
   const enabled = channels.filter((c) => c.status === 1).length;
@@ -179,6 +169,7 @@ const Dashboard = () => {
 
         {/* 柱状图 */}
         <ChartCard title='模型消耗分布'>
+          {modelData.length > 0 ? (
           <ResponsiveContainer width='100%' height='100%'>
             <BarChart data={modelData} margin={{ top: 5, right: 10, left: -20, bottom: 20 }}>
               <CartesianGrid strokeDasharray='3 3' stroke='rgba(255,255,255,0.04)' vertical={false} />
@@ -190,6 +181,9 @@ const Dashboard = () => {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#71717A', fontSize: 13 }}>暂无消费记录</div>
+          )}
         </ChartCard>
 
         {/* 环形图 */}

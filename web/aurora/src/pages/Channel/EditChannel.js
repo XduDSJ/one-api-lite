@@ -168,7 +168,7 @@ const EditChannel = () => {
       weight: parseInt(inputs.weight) || 0,
       priority: parseInt(inputs.priority) || 0,
       multi_key_mode: parseInt(inputs.multi_key_mode) || 0,
-      models: inputs.models,
+      models: Array.isArray(inputs.models) ? inputs.models.join(',') : (inputs.models || ''),
       groups: inputs.groups,
       model_mapping: Object.keys(mapping).length > 0 ? JSON.stringify(mapping) : '',
       keys: parseInt(inputs.multi_key_mode) !== 0 ? keys : undefined,

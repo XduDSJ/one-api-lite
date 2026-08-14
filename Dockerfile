@@ -2,11 +2,12 @@ FROM --platform=$BUILDPLATFORM node:16 AS builder
 
 WORKDIR /web
 COPY ./VERSION .
-COPY ./web/aurora ./web/aurora
+COPY ./web/aurora /web/aurora
 
-RUN npm install --prefix /web/aurora --legacy-peer-deps
+RUN cd /web/aurora && npm install --legacy-peer-deps
 
-RUN DISABLE_ESLINT_PLUGIN='true' REACT_APP_VERSION=$(cat ./VERSION) npm run build --prefix /web/aurora && \
+RUN cd /web/aurora && \
+    DISABLE_ESLINT_PLUGIN='true' REACT_APP_VERSION=$(cat /web/VERSION) npm run build && \
     mkdir -p /web/build && \
     mv /web/aurora/build /web/build/aurora
 

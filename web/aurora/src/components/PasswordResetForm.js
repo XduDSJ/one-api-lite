@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Form, Image } from 'semantic-ui-react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { API, getLogo, showError, showInfo, showSuccess } from '../helpers';
@@ -7,95 +6,56 @@ import { API, getLogo, showError, showInfo, showSuccess } from '../helpers';
 const PasswordResetForm = () => {
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [disableButton, setDisableButton] = useState(false);
+  const [disableBtn, setDisableBtn] = useState(false);
   const [countdown, setCountdown] = useState(30);
   const logo = getLogo();
 
   useEffect(() => {
-    let interval = null;
-    if (disableButton) {
-      interval = setInterval(() => {
-        setCountdown((c) => (c > 0 ? c - 1 : 0));
-      }, 1000);
-    }
+    if (!disableBtn) return;
+    const interval = setInterval(() => setCountdown((c) => (c > 0 ? c - 1 : 0)), 1000);
     return () => clearInterval(interval);
-  }, [disableButton]);
+  }, [disableBtn]);
 
-  async function handleSubmit() {
-    if (!email) {
-      showInfo(t('messages.error.empty_email', '请先输入邮箱地址'));
-      return;
-    }
-    setDisableButton(true);
-    setCountdown(30);
-    const res = await API.post('/api/user/reset', {
-      email,
-    });
+  const handleSubmit = async () => {
+    if (!email) { showInfo(t('messages.error.empty_email', '请输入邮箱')); return; }
+    setDisableBtn(true); setCountdown(30);
+    const res = await API.post('/api/user/reset', { email });
     const { success, message } = res.data;
-    if (success) {
-      showSuccess(t('messages.success.password_reset'));
-    } else {
-      showError(message);
-      setDisableButton(false);
-      setCountdown(30);
-    }
-    setLoading(false);
-  }
+    if (success) showSuccess(t('messages.success.password_reset', '重置邮件已发送'));
+    else { showError(message); setDisableBtn(false); setCountdown(30); }
+  };
 
   return (
-    <div className='aurora-login-page'>
-      <div className='aurora-glow aurora-glow-tl' aria-hidden='true' />
-      <div className='aurora-glow aurora-glow-br' aria-hidden='true' />
+    <div style={{ position: 'relative', width: '100%', minHeight: '100vh', background: '#0D0D12', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ position: 'absolute', top: -100, left: -100, width: 800, height: 800, borderRadius: '50%', background: 'radial-gradient(circle, rgba(184,111,5,0.15) 0%, rgba(184,111,5,0) 70%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: -100, right: -100, width: 800, height: 800, borderRadius: '50%', background: 'radial-gradient(circle, rgba(45,212,191,0.08) 0%, rgba(45,212,191,0) 70%)', pointerEvents: 'none' }} />
 
-      <div className='aurora-login-card'>
-        <div className='aurora-login-brand'>
-          <Image src={logo} className='aurora-login-logo' />
-          <span className='aurora-login-brandname'>One API Lite</span>
+      <div style={{ position: 'relative', zIndex: 2, width: 440, maxWidth: 'calc(100vw - 40px)', background: '#131319', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <img src={logo} alt='logo' style={{ width: 32, height: 32, borderRadius: 8 }} />
+          <span style={{ fontSize: 20, fontWeight: 700, color: '#F5F5F8' }}>One API Lite</span>
         </div>
 
-        <h1 className='aurora-login-title'>{t('auth.reset.title')}</h1>
-        <p className='aurora-login-subtitle'>{t('auth.reset.welcome_subtitle', '重置您的密码')}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#F5F5F8' }}>{t('auth.reset.title', '密码重置')}</h1>
+          <p style={{ fontSize: 14, color: '#71717A' }}>{t('auth.reset.welcome_subtitle', '重置你的密码')}</p>
+        </div>
 
-        <Form size='large' className='aurora-login-form'>
-          <Form.Field>
-            <label className='aurora-login-label'>{t('auth.reset.email')}</label>
-            <input
-              name='email'
-              type='email'
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={t('auth.reset.email')}
-              className='aurora-login-input'
-            />
-          </Form.Field>
-          <button
-            type='button'
-            onClick={handleSubmit}
-            className='aurora-login-btn'
-            disabled={!email || disableButton}
-          >
-            {disableButton
-              ? t('auth.register.get_code_retry', { countdown })
-              : t('auth.reset.button')}
+        <div style={{ width: 360, maxWidth: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label style={{ fontSize: 13, color: '#A1A1AA', marginBottom: 8, display: 'block' }}>{t('auth.reset.email', '邮箱')}</label>
+            <input type='email' value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('auth.reset.email', '邮箱')} style={{ width: '100%', height: 44, background: '#0D0D12', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: '#FFFFFF', fontSize: 13, padding: '0 14px' }} />
+          </div>
+          <button onClick={handleSubmit} disabled={!email || disableBtn} style={{ width: '100%', height: 46, background: '#B86F05', border: 'none', borderRadius: 10, color: '#FFFFFF', fontSize: 15, fontWeight: 600, cursor: 'pointer', opacity: email && !disableBtn ? 1 : 0.5 }}>
+            {disableBtn ? `${countdown}s` : t('auth.reset.button', '提 交')}
           </button>
-        </Form>
-
-        <div style={{
-          width: '100%',
-          textAlign: 'center',
-          fontSize: 13,
-          color: 'var(--aurora-text-muted)',
-          marginTop: 'var(--space-2)',
-        }}>
-          {t('auth.reset.notice')}
         </div>
 
-        <div className='aurora-login-footer'>
-          <Link to='/login' className='aurora-login-link'>
-            ← {t('auth.login.title')}
-          </Link>
+        <div style={{ fontSize: 13, color: '#71717A', textAlign: 'center', width: 360, maxWidth: '100%' }}>
+          {t('auth.reset.notice', '系统将向您的邮箱发送重置链接')}
         </div>
+
+        <Link to='/login' style={{ fontSize: 13, color: '#B86F05', fontWeight: 600 }}>← {t('auth.login.title', '登录')}</Link>
       </div>
     </div>
   );

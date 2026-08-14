@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import Layout from './components/Layout';
-import 'semantic-ui-css/semantic.min.css';
 import './aurora-theme.css';
 import './index.css';
 import { UserProvider } from './context/User';

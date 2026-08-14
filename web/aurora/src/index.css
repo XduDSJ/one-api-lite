@@ -1,97 +1,17 @@
-/* ============================================================
-   Aurora Theme — 全局基础样式
-   深色主题 + 氛围光晕已在 aurora-theme.css 定义
-   ============================================================ */
+/* index.css — 极简，只保留全局 reset 和 toastify */
+body { margin: 0; }
+#root { min-height: 100vh; }
 
-body {
-    margin: 0;
-    padding: 0;
-    overflow-y: scroll;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+/* react-toastify 深色覆写 */
+.Toastify__toast {
+  background: var(--surface-2) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-sm) !important;
 }
-
-/* 自定义滚动条（深色） */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-::-webkit-scrollbar-track {
-    background: var(--aurora-bg);
-}
-::-webkit-scrollbar-thumb {
-    background: var(--aurora-surface-2);
-    border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.15);
-}
-
-code {
-    font-family: 'Fira Code', 'Source Code Pro', Menlo, Monaco, Consolas, 'Courier New', monospace;
-}
-
-.small-icon .icon {
-    font-size: 1em !important;
-}
-
-.custom-footer {
-    font-size: 1.1em;
-    color: var(--aurora-text-muted);
-}
-
-.custom-footer a {
-    color: var(--aurora-text-muted);
-}
-
-/* 登录/注册页深色卡片居中 */
-.auth-container {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--space-5);
-}
-
-.auth-card {
-    width: 100%;
-    max-width: 420px;
-    background: var(--aurora-surface);
-    border: 1px solid var(--aurora-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-card-dark);
-    padding: var(--space-7);
-}
-
-.auth-card > .content {
-    padding: 0 !important;
-}
-
-/* Dashboard 图表区 */
-.charts-grid .column {
-    padding: var(--space-2) !important;
-}
-
-.chart-card {
-    margin: 0 !important;
-}
-
-/* 统计值 */
-.stat-value {
-    color: var(--aurora-text) !important;
-}
-
-@media screen and (max-width: 1366px) {
-    .ui.header {
-        font-size: 1.1em !important;
-    }
-    .stat-value {
-        font-size: 0.9em !important;
-    }
-}
-
-@media screen and (max-width: 600px) {
-    .hide-on-mobile {
-        display: none !important;
-    }
-}
+.Toastify__toast--success { border-left: 3px solid var(--cyan) !important; }
+.Toastify__toast--error { border-left: 3px solid var(--red) !important; }
+.Toastify__toast--warning { border-left: 3px solid var(--accent) !important; }
+.Toastify__toast--info { border-left: 3px solid var(--purple) !important; }
+.Toastify__close-button { color: var(--text-muted) !important; }
+.Toastify__progress-bar { background: var(--accent) !important; }

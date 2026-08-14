@@ -243,6 +243,7 @@ const Dashboard = () => {
           <div className='aurora-table-header'>
             <span style={{ width: 40 }}>ID</span>
             <span style={{ width: 150 }}>名称</span>
+            <span style={{ width: 200 }}>支持模型</span>
             <span style={{ width: 70 }}>优先级</span>
             <span style={{ width: 80 }}>状态</span>
             <span style={{ width: 90 }}>响应</span>
@@ -252,6 +253,9 @@ const Dashboard = () => {
             <div className='aurora-table-row' key={ch.id}>
               <span style={{ width: 40, color: '#6B7280' }}>{ch.id}</span>
               <span style={{ width: 150, color: '#FFFFFF', fontWeight: 500 }}>{ch.name || '—'}</span>
+              <span style={{ width: 200, color: '#D1D5DB', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {Array.isArray(ch.models) ? (ch.models.length > 3 ? ch.models.slice(0, 3).join(', ') + ` +${ch.models.length - 3}` : ch.models.join(', ')) : (typeof ch.models === 'string' && ch.models ? ch.models.split(',').slice(0, 3).join(', ') : '—')}
+              </span>
               <span style={{ width: 70, color: gold, fontWeight: 700 }}>{ch.priority ?? 0}</span>
               <span style={{ width: 80 }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -262,7 +266,7 @@ const Dashboard = () => {
               <span style={{ width: 90, color: ch.response_time < 200 ? cyan : ch.response_time < 500 ? gold : red }}>{ch.response_time ? `${ch.response_time}ms` : '—'}</span>
               <span style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
                 <Link to={`/channel/edit/${ch.id}`} style={{ fontSize: 12, color: gold, fontWeight: 500 }}>编辑</Link>
-                <span style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 500, cursor: 'pointer' }}>测试</span>
+                <Link to='/channel' style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 500 }}>管理</Link>
               </span>
             </div>
           ))}

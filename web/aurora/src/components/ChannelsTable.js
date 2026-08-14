@@ -149,6 +149,8 @@ const ChannelsTable = () => {
           <span style={{ width: 40 }}>ID</span>
           <span style={{ width: 150 }}>名称</span>
           <span style={{ width: 100 }}>类型</span>
+          <span style={{ width: 80 }}>分组</span>
+          <span style={{ width: 200 }}>支持模型</span>
           <span style={{ width: 70 }}>优先级</span>
           <span style={{ width: 60 }}>权重</span>
           <span style={{ width: 80 }}>状态</span>
@@ -168,6 +170,10 @@ const ChannelsTable = () => {
                 <span style={{ width: 150, color: '#FFFFFF', fontWeight: 500 }}>{ch.name || '—'}</span>
                 <span style={{ width: 100 }}>
                   <span className={`aurora-badge aurora-badge-${badgeColor}`}>{typeMap[ch.type]?.text || `#${ch.type}`}</span>
+                </span>
+                <span style={{ width: 80, color: '#9CA3AF', fontSize: 12 }}>{ch.group || 'default'}</span>
+                <span style={{ width: 200, color: '#D1D5DB', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {Array.isArray(ch.models) ? (ch.models.length > 3 ? ch.models.slice(0, 3).join(', ') + ` +${ch.models.length - 3}` : ch.models.join(', ')) : (typeof ch.models === 'string' && ch.models ? ch.models.split(',').slice(0, 3).join(', ') : '—')}
                 </span>
                 <span style={{ width: 70, color: '#B86F05', fontWeight: 700 }}>{ch.priority ?? 0}</span>
                 <span style={{ width: 60, color: '#D1D5DB' }}>{ch.weight ?? 0}</span>

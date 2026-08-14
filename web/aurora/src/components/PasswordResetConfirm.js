@@ -1,66 +1,56 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Button,
-  Form,
-  Grid,
-  Header,
-  Image,
-  Card,
-  Message,
-} from 'semantic-ui-react';
+import { Form, Image } from 'semantic-ui-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { API, copy, getLogo, showError, showNotice } from '../helpers';
-import { useSearchParams } from 'react-router-dom';
+import { API, getLogo, showError, showNotice } from '../helpers';
 
 const PasswordResetConfirm = () => {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
   const [inputs, setInputs] = useState({
     email: '',
-    token: '',
+    newPassword: '',
   });
-  const { email, token } = inputs;
+  const { email, newPassword } = inputs;
   const [loading, setLoading] = useState(false);
   const [disableButton, setDisableButton] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
   const logo = getLogo();
 
-  const [countdown, setCountdown] = useState(30);
-
-  const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
-    let token = searchParams.get('token');
-    let email = searchParams.get('email');
-    setInputs({
-      token,
-      email,
-    });
+    const token = searchParams.get('token');
+    if (token) {
+      const res = API.get(`/api/user/reset?token=${token}`).then((res) => {
+        const { success, message, data } = res.data;
+        if (success) {
+          setInputs({
+            email: data.email,
+            newPassword: data.password,
+          });
+        } else {
+          showError(message);
+        }
+      });
+    }
   }, []);
 
-  useEffect(() => {
-    let countdownInterval = null;
-    if (disableButton && countdown > 0) {
-      countdownInterval = setInterval(() => {
-        setCountdown(countdown - 1);
-      }, 1000);
-    } else if (countdown === 0) {
-      setDisableButton(false);
-      setCountdown(30);
+  const copy = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (e) {
+      console.error('Copy failed:', e);
     }
-    return () => clearInterval(countdownInterval);
-  }, [disableButton, countdown]);
+  };
 
-  async function handleSubmit(e) {
-    setDisableButton(true);
-    if (!email) return;
+  async function handleSubmit() {
     setLoading(true);
-    const res = await API.post(`/api/user/reset`, {
+    const res = await API.post('/api/user/reset_confirm', {
       email,
-      token,
+      password: newPassword,
     });
     const { success, message } = res.data;
     if (success) {
       let password = res.data.data;
-      setNewPassword(password);
+      setInputs({ ...inputs, newPassword: password });
       await copy(password);
       showNotice(t('messages.notice.password_copied', { password }));
     } else {
@@ -70,82 +60,72 @@ const PasswordResetConfirm = () => {
   }
 
   return (
-    <Grid textAlign='center' style={{ minHeight: '100vh', margin: '0' }} verticalAlign='middle'>
-      <Grid.Column style={{ maxWidth: 450 }}>
-        <Card
-          fluid
-          className='auth-card'
-        >
-          <Card.Content>
-            <Card.Header>
-              <Header
-                as='h2'
-                textAlign='center'
-                style={{ marginBottom: '1.5em' }}
-              >
-                <Image src={logo} style={{ marginBottom: '10px' }} />
-                <Header.Content>{t('auth.reset.confirm.title')}</Header.Content>
-              </Header>
-            </Card.Header>
-            <Form size='large'>
-              <Form.Input
-                fluid
-                icon='mail'
-                iconPosition='left'
-                placeholder={t('auth.reset.email')}
-                name='email'
-                value={email}
-                readOnly
-                style={{ marginBottom: '1em' }}
-              />
-              {newPassword && (
-                <Form.Input
-                  fluid
-                  icon='lock'
-                  iconPosition='left'
-                  placeholder={t('auth.reset.confirm.new_password')}
-                  name='newPassword'
-                  value={newPassword}
-                  readOnly
-                  style={{
-                    marginBottom: '1em',
-                    cursor: 'pointer',
-                    backgroundColor: 'var(--aurora-surface-2)',
-                  }}
-                  onClick={(e) => {
-                    e.target.select();
-                    navigator.clipboard.writeText(newPassword);
-                    showNotice(t('auth.reset.confirm.notice'));
-                  }}
-                />
-              )}
-              <Button
-                fluid
-                size='large'
-                primary
-                onClick={handleSubmit}
-                loading={loading}
-                disabled={disableButton}
-                style={{
-                  marginBottom: '1.5em',
-                }}
-              >
-                {disableButton
-                  ? t('auth.reset.confirm.button_disabled')
-                  : t('auth.reset.confirm.button')}
-              </Button>
-            </Form>
-            {newPassword && (
-              <Message style={{ background: 'transparent', boxShadow: 'none' }}>
-                <p style={{ fontSize: '0.9em', color: 'var(--aurora-text-muted)' }}>
-                  {t('auth.reset.confirm.notice')}
-                </p>
-              </Message>
-            )}
-          </Card.Content>
-        </Card>
-      </Grid.Column>
-    </Grid>
+    <div className='aurora-login-page'>
+      <div className='aurora-glow aurora-glow-tl' aria-hidden='true' />
+      <div className='aurora-glow aurora-glow-br' aria-hidden='true' />
+
+      <div className='aurora-login-card'>
+        <div className='aurora-login-brand'>
+          <Image src={logo} className='aurora-login-logo' />
+          <span className='aurora-login-brandname'>One API Lite</span>
+        </div>
+
+        <h1 className='aurora-login-title'>{t('auth.reset.confirm.title')}</h1>
+        <p className='aurora-login-subtitle'>{t('auth.reset.confirm.welcome_subtitle', '已为您生成新密码')}</p>
+
+        <Form size='large' className='aurora-login-form'>
+          <Form.Field>
+            <label className='aurora-login-label'>{t('auth.reset.email')}</label>
+            <input
+              name='email'
+              value={email}
+              readOnly
+              placeholder={t('auth.reset.email')}
+              className='aurora-login-input'
+              style={{ backgroundColor: 'var(--aurora-surface-2)', cursor: 'default' }}
+            />
+          </Form.Field>
+          <Form.Field>
+            <label className='aurora-login-label'>{t('auth.reset.confirm.new_password')}</label>
+            <input
+              name='newPassword'
+              value={newPassword}
+              readOnly
+              onClick={() => copy(newPassword)}
+              placeholder={t('auth.reset.confirm.new_password')}
+              className='aurora-login-input'
+              style={{ backgroundColor: 'var(--aurora-surface-2)', cursor: 'pointer' }}
+            />
+          </Form.Field>
+          <button
+            type='button'
+            onClick={handleSubmit}
+            className='aurora-login-btn'
+            disabled={disableButton}
+          >
+            {disableButton
+              ? t('auth.reset.confirm.button_disabled')
+              : t('auth.reset.confirm.button')}
+          </button>
+        </Form>
+
+        <div style={{
+          width: '100%',
+          textAlign: 'center',
+          fontSize: 13,
+          color: 'var(--aurora-text-muted)',
+          marginTop: 'var(--space-2)',
+        }}>
+          {t('auth.reset.confirm.notice')}
+        </div>
+
+        <div className='aurora-login-footer'>
+          <Link to='/login' className='aurora-login-link'>
+            ← {t('auth.login.title')}
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 };
 

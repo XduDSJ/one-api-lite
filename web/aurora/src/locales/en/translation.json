@@ -297,7 +297,11 @@
   },
   "token": {
     "title": "Token Management",
-    "search": "Search tokens by name ...",
+    "search": "Search tokens by name…",
+    "status_bar": {
+      "summary": "{{total}} tokens · {{enabled}} enabled",
+      "tip": "Last updated: just now"
+    },
     "table": {
       "name": "Name",
       "status": "Status",
@@ -478,6 +482,13 @@
   },
   "user": {
     "title": "User Management",
+    "filter": {
+      "all_role": "All Roles",
+      "all_status": "All Status"
+    },
+    "status_bar": {
+      "summary": "{{total}} users · {{admins}} admins"
+    },
     "edit": {
       "title": "Update User Information",
       "username": "Username",
@@ -915,7 +926,9 @@
       }
     },
     "register": {
-      "title": "New User Registration",
+      "title": "Sign Up",
+      "welcome_title": "Create Account",
+      "welcome_subtitle": "Join your AI hub",
       "username": "Username (max 12 characters)",
       "password": "Password (8-20 characters)",
       "confirm_password": "Confirm password",
@@ -923,17 +936,19 @@
       "verification_code": "Verification code",
       "get_code": "Get code",
       "get_code_retry": "Retry ({{countdown}})",
-      "button": "Register",
+      "button": "Sign Up",
       "has_account": "Have an account?",
-      "login": "Login"
+      "login": "Back to Sign In"
     },
     "reset": {
       "title": "Password Reset",
+      "welcome_subtitle": "Reset your password",
       "email": "Email address",
       "button": "Submit",
       "notice": "The system will send an email containing a reset link to your mailbox. Please check your email.",
       "confirm": {
         "title": "Password Reset Confirmation",
+        "welcome_subtitle": "New password generated",
         "new_password": "New password",
         "button": "Submit",
         "button_disabled": "Password reset completed",

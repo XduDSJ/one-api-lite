@@ -302,17 +302,61 @@ const TokensTable = () => {
 
   return (
     <>
-      <Form onSubmit={searchTokens}>
-        <Form.Input
-          icon='search'
-          fluid
-          iconPosition='left'
-          placeholder={t('token.search')}
-          value={searchKeyword}
-          loading={searching}
-          onChange={handleKeywordChange}
-        />
-      </Form>
+      {/* 顶部工具栏：搜索 + 排序 + 添加按钮（设计稿布局） */}
+      <div className='aurora-channel-toolbar'>
+        <div className='aurora-channel-toolbar__left'>
+          <Form onSubmit={searchTokens} style={{ margin: 0, flex: 1, maxWidth: 320 }}>
+            <Form.Input
+              icon='search'
+              fluid
+              iconPosition='left'
+              placeholder={t('token.search')}
+              value={searchKeyword}
+              loading={searching}
+              onChange={handleKeywordChange}
+            />
+          </Form>
+          <Dropdown
+            selection
+            compact
+            value={orderBy}
+            onChange={handleOrderByChange}
+            options={[
+              { key: 'default', value: '', text: t('token.sort.placeholder', '排序方式') },
+              { key: 'remain', value: 'remain_quota', text: t('token.sort.by_remain', '按剩余额度排序') },
+              { key: 'used', value: 'used_quota', text: t('token.sort.by_used', '按已用额度排序') },
+            ]}
+            style={{ minWidth: 180 }}
+          />
+        </div>
+        <div className='aurora-channel-toolbar__right'>
+          <Button
+            size='small'
+            as={Link}
+            to='/token/add'
+            className='aurora-btn-primary'
+            style={{
+              background: 'var(--aurora-accent)',
+              color: '#fff',
+              borderColor: 'var(--aurora-accent)',
+            }}
+            loading={loading}
+          >
+            + {t('token.buttons.add')}
+          </Button>
+        </div>
+      </div>
+
+      {/* 状态条：汇总统计 */}
+      <div className='aurora-status-bar'>
+        <span>
+          {t('token.status_bar.summary', {
+            total: tokens.length,
+            enabled: tokens.filter((tk) => tk.status === 1).length,
+          })}
+        </span>
+        <span>{t('token.status_bar.tip')}</span>
+      </div>
 
       <Table basic={'very'} compact size='small'>
         <Table.Header>

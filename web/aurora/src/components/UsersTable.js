@@ -177,17 +177,71 @@ const UsersTable = () => {
 
   return (
     <>
-      <Form onSubmit={searchUsers}>
-        <Form.Input
-          icon='search'
-          fluid
-          iconPosition='left'
-          placeholder={t('user.search')}
-          value={searchKeyword}
-          loading={searching}
-          onChange={handleKeywordChange}
-        />
-      </Form>
+      {/* 顶部工具栏：搜索 + 角色过滤 + 添加按钮 */}
+      <div className='aurora-channel-toolbar'>
+        <div className='aurora-channel-toolbar__left'>
+          <Form onSubmit={searchUsers} style={{ margin: 0, flex: 1, maxWidth: 320 }}>
+            <Form.Input
+              icon='search'
+              fluid
+              iconPosition='left'
+              placeholder={t('user.search')}
+              value={searchKeyword}
+              loading={searching}
+              onChange={handleKeywordChange}
+            />
+          </Form>
+          <Dropdown
+            selection
+            compact
+            placeholder={t('user.filter.all_role', '全角色')}
+            options={[
+              { key: 'all', value: '', text: t('user.filter.all_role', '全角色') },
+              { key: 'root', value: 'root', text: t('user.table.role_types.super_admin') },
+              { key: 'admin', value: 'admin', text: t('user.table.role_types.admin') },
+              { key: 'user', value: 'user', text: t('user.table.role_types.normal') },
+            ]}
+            style={{ minWidth: 140 }}
+          />
+          <Dropdown
+            selection
+            compact
+            placeholder={t('user.filter.all_status', '全状态')}
+            options={[
+              { key: 'all', value: '', text: t('user.filter.all_status', '全状态') },
+              { key: 'activated', value: '1', text: t('user.table.status_types.activated') },
+              { key: 'banned', value: '2', text: t('user.table.status_types.banned') },
+            ]}
+            style={{ minWidth: 140 }}
+          />
+        </div>
+        <div className='aurora-channel-toolbar__right'>
+          <Button
+            size='small'
+            as={Link}
+            to='/user/add'
+            className='aurora-btn-primary'
+            style={{
+              background: 'var(--aurora-accent)',
+              color: '#fff',
+              borderColor: 'var(--aurora-accent)',
+            }}
+            loading={loading}
+          >
+            + {t('user.buttons.add')}
+          </Button>
+        </div>
+      </div>
+
+      {/* 状态条：汇总统计 */}
+      <div className='aurora-status-bar'>
+        <span>
+          {t('user.status_bar.summary', {
+            total: users.length,
+            admins: users.filter((u) => u.role >= 10).length,
+          })}
+        </span>
+      </div>
 
       <Table basic={'very'} compact size='small'>
         <Table.Header>

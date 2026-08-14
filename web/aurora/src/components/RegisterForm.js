@@ -1,16 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   Button,
+  Divider,
   Form,
-  Grid,
-  Header,
+  Icon,
   Image,
   Message,
-  Card,
-  Divider,
 } from 'semantic-ui-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { UserContext } from '../context/User';
 import { API, getLogo, showError, showInfo, showSuccess } from '../helpers';
 
 const RegisterForm = () => {
@@ -18,84 +17,54 @@ const RegisterForm = () => {
   const [inputs, setInputs] = useState({
     username: '',
     password: '',
-    password2: '',
+    confirmPassword: '',
     email: '',
-    verification_code: '',
+    verificationCode: '',
   });
-  const { username, password, password2 } = inputs;
-  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const { username, password, confirmPassword, email, verificationCode } = inputs;
+  const [, userDispatch] = useContext(UserContext);
+  const navigate = useNavigate();
+  const logo = getLogo();
   const [loading, setLoading] = useState(false);
   const [disableButton, setDisableButton] = useState(false);
   const [countdown, setCountdown] = useState(30);
-  const logo = getLogo();
-  let affCode = new URLSearchParams(window.location.search).get('aff');
-  if (affCode) {
-    localStorage.setItem('aff', affCode);
-  }
+  const [status, setStatus] = useState({});
+  const [emailVerify, setEmailVerify] = useState(false);
 
   useEffect(() => {
-    let status = localStorage.getItem('status');
-    if (status) {
-      status = JSON.parse(status);
-      setShowEmailVerification(status.email_verification);
+    let s = localStorage.getItem('status');
+    if (s) {
+      s = JSON.parse(s);
+      setStatus(s);
+      if (s.email_verification) setEmailVerify(true);
     }
-  });
+  }, []);
 
   useEffect(() => {
-    let countdownInterval = null;
-    if (disableButton && countdown > 0) {
-      countdownInterval = setInterval(() => {
-        setCountdown(countdown - 1);
+    let interval = null;
+    if (disableButton) {
+      interval = setInterval(() => {
+        setCountdown((c) => (c > 0 ? c - 1 : 0));
       }, 1000);
-    } else if (countdown === 0) {
-      setDisableButton(false);
-      setCountdown(30);
     }
-    return () => clearInterval(countdownInterval);
-  }, [disableButton, countdown]);
-
-  let navigate = useNavigate();
+    return () => clearInterval(interval);
+  }, [disableButton]);
 
   function handleChange(e) {
     const { name, value } = e.target;
-    console.log(name, value);
     setInputs((inputs) => ({ ...inputs, [name]: value }));
   }
 
-  async function handleSubmit(e) {
-    if (password.length < 8) {
-      showInfo(t('messages.error.password_length'));
+  async function handleSendVerificationCode() {
+    if (!email) {
+      showInfo(t('messages.error.empty_email', '请先输入邮箱地址'));
       return;
     }
-    if (password !== password2) {
-      showInfo(t('messages.error.password_mismatch'));
-      return;
-    }
-    if (username && password) {
-      setLoading(true);
-      if (!affCode) {
-        affCode = localStorage.getItem('aff');
-      }
-      inputs.aff_code = affCode;
-      const res = await API.post(`/api/user/register`, inputs);
-      const { success, message } = res.data;
-      if (success) {
-        navigate('/login');
-        showSuccess(t('messages.success.register'));
-      } else {
-        showError(message);
-      }
-      setLoading(false);
-    }
-  }
-
-  const sendVerificationCode = async () => {
-    if (inputs.email === '') return;
     setDisableButton(true);
-    setLoading(true);
-    const res = await API.get(
-      `/api/verification?email=${inputs.email}`
-    );
+    setCountdown(30);
+    const res = await API.post('/api/verification', {
+      email,
+    });
     const { success, message } = res.data;
     if (success) {
       showSuccess(t('messages.success.verification_code'));
@@ -105,124 +74,140 @@ const RegisterForm = () => {
       setCountdown(30);
     }
     setLoading(false);
-  };
+  }
+
+  async function handleSubmit(e) {
+    if (password !== confirmPassword) {
+      showError(t('messages.error.password_mismatch'));
+      return;
+    }
+    if (password.length < 8) {
+      showError(t('messages.error.password_length'));
+      return;
+    }
+    setLoading(true);
+    const res = await API.post('/api/user/register', {
+      username,
+      password,
+      email: emailVerify ? email : '',
+      verification_code: emailVerify ? verificationCode : '',
+    });
+    const { success, message } = res.data;
+    if (success) {
+      userDispatch({ type: 'logout' });
+      localStorage.removeItem('user');
+      navigate('/login');
+      showSuccess(t('messages.success.register'));
+    } else {
+      showError(message);
+    }
+    setLoading(false);
+  }
 
   return (
-    <Grid textAlign='center' style={{ minHeight: '100vh', margin: '0' }} verticalAlign='middle'>
-      <Grid.Column style={{ maxWidth: 450 }}>
-        <Card
-          fluid
-          className='auth-card'
-        >
-          <Card.Content>
-            <Card.Header>
-              <Header
-                as='h2'
-                textAlign='center'
-                style={{ marginBottom: '1.5em' }}
-              >
-                <Image src={logo} style={{ marginBottom: '10px' }} />
-                <Header.Content>{t('auth.register.title')}</Header.Content>
-              </Header>
-            </Card.Header>
-            <Form size='large'>
-              <Form.Input
-                fluid
-                icon='user'
-                iconPosition='left'
-                placeholder={t('auth.register.username')}
-                onChange={handleChange}
-                name='username'
-                style={{ marginBottom: '1em' }}
-              />
-              <Form.Input
-                fluid
-                icon='lock'
-                iconPosition='left'
-                placeholder={t('auth.register.password')}
-                onChange={handleChange}
-                name='password'
-                type='password'
-                style={{ marginBottom: '1em' }}
-              />
-              <Form.Input
-                fluid
-                icon='lock'
-                iconPosition='left'
-                placeholder={t('auth.register.confirm_password')}
-                onChange={handleChange}
-                name='password2'
-                type='password'
-                style={{ marginBottom: '1em' }}
-              />
+    <div className='aurora-login-page'>
+      <div className='aurora-glow aurora-glow-tl' aria-hidden='true' />
+      <div className='aurora-glow aurora-glow-br' aria-hidden='true' />
 
-              {showEmailVerification && (
-                <>
-                  <Form.Input
-                    fluid
-                    icon='mail'
-                    iconPosition='left'
-                    placeholder={t('auth.register.email')}
-                    onChange={handleChange}
-                    name='email'
-                    type='email'
-                    action={
-                      <Button onClick={sendVerificationCode} disabled={loading}>
-                        {disableButton
-                          ? t('auth.register.get_code_retry', { countdown })
-                          : t('auth.register.get_code')}
-                      </Button>
-                    }
-                    style={{ marginBottom: '1em' }}
-                  />
-                  <Form.Input
-                    fluid
-                    icon='lock'
-                    iconPosition='left'
-                    placeholder={t('auth.register.verification_code')}
-                    onChange={handleChange}
-                    name='verification_code'
-                    style={{ marginBottom: '1em' }}
-                  />
-                </>
-              )}
+      <div className='aurora-login-card' style={{ maxWidth: 480 }}>
+        <div className='aurora-login-brand'>
+          <Image src={logo} className='aurora-login-logo' />
+          <span className='aurora-login-brandname'>One API Lite</span>
+        </div>
 
-              <Button
-                fluid
-                size='large'
-                primary
-                onClick={handleSubmit}
-                style={{
-                  marginBottom: '1.5em',
-                }}
-                loading={loading}
-              >
-                {t('auth.register.button')}
-              </Button>
-            </Form>
+        <h1 className='aurora-login-title'>{t('auth.register.welcome_title', '创建账号')}</h1>
+        <p className='aurora-login-subtitle'>{t('auth.register.welcome_subtitle', '加入您的 AI 中枢')}</p>
 
-            <Divider />
-            <Message style={{ background: 'transparent', boxShadow: 'none' }}>
-              <div
-                style={{
-                  textAlign: 'center',
-                  fontSize: '0.9em',
-                  color: 'var(--aurora-text-muted)',
-                }}
-              >
-                {t('auth.register.has_account')}
-                <Link
-                  to='/login'
-                  style={{ color: 'var(--aurora-primary)', marginLeft: '2px' }}
+        <Form size='large' className='aurora-login-form'>
+          <Form.Field>
+            <label className='aurora-login-label'>{t('auth.register.username')}</label>
+            <input
+              name='username'
+              value={username}
+              onChange={handleChange}
+              placeholder={t('auth.register.username')}
+              className='aurora-login-input'
+            />
+          </Form.Field>
+          <Form.Field>
+            <label className='aurora-login-label'>{t('auth.register.email')}</label>
+            <input
+              name='email'
+              type='email'
+              value={email}
+              onChange={handleChange}
+              placeholder={t('auth.register.email')}
+              className='aurora-login-input'
+            />
+          </Form.Field>
+          {emailVerify && (
+            <Form.Field>
+              <label className='aurora-login-label'>{t('auth.register.verification_code')}</label>
+              <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                <input
+                  name='verificationCode'
+                  value={verificationCode}
+                  onChange={handleChange}
+                  placeholder={t('auth.register.verification_code')}
+                  className='aurora-login-input'
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type='button'
+                  onClick={handleSendVerificationCode}
+                  disabled={disableButton}
+                  className='aurora-oauth-btn'
+                  style={{ flex: '0 0 auto' }}
                 >
-                  {t('auth.register.login')}
-                </Link>
+                  {disableButton
+                    ? t('auth.register.get_code_retry', { countdown })
+                    : t('auth.register.get_code')}
+                </button>
               </div>
-            </Message>
-          </Card.Content>
-        </Card>
-      </Grid.Column>
-    </Grid>
+            </Form.Field>
+          )}
+          <Form.Field>
+            <label className='aurora-login-label'>{t('auth.register.password')}</label>
+            <input
+              name='password'
+              type='password'
+              value={password}
+              onChange={handleChange}
+              placeholder={t('auth.register.password')}
+              className='aurora-login-input'
+            />
+          </Form.Field>
+          <Form.Field>
+            <label className='aurora-login-label'>{t('auth.register.confirm_password')}</label>
+            <input
+              name='confirmPassword'
+              type='password'
+              value={confirmPassword}
+              onChange={handleChange}
+              placeholder={t('auth.register.confirm_password')}
+              className='aurora-login-input'
+            />
+          </Form.Field>
+          <button
+            type='button'
+            onClick={handleSubmit}
+            className='aurora-login-btn'
+            disabled={!username || !password || !confirmPassword || (emailVerify && (!email || !verificationCode))}
+          >
+            {t('auth.register.button')}
+          </button>
+        </Form>
+
+        <div className='aurora-login-footer'>
+          <span style={{ color: 'var(--aurora-text-muted)' }}>
+            {t('auth.register.has_account')}
+          </span>
+          <Link to='/login' className='aurora-login-link'>
+            {t('auth.register.login')}
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 };
 

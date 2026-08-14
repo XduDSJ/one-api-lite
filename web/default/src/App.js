@@ -21,6 +21,7 @@ import EditChannel from './pages/Channel/EditChannel';
 import Log from './pages/Log';
 import Chat from './pages/Chat';
 import Dashboard from './pages/Dashboard';
+import Group from './pages/Group';
 
 const Home = lazy(() => import('./pages/Home'));
 const About = lazy(() => import('./pages/About'));
@@ -248,6 +249,14 @@ function App() {
         element={
           <PrivateRoute>
             <Dashboard />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path='/group'
+        element={
+          <PrivateRoute>
+            <Group />
           </PrivateRoute>
         }
       />

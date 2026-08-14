@@ -19,6 +19,7 @@ import {
   renderQuota,
   renderText,
 } from '../helpers/render';
+import RechargeModal from './RechargeModal';
 
 function renderRole(role, t) {
   switch (role) {
@@ -43,6 +44,8 @@ const UsersTable = () => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searching, setSearching] = useState(false);
   const [orderBy, setOrderBy] = useState('');
+  const [rechargeOpen, setRechargeOpen] = useState(false);
+  const [rechargeUser, setRechargeUser] = useState(null);
 
   const loadUsers = async (startIdx) => {
     const res = await API.get(`/api/user/?p=${startIdx}&order=${orderBy}`);
@@ -357,6 +360,17 @@ const UsersTable = () => {
                       >
                         {t('user.buttons.edit')}
                       </Button>
+                      <Button
+                        size={'tiny'}
+                        color='teal'
+                        onClick={() => {
+                          setRechargeUser(user);
+                          setRechargeOpen(true);
+                        }}
+                        disabled={user.role === 100}
+                      >
+                        {t('user.buttons.recharge')}
+                      </Button>
                     </div>
                   </Table.Cell>
                 </Table.Row>
@@ -410,6 +424,21 @@ const UsersTable = () => {
           </Table.Row>
         </Table.Footer>
       </Table>
+
+      <RechargeModal
+        open={rechargeOpen}
+        onClose={() => setRechargeOpen(false)}
+        user={rechargeUser}
+        onSuccess={(userId, newQuota) => {
+          // 更新本地用户列表中的额度
+          let newUsers = [...users];
+          const idx = newUsers.findIndex((u) => u.id === userId);
+          if (idx !== -1) {
+            newUsers[idx].quota = newQuota;
+            setUsers(newUsers);
+          }
+        }}
+      />
     </>
   );
 };

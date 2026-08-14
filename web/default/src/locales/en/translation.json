@@ -13,7 +13,66 @@
     "chat": "Chat",
     "login": "Login",
     "logout": "Logout",
-    "register": "Register"
+    "register": "Register",
+    "group": "Groups"
+  },
+  "group": {
+    "title": "Group Management",
+    "description": "Manage channel and user groups, configure available channels and model permissions per group",
+    "loading": "Loading group data...",
+    "add_new": "Add New Group",
+    "name_placeholder": "Enter group name",
+    "channels": "channels",
+    "empty_title": "No Groups",
+    "empty_hint": "Add a new group or assign channels/users to a group",
+    "active_hint": "Active channels: {{active}} / {{total}}",
+    "stats": {
+      "channels": "Channels",
+      "users": "Users",
+      "models": "Models"
+    },
+    "buttons": {
+      "add": "Add",
+      "manage": "Manage Permissions"
+    },
+    "messages": {
+      "name_required": "Please enter a group name!",
+      "name_exists": "This group name already exists!",
+      "add_success": "Group added successfully!"
+    },
+    "permission": {
+      "title": "Group Permission Configuration",
+      "tab_channels": "Channels",
+      "tab_users": "Users",
+      "tab_models": "Available Models",
+      "no_channels": "No channels in this group",
+      "no_users": "No users in this group",
+      "no_models": "No available models in this group",
+      "col_id": "ID",
+      "col_name": "Name",
+      "col_type": "Type",
+      "col_status": "Status",
+      "col_username": "Username",
+      "col_display_name": "Display Name",
+      "col_role": "Role",
+      "col_quota": "Quota",
+      "col_move_to": "Move to",
+      "select_group": "Select group",
+      "status_enabled": "Enabled",
+      "status_disabled": "Disabled",
+      "status_auto_disabled": "Auto Disabled",
+      "status_unknown": "Unknown",
+      "role_root": "Super Admin",
+      "role_admin": "Admin",
+      "role_user": "User",
+      "channel_moved": "Channel \"{{name}}\" moved to group \"{{target}}\"",
+      "user_moved": "User \"{{name}}\" moved to group \"{{target}}\"",
+      "fetch_error": "Failed to fetch data",
+      "user_not_found": "User not found",
+      "buttons": {
+        "close": "Close"
+      }
+    }
   },
   "topup": {
     "title": "Top Up Center",
@@ -92,6 +151,16 @@
     "edit": {
       "title_edit": "Update Channel Information",
       "title_create": "Create New Channel",
+      "wizard": {
+        "step1_title": "Basic Info",
+        "step1_desc": "Channel type, name and group",
+        "step2_title": "Key Configuration",
+        "step2_desc": "API keys and authentication",
+        "step3_title": "Model Selection",
+        "step3_desc": "Supported models and aliases",
+        "previous": "Previous",
+        "next": "Next"
+      },
       "type": "Type",
       "name": "Name",
       "name_placeholder": "Please enter name",
@@ -464,7 +533,31 @@
       "disable": "Disable",
       "edit": "Edit",
       "promote": "Promote",
-      "demote": "Demote"
+      "demote": "Demote",
+      "recharge": "Recharge"
+    },
+    "recharge": {
+      "title": "Recharge User",
+      "user": "User",
+      "current_quota": "Current Quota",
+      "amount_label_currency": "Amount (USD)",
+      "amount_label_raw": "Amount (quota)",
+      "amount_placeholder_currency": "Enter amount to add",
+      "amount_placeholder_raw": "Enter quota to add",
+      "quick_add": "Quick Amount",
+      "preview": "Preview",
+      "raw_quota_hint": "Actual quota added: {{count}}",
+      "equivalent": "Equivalent: ${{amount}}",
+      "remark_label": "Remark",
+      "remark_placeholder": "Optional, add a remark",
+      "buttons": {
+        "confirm": "Confirm Recharge",
+        "cancel": "Cancel"
+      },
+      "messages": {
+        "amount_invalid": "Please enter a valid amount!",
+        "success": "Recharge successful!"
+      }
     }
   },
   "dashboard": {

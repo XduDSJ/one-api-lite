@@ -41,6 +41,12 @@ let headerButtons = [
     admin: true,
   },
   {
+    name: 'header.group',
+    to: '/group',
+    icon: 'object group',
+    admin: true,
+  },
+  {
     name: 'header.dashboard',
     to: '/dashboard',
     icon: 'chart bar',

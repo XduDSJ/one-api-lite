@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Button, Card, Form, Input, Label, Message, Table} from 'semantic-ui-react';
+import {Button, Card, Form, Input, Label, Message, Step, Table} from 'semantic-ui-react';
 import {useNavigate, useParams} from 'react-router-dom';
 import {API, copy, showError, showInfo, showSuccess, verifyJSON,} from '../../helpers';
 import {CHANNEL_OPTIONS} from '../../constants';
@@ -49,6 +49,7 @@ const EditChannel = () => {
     groups: ['default'],
   };
   const [batch, setBatch] = useState(false);
+  const [step, setStep] = useState(1); // 1=基本信息, 2=密钥配置, 3=模型选择
   const [inputs, setInputs] = useState(originInputs);
   const [modelOptions, setModelOptions] = useState([]);
   const [groupOptions, setGroupOptions] = useState([]);
@@ -453,7 +454,33 @@ const EditChannel = () => {
               ? t('channel.edit.title_edit')
               : t('channel.edit.title_create')}
           </Card.Header>
+          {/* 步骤指示器 */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px', marginTop: '16px' }}>
+            <Step.Group widths={3}>
+              <Step active={step === 1} completed={step > 1} onClick={() => setStep(1)} style={{ cursor: 'pointer' }}>
+                <Step.Content>
+                  <Step.Title>{t('channel.edit.wizard.step1_title')}</Step.Title>
+                  <Step.Description>{t('channel.edit.wizard.step1_desc')}</Step.Description>
+                </Step.Content>
+              </Step>
+              <Step active={step === 2} completed={step > 2} disabled={step < 1} onClick={() => step > 1 && setStep(2)} style={{ cursor: step > 1 ? 'pointer' : 'default' }}>
+                <Step.Content>
+                  <Step.Title>{t('channel.edit.wizard.step2_title')}</Step.Title>
+                  <Step.Description>{t('channel.edit.wizard.step2_desc')}</Step.Description>
+                </Step.Content>
+              </Step>
+              <Step active={step === 3} disabled={step < 2} onClick={() => step > 2 && setStep(3)} style={{ cursor: step > 2 ? 'pointer' : 'default' }}>
+                <Step.Content>
+                  <Step.Title>{t('channel.edit.wizard.step3_title')}</Step.Title>
+                  <Step.Description>{t('channel.edit.wizard.step3_desc')}</Step.Description>
+                </Step.Content>
+              </Step>
+            </Step.Group>
+          </div>
           <Form loading={loading} autoComplete='new-password'>
+            {/* ====== Step 1: 基本信息 ====== */}
+            {step === 1 && (
+              <>
             <Form.Field>
               <Form.Select
                 label={t('channel.edit.type')}
@@ -641,6 +668,12 @@ const EditChannel = () => {
                 />
               </Form.Field>
             )}
+            </>
+            )}
+            {/* ====== Step 1 end ====== */}
+            {/* ====== Step 2: 密钥配置 ====== */}
+            {step === 2 && (
+              <>
             {/* 多 Key 模式选择 */}
             {inputs.type !== 33 && inputs.type !== 42 && (
               <Form.Field>
@@ -863,6 +896,12 @@ const EditChannel = () => {
                 />
               </Form.Field>
             )}
+            </>
+            )}
+            {/* ====== Step 2 end ====== */}
+            {/* ====== Step 3: 模型选择 ====== */}
+            {step === 3 && (
+              <>
             {inputs.type !== 43 && (
               <Form.Field>
                 <Form.Dropdown
@@ -975,17 +1014,51 @@ const EditChannel = () => {
                 </Table>
               </Form.Field>
             )}
+            </>
+            )}
+            {/* ====== Step 3 end ====== */}
+          </Form>
+          {/* 步骤导航按钮 */}
+          <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between' }}>
             <Button onClick={handleCancel}>
               {t('channel.edit.buttons.cancel')}
             </Button>
-            <Button
-              type={isEdit ? 'button' : 'submit'}
-              positive
-              onClick={submit}
-            >
-              {t('channel.edit.buttons.submit')}
-            </Button>
-          </Form>
+            <div>
+              {step > 1 && (
+                <Button
+                  onClick={() => setStep(step - 1)}
+                  style={{ marginRight: '8px' }}
+                >
+                  {t('channel.edit.wizard.previous')}
+                </Button>
+              )}
+              {step < 3 && (
+                <Button
+                  positive
+                  onClick={() => {
+                    if (step === 1) {
+                      // Step 1 → 2 验证：名称必填
+                      if (!isEdit && inputs.name === '') {
+                        showInfo(t('channel.edit.messages.name_required'));
+                        return;
+                      }
+                    }
+                    setStep(step + 1);
+                  }}
+                >
+                  {t('channel.edit.wizard.next')}
+                </Button>
+              )}
+              {step === 3 && (
+                <Button
+                  positive
+                  onClick={submit}
+                >
+                  {t('channel.edit.buttons.submit')}
+                </Button>
+              )}
+            </div>
+          </div>
         </Card.Content>
       </Card>
     </div>

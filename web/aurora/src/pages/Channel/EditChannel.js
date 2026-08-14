@@ -621,79 +621,113 @@ const EditChannel = () => {
           />
         </Form.Field>
       )}
-      {/* 多 Key 动态列表 */}
+      {/* 多 Key 表格 — 按设计稿 19:167 精确还原（自适应宽度） */}
       {inputs.type !== 33 && inputs.type !== 42 && inputs.multi_key_mode !== 0 && (
         <Form.Field>
-          <div className='key-editor-header-bar'>
-            <label>{t('channel.edit.keys_list', '密钥列表')}</label>
-            <Label size='tiny' className='multi-key-badge'>
-              {t('channel.edit.key_count', '共')} {inputs.keys.length}
+          <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <label style={{ color: 'var(--aurora-text)', fontSize: '13px', fontWeight: 500 }}>
+              {t('channel.edit.keys_list', '密钥列表')}
+            </label>
+            <Label size='tiny' style={{ background: 'rgba(184,111,5,0.15)', color: '#B86F05' }}>
+              {inputs.keys.length}
             </Label>
-            <Button type='button' primary size='mini' onClick={addKey}>
-              {t('channel.edit.add_key', '+ 添加密钥')}
-            </Button>
           </div>
-          {inputs.keys.length === 0 && (
-            <Message size='tiny' style={{ marginTop: 0 }}>
-              {t('channel.edit.no_key_hint', '暂无密钥，点击「添加密钥」新建')}
-            </Message>
-          )}
+
           {inputs.keys.length > 0 && (
-            <div className='key-editor-list'>
+            <div className='aurora-key-table-wrap'>
+              {/* 表头 */}
+              <div className='aurora-key-table-header'>
+                <span className='aurora-key-th-key'>{t('channel.edit.key_value', '密钥')}</span>
+                <span className='aurora-key-th-remark'>{t('channel.edit.key_remark', '备注')}</span>
+                <span className='aurora-key-th-priority'>{t('channel.edit.key_priority', '优先级')}</span>
+                <span className='aurora-key-th-quota'>{t('channel.edit.key_daily_quota', '每日配额')}</span>
+                <span className='aurora-key-th-reset'>{t('channel.edit.key_reset_rule', '重置时刻')}</span>
+                <span className='aurora-key-th-action'>{t('channel.edit.alias_actions', '操作')}</span>
+              </div>
+              {/* 数据行 */}
               {inputs.keys.map((k, index) => (
-                <div className='key-editor-row' key={index + '_' + k.key_value}>
-                  <Form.Input
-                    className='key-field-key'
-                    label={t('channel.edit.key_value', '密钥')}
-                    required
-                    value={k.key_value}
-                    onChange={(e, { value }) => updateKeyField(index, 'key_value', value)}
-                    autoComplete='new-password'
-                  />
-                  <Form.Input
-                    label={t('channel.edit.key_remark', '备注')}
-                    value={k.remark}
-                    onChange={(e, { value }) => updateKeyField(index, 'remark', value)}
-                  />
-                  <Form.Input
-                    label={t('channel.edit.key_priority', '优先级')}
-                    type='number'
-                    value={k.priority}
-                    onChange={(e, { value }) => updateKeyField(index, 'priority', parseInt(value) || 0)}
-                  />
-                  <Form.Input
-                    label={t('channel.edit.key_daily_quota', '每日配额(token)')}
-                    type='number'
-                    value={k.daily_quota_limit}
-                    onChange={(e, { value }) => updateKeyField(index, 'daily_quota_limit', parseInt(value) || 0)}
-                  />
-                  <Form.Dropdown
-                    label={t('channel.edit.key_reset_rule', '重置时刻')}
-                    selection
-                    value={k.quota_reset_rule}
-                    onChange={(e, { value }) => updateKeyField(index, 'quota_reset_rule', value)}
-                    options={[
-                      { key: '', text: t('channel.edit.no_reset', '不自动重置'), value: '' },
-                      { key: '00:00', text: '00:00', value: '00:00' },
-                      { key: '04:00', text: '04:00', value: '04:00' },
-                      { key: '08:00', text: '08:00', value: '08:00' },
-                      { key: '12:00', text: '12:00', value: '12:00' },
-                      { key: '16:00', text: '16:00', value: '16:00' },
-                      { key: '20:00', text: '20:00', value: '20:00' },
-                    ]}
-                  />
-                  <Button
-                    className='key-field-delete'
-                    type='button'
-                    negative
-                    size='mini'
-                    icon='trash'
-                    aria-label={t('channel.edit.remove_key', '删除')}
-                    title={t('channel.edit.remove_key', '删除')}
-                    onClick={() => removeKey(index)}
-                  />
+                <div className='aurora-key-table-row' key={index + '_' + k.key_value}>
+                  <div className='aurora-key-cell-key'>
+                    <input
+                      required
+                      value={k.key_value}
+                      onChange={(e) => updateKeyField(index, 'key_value', e.target.value)}
+                      placeholder='sk-...'
+                      autoComplete='new-password'
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  <div className='aurora-key-cell-remark'>
+                    <input
+                      value={k.remark}
+                      onChange={(e) => updateKeyField(index, 'remark', e.target.value)}
+                      placeholder='—'
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  <div className='aurora-key-cell-priority'>
+                    <input
+                      type='number'
+                      value={k.priority}
+                      onChange={(e) => updateKeyField(index, 'priority', parseInt(e.target.value) || 0)}
+                      style={{ width: '100%', textAlign: 'center' }}
+                    />
+                  </div>
+                  <div className='aurora-key-cell-quota'>
+                    <input
+                      type='number'
+                      value={k.daily_quota_limit}
+                      onChange={(e) => updateKeyField(index, 'daily_quota_limit', parseInt(e.target.value) || 0)}
+                      placeholder='0'
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  <div className='aurora-key-cell-reset'>
+                    <select
+                      value={k.quota_reset_rule}
+                      onChange={(e) => updateKeyField(index, 'quota_reset_rule', e.target.value)}
+                      style={{
+                        width: '100%', height: 36, borderRadius: 6,
+                        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                        color: 'var(--aurora-text)', fontSize: 12, padding: '0 8px',
+                      }}
+                    >
+                      <option value=''>{t('channel.edit.no_reset', '不重置')}</option>
+                      <option value='00:00'>00:00</option>
+                      <option value='04:00'>04:00</option>
+                      <option value='08:00'>08:00</option>
+                      <option value='12:00'>12:00</option>
+                      <option value='16:00'>16:00</option>
+                      <option value='20:00'>20:00</option>
+                    </select>
+                  </div>
+                  <div className='aurora-key-cell-action'>
+                    <button
+                      className='aurora-key-delete-btn'
+                      type='button'
+                      onClick={() => removeKey(index)}
+                    >
+                      {t('channel.edit.remove_key', '删除')}
+                    </button>
+                  </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* 添加密钥按钮 */}
+          <button type='button' className='aurora-key-add-btn' onClick={addKey}>
+            + {t('channel.edit.add_key', '添加密钥')}
+          </button>
+
+          {/* 重置时刻提示 */}
+          <div className='aurora-key-hint'>
+            {t('channel.edit.reset_hint', '重置时刻按 4 小时一档：00:00 / 04:00 / 08:00 / 12:00 / 16:00 / 20:00 / 不重置；每日配额 0 表示不限')}
+          </div>
+
+          {inputs.keys.length === 0 && (
+            <div style={{ color: 'var(--aurora-text-muted)', fontSize: '13px', padding: '16px 0' }}>
+              {t('channel.edit.no_key_hint', '暂无密钥，点击「添加密钥」新建')}
             </div>
           )}
         </Form.Field>

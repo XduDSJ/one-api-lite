@@ -533,280 +533,89 @@ const ChannelsTable = () => {
           {t('channel.detail_notice')}
         </Message>
       )}
-      <div style={{ overflowX: 'auto' }}>
-      <Table className='channel-table' basic={'very'} compact size='small'>
-        <Table.Header>
-          <Table.Row>
-            <Table.HeaderCell
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                sortChannel('id');
-              }}
-            >
-              {t('channel.table.id')}
-            </Table.HeaderCell>
-            <Table.HeaderCell
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                sortChannel('name');
-              }}
-            >
-              {t('channel.table.name')}
-            </Table.HeaderCell>
-            <Table.HeaderCell
-              hidden
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                sortChannel('group');
-              }}
-            >
-              {t('channel.table.group')}
-            </Table.HeaderCell>
-            <Table.HeaderCell
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                sortChannel('type');
-              }}
-            >
-              {t('channel.table.type')}
-            </Table.HeaderCell>
-            <Table.HeaderCell
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                sortChannel('status');
-              }}
-            >
-              {t('channel.table.status')}
-            </Table.HeaderCell>
-            <Table.HeaderCell>
-              {t('channel.table.key_mode', '密钥模式')}
-            </Table.HeaderCell>
-            <Table.HeaderCell
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                sortChannel('response_time');
-              }}
-            >
-              {t('channel.table.response_time')}
-            </Table.HeaderCell>
-            <Table.HeaderCell
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                sortChannel('balance');
-              }}
-            >
-              {t('channel.table.balance')}
-            </Table.HeaderCell>
-            <Table.HeaderCell
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                sortChannel('priority');
-              }}
-              hidden={!showDetail}
-            >
-              {t('channel.table.priority')}
-            </Table.HeaderCell>
-            <Table.HeaderCell hidden={!showDetail}>
-              {t('channel.table.test_model')}
-            </Table.HeaderCell>
-            <Table.HeaderCell>{t('channel.table.actions')}</Table.HeaderCell>
-            <Table.HeaderCell style={{ width: '44px', textAlign: 'center' }}>
-              {t('channel.key_list.detail', '密钥')}
-            </Table.HeaderCell>
-          </Table.Row>
-        </Table.Header>
+      {/* 渠道表格卡片 — 按设计稿 3:870 精确还原 */}
+      <div className='aurora-channel-table-card'>
+        {/* 表头 */}
+        <div className='aurora-ch-header'>
+          <span className='aurora-ch-col-id' style={{ cursor: 'pointer' }} onClick={() => sortChannel('id')}>{t('channel.table.id')}</span>
+          <span className='aurora-ch-col-name' style={{ cursor: 'pointer' }} onClick={() => sortChannel('name')}>{t('channel.table.name')}</span>
+          <span className='aurora-ch-col-type' style={{ cursor: 'pointer' }} onClick={() => sortChannel('type')}>{t('channel.table.type')}</span>
+          <span className='aurora-ch-col-group'>{t('channel.table.group')}</span>
+          <span className='aurora-ch-col-models'>{t('channel.table.supported_models', '支持模型')}</span>
+          <span className='aurora-ch-col-priority' style={{ cursor: 'pointer' }} onClick={() => sortChannel('priority')}>{t('channel.table.priority')}</span>
+          <span className='aurora-ch-col-weight'>{t('channel.table.weight', '权重')}</span>
+          <span className='aurora-ch-col-status' style={{ cursor: 'pointer' }} onClick={() => sortChannel('status')}>{t('channel.table.status')}</span>
+          <span className='aurora-ch-col-response' style={{ cursor: 'pointer' }} onClick={() => sortChannel('response_time')}>{t('channel.table.response_time')}</span>
+          <span className='aurora-ch-col-balance' style={{ cursor: 'pointer' }} onClick={() => sortChannel('balance')}>{t('channel.table.balance')}</span>
+          <span className='aurora-ch-col-actions'>{t('channel.table.actions')}</span>
+        </div>
 
-        <Table.Body>
-          {channels
-            .slice(
-              (activePage - 1) * ITEMS_PER_PAGE,
-              activePage * ITEMS_PER_PAGE
-            )
-            .map((channel, idx) => {
-              if (channel.deleted) return null;
+        {/* 数据行 */}
+        {channels
+          .slice((activePage - 1) * ITEMS_PER_PAGE, activePage * ITEMS_PER_PAGE)
+          .map((channel, idx) => {
+            if (channel.deleted) return null;
+            const typeBadgeClass = `aurora-ch-type-${(type2label?.[channel.type]?.text || 'default').toLowerCase().replace(/\s+/g, '')}`.replace(/[^a-z0-9-_]/g, '');
+            const responseTimeMs = channel.response_time || 0;
+            const responseClass = responseTimeMs === 0 ? 'aurora-ch-response-none' : responseTimeMs < 200 ? 'aurora-ch-response-fast' : responseTimeMs < 500 ? 'aurora-ch-response-medium' : 'aurora-ch-response-slow';
+            const statusClass = channel.status === 1 ? 'aurora-ch-status-enabled' : channel.status === 2 ? 'aurora-ch-status-disabled' : channel.status === 3 ? 'aurora-ch-status-auto' : '';
+            const statusLabel = channel.status === 1 ? t('channel.table.status_enabled') : channel.status === 2 ? t('channel.table.status_disabled') : channel.status === 3 ? t('channel.table.status_auto_disabled') : t('channel.table.status_unknown');
+            const realIdx = (activePage - 1) * ITEMS_PER_PAGE + idx;
+            return (
+              <div className='aurora-ch-row' key={channel.id}>
+                <span className='aurora-ch-col-id aurora-ch-cell-id'>{channel.id}</span>
+                <span className='aurora-ch-col-name aurora-ch-cell-name'>{channel.name || t('channel.table.no_name')}</span>
+                <div className='aurora-ch-col-type'>
+                  <span className={`aurora-ch-type-badge ${typeBadgeClass}`}>
+                    {type2label?.[channel.type]?.text || `#${channel.type}`}
+                  </span>
+                </div>
+                <span className='aurora-ch-col-group aurora-ch-cell-group'>{channel.group || 'default'}</span>
+                <span className='aurora-ch-col-models aurora-ch-cell-models'>
+                  {channel.models ? (channel.models.length > 3 ? channel.models.slice(0, 3).join(', ') + ` +${channel.models.length - 3}` : channel.models.join(', ')) : '—'}
+                </span>
+                <span className='aurora-ch-col-priority aurora-ch-cell-priority'>{channel.priority ?? 0}</span>
+                <span className='aurora-ch-col-weight aurora-ch-cell-weight'>{channel.weight ?? 0}</span>
+                <div className='aurora-ch-col-status'>
+                  <span className={`aurora-ch-status ${statusClass}`}>
+                    <span className='aurora-ch-status-dot' />
+                    <span className='aurora-ch-status-label'>{statusLabel}</span>
+                  </span>
+                </div>
+                <span className={`aurora-ch-col-response ${responseClass}`}>
+                  {responseTimeMs > 0 ? `${responseTimeMs}ms` : '—'}
+                </span>
+                <span className={`aurora-ch-col-balance ${channel.balance ? 'aurora-ch-cell-balance' : 'aurora-ch-cell-balance-muted'}`}>
+                  {channel.balance ? renderBalance(channel.type, channel.balance, t) : '—'}
+                </span>
+                <div className='aurora-ch-col-actions aurora-ch-actions'>
+                  <Link to={`/channel/edit/${channel.id}`} className='aurora-ch-action-btn aurora-ch-action-edit'>{t('channel.buttons.edit')}</Link>
+                  <button className='aurora-ch-action-btn aurora-ch-action-test' onClick={() => testChannel(channel.id, channel.name, idx)}>{t('channel.buttons.test')}</button>
+                  <button className='aurora-ch-action-btn aurora-ch-action-balance' onClick={() => updateChannelBalance(channel.id, channel.name, idx)}>{t('channel.buttons.balance', '余额')}</button>
+                  <button className='aurora-ch-action-btn aurora-ch-action-delete' onClick={() => manageChannel(channel.id, 'delete', idx)}>{t('channel.buttons.delete')}</button>
+                </div>
+              </div>
+            );
+          })}
+
+        {/* 分页器 */}
+        <div className='aurora-ch-pagination'>
+          <span className='aurora-ch-pagi-info'>
+            {t('channel.pagi.info', { total: channels.length, page: activePage, total_pages: Math.ceil(channels.length / ITEMS_PER_PAGE) || 1 })}
+          </span>
+          <div className='aurora-ch-pagi-btns'>
+            <button className='aurora-ch-pagi-btn' onClick={() => setActivePage(activePage - 1)} disabled={activePage <= 1}>‹</button>
+            {Array.from({ length: Math.min(5, Math.ceil(channels.length / ITEMS_PER_PAGE) || 1) }, (_, i) => {
+              const page = i + 1;
               return (
-                <React.Fragment key={channel.id}>
-                <Table.Row>
-                  <Table.Cell>{channel.id}</Table.Cell>
-                  <Table.Cell>
-                    {channel.name ? channel.name : t('channel.table.no_name')}
-                  </Table.Cell>
-                  <Table.Cell hidden>{renderGroup(channel.group)}</Table.Cell>
-                  <Table.Cell>{renderType(channel.type, t)}</Table.Cell>
-                  <Table.Cell>
-                    {renderStatus(channel.status, t)}
-                  </Table.Cell>
-                  <Table.Cell>
-                    {renderKeyMode(channel.multi_key_mode, t)}
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Popup
-                      content={
-                        channel.test_time
-                          ? renderTimestamp(channel.test_time)
-                          : t('channel.table.not_tested')
-                      }
-                      key={channel.id}
-                      trigger={renderResponseTime(channel.response_time, t)}
-                      basic
-                    />
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Popup
-                      trigger={
-                        <span
-                          onClick={() => {
-                            updateChannelBalance(channel.id, channel.name, idx);
-                          }}
-                          style={{ cursor: 'pointer' }}
-                        >
-                          {renderBalance(channel.type, channel.balance, t)}
-                        </span>
-                      }
-                      content={t('channel.table.click_to_update')}
-                      basic
-                    />
-                  </Table.Cell>
-                  <Table.Cell hidden={!showDetail}>
-                    <Popup
-                      trigger={
-                        <Input
-                          type='number'
-                          defaultValue={channel.priority}
-                          onBlur={(event) => {
-                            manageChannel(
-                              channel.id,
-                              'priority',
-                              idx,
-                              event.target.value
-                            );
-                          }}
-                        >
-                          <input style={{ maxWidth: '60px' }} />
-                        </Input>
-                      }
-                      content={t('channel.table.priority_tip')}
-                      basic
-                    />
-                  </Table.Cell>
-                  <Table.Cell hidden={!showDetail}>
-                    <Dropdown
-                      placeholder={t('channel.table.select_test_model')}
-                      selection
-                      options={channel.model_options}
-                      defaultValue={channel.test_model}
-                      onChange={(event, data) => {
-                        switchTestModel(idx, data.value);
-                      }}
-                    />
-                  </Table.Cell>
-                  <Table.Cell>
-                    <div
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        flexWrap: 'nowrap',
-                        gap: 'var(--space-1)',
-                      }}
-                    >
-                      <Button
-                        size={'mini'}
-                        positive
-                        onClick={() => {
-                          testChannel(
-                            channel.id,
-                            channel.name,
-                            idx,
-                            channel.test_model
-                          );
-                        }}
-                      >
-                        {t('channel.buttons.test')}
-                      </Button>
-                      <Popup
-                        trigger={
-                          <Button size='mini' negative>
-                            {t('channel.buttons.delete')}
-                          </Button>
-                        }
-                        on='click'
-                        flowing
-                        hoverable
-                      >
-                        <Button
-                          size={'mini'}
-                          negative
-                          onClick={() => {
-                            manageChannel(channel.id, 'delete', idx);
-                          }}
-                        >
-                          {t('channel.buttons.confirm_delete')} {channel.name}
-                        </Button>
-                      </Popup>
-                      <Button
-                        size={'mini'}
-                        onClick={() => {
-                          manageChannel(
-                            channel.id,
-                            channel.status === 1 ? 'disable' : 'enable',
-                            idx
-                          );
-                        }}
-                      >
-                        {channel.status === 1
-                          ? t('channel.buttons.disable')
-                          : t('channel.buttons.enable')}
-                      </Button>
-                      <Button
-                        size={'mini'}
-                        as={Link}
-                        to={'/channel/edit/' + channel.id}
-                      >
-                        {t('channel.buttons.edit')}
-                      </Button>
-                    </div>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Button
-                      size='tiny'
-                      icon={expandedChannelId === channel.id ? 'angle up' : 'angle down'}
-                      onClick={() => {
-                        setExpandedChannelId(
-                          expandedChannelId === channel.id ? null : channel.id
-                        );
-                      }}
-                    />
-                  </Table.Cell>
-                </Table.Row>
-                {expandedChannelId === channel.id && (
-                  <Table.Row key={channel.id + '-expand'}>
-                    <Table.Cell colSpan={showDetail ? '11' : '9'} style={{ padding: 'var(--space-4)', backgroundColor: 'var(--aurora-surface-2)' }}>
-                      <ChannelKeyList channelId={channel.id} />
-                    </Table.Cell>
-                  </Table.Row>
-                )}
-              </React.Fragment>
+                <button key={page} className={`aurora-ch-pagi-btn ${activePage === page ? 'active' : ''}`} onClick={() => setActivePage(page)}>
+                  {page}
+                </button>
               );
             })}
-        </Table.Body>
-
-        <Table.Footer>
-          <Table.Row>
-            <Table.HeaderCell colSpan={showDetail ? '11' : '9'} style={{ textAlign: 'right' }}>
-              <Pagination
-                activePage={activePage}
-                onPageChange={onPaginationChange}
-                size='tiny'
-                siblingRange={1}
-                totalPages={
-                  Math.ceil(channels.length / ITEMS_PER_PAGE) +
-                  (channels.length % ITEMS_PER_PAGE === 0 ? 1 : 0)
-                }
-              />
-            </Table.HeaderCell>
-          </Table.Row>
-        </Table.Footer>
-      </Table>
+            <button className='aurora-ch-pagi-btn' onClick={() => setActivePage(activePage + 1)} disabled={activePage >= Math.ceil(channels.length / ITEMS_PER_PAGE)}>›</button>
+          </div>
+        </div>
       </div>
     </>
   );

@@ -962,6 +962,362 @@ body::before {
 .ui.menu .item {
   color: var(--aurora-text-muted) !important;
 }
+
+/* ============================================================
+   渠道管理表格 — 按设计稿 3:870 精确还原
+   ============================================================ */
+
+.aurora-channel-table-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid var(--aurora-border) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+/* 表头行 */
+.aurora-channel-table-card .aurora-ch-header {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 24px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--aurora-divider);
+}
+.aurora-ch-header > span {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6B7280;
+  font-family: 'Noto Sans SC', sans-serif;
+  flex-shrink: 0;
+}
+.aurora-ch-col-id { width: 40px; }
+.aurora-ch-col-name { width: 150px; }
+.aurora-ch-col-type { width: 100px; }
+.aurora-ch-col-group { width: 80px; }
+.aurora-ch-col-models { width: 220px; }
+.aurora-ch-col-priority { width: 70px; }
+.aurora-ch-col-weight { width: 60px; }
+.aurora-ch-col-status { width: 80px; }
+.aurora-ch-col-response { width: 90px; }
+.aurora-ch-col-balance { width: 90px; }
+.aurora-ch-col-actions { flex: 1; min-width: 120px; text-align: right; }
+
+/* 数据行 */
+.aurora-channel-table-card .aurora-ch-row {
+  display: flex;
+  align-items: center;
+  height: 56px;
+  padding: 0 24px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.15s ease;
+}
+.aurora-channel-table-card .aurora-ch-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.aurora-ch-row > span,
+.aurora-ch-row > div {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-family: 'Noto Sans SC', sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 列内容颜色 */
+.aurora-ch-cell-id { color: #6B7280; }
+.aurora-ch-cell-name { color: #FFFFFF; font-weight: 500; }
+.aurora-ch-cell-group { color: #9CA3AF; font-size: 12px; }
+.aurora-ch-cell-models { color: #D1D5DB; font-size: 12px; }
+.aurora-ch-cell-weight { color: #D1D5DB; }
+.aurora-ch-cell-balance { color: #D1D5DB; }
+.aurora-ch-cell-balance-muted { color: #6B7280; }
+
+/* 优先级金色加粗 */
+.aurora-ch-cell-priority {
+  color: #F5A623;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* 类型徽章 */
+.aurora-ch-type-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Noto Sans SC', sans-serif;
+  padding: 0 10px;
+}
+.aurora-ch-type-openai { background: rgba(45, 212, 191, 0.15); color: #2DD4BF; }
+.aurora-ch-type-azure { background: rgba(84, 130, 219, 0.15); color: #60A5FA; }
+.aurora-ch-type-anthropic { background: rgba(245, 166, 35, 0.15); color: #F5A623; }
+.aurora-ch-type-custom { background: rgba(255, 255, 255, 0.08); color: #D1D5DB; }
+.aurora-ch-type-gemini { background: rgba(45, 212, 191, 0.15); color: #2DD4BF; }
+.aurora-ch-type-qwen { background: rgba(138, 99, 217, 0.15); color: #A78BFA; }
+.aurora-ch-type-default { background: rgba(255, 255, 255, 0.08); color: #9CA3AF; }
+
+/* 状态指示器 */
+.aurora-ch-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.aurora-ch-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.aurora-ch-status-enabled .aurora-ch-status-dot { background: #2DD4BF; }
+.aurora-ch-status-enabled .aurora-ch-status-label { color: #2DD4BF; }
+.aurora-ch-status-disabled .aurora-ch-status-dot { background: #EF4444; }
+.aurora-ch-status-disabled .aurora-ch-status-label { color: #EF4444; }
+.aurora-ch-status-auto .aurora-ch-status-dot { background: #F5A623; }
+.aurora-ch-status-auto .aurora-ch-status-label { color: #F5A623; }
+.aurora-ch-status-label {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Noto Sans SC', sans-serif;
+}
+
+/* 响应时间颜色编码 */
+.aurora-ch-response-fast { color: #2DD4BF; }     /* <200ms */
+.aurora-ch-response-medium { color: #F5A623; }   /* 200-500ms */
+.aurora-ch-response-slow { color: #EF4444; }     /* >500ms */
+.aurora-ch-response-none { color: #6B7280; }     /* 未测试 */
+
+/* 操作列 */
+.aurora-ch-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.aurora-ch-action-btn {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Noto Sans SC', sans-serif;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  transition: opacity 0.15s ease;
+}
+.aurora-ch-action-btn:hover { opacity: 0.75; }
+.aurora-ch-action-edit { color: #F5A623; }
+.aurora-ch-action-test { color: #9CA3AF; }
+.aurora-ch-action-balance { color: #2DD4BF; }
+.aurora-ch-action-delete { color: #EF4444; }
+
+/* 分页器 */
+.aurora-ch-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 24px;
+}
+.aurora-ch-pagi-info {
+  font-size: 12px;
+  color: #6B7280;
+  font-family: 'Noto Sans SC', sans-serif;
+}
+.aurora-ch-pagi-btns {
+  display: flex;
+  gap: 6px;
+}
+.aurora-ch-pagi-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--aurora-text-muted);
+  transition: all 0.15s ease;
+}
+.aurora-ch-pagi-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--aurora-text);
+}
+.aurora-ch-pagi-btn.active {
+  background: #B86F05;
+  color: #fff;
+}
+
+/* 渠道管理 toolbar */
+.aurora-channel-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+  flex-wrap: wrap;
+}
+.aurora-channel-toolbar__left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+}
+.aurora-channel-toolbar__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* 渠道添加向导按钮 */
+.aurora-wizard-btn {
+  height: 36px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(184, 111, 5, 0.4);
+  border-radius: 8px;
+  color: #B86F05;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Noto Sans SC', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.aurora-wizard-btn:hover {
+  background: rgba(184, 111, 5, 0.1);
+  border-color: #B86F05;
+}
+
+/* ============================================================
+   多 Key 表格 — 按设计稿 19:167 精确还原（自适应宽度）
+   ============================================================ */
+.aurora-key-table-wrap {
+  width: fit-content;
+  min-width: 480px;
+  max-width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.aurora-key-table-header {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 4px;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.aurora-key-table-header > span {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #6B7280;
+  font-family: 'Noto Sans SC', sans-serif;
+  flex-shrink: 0;
+}
+.aurora-key-th-key { width: 248px; }
+.aurora-key-th-remark { width: 118px; }
+.aurora-key-th-priority { width: 68px; text-align: center; }
+.aurora-key-th-quota { width: 118px; }
+.aurora-key-th-reset { width: 118px; }
+.aurora-key-th-action { width: 56px; text-align: center; }
+
+.aurora-key-table-row {
+  display: flex;
+  align-items: center;
+  height: 52px;
+  padding: 8px 4px;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  margin-top: 4px;
+  transition: background 0.15s ease;
+}
+.aurora-key-table-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.aurora-key-table-row input,
+.aurora-key-table-row .ui.selection.dropdown {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 6px !important;
+  color: var(--aurora-text) !important;
+  font-size: 12px !important;
+  height: 36px !important;
+}
+.aurora-key-table-row input:focus {
+  border-color: var(--aurora-primary) !important;
+}
+.aurora-key-table-row input::placeholder {
+  color: var(--aurora-text-muted);
+  opacity: 0.5;
+}
+
+.aurora-key-cell-key { width: 248px; flex-shrink: 0; }
+.aurora-key-cell-remark { width: 118px; flex-shrink: 0; }
+.aurora-key-cell-priority { width: 68px; flex-shrink: 0; }
+.aurora-key-cell-quota { width: 118px; flex-shrink: 0; }
+.aurora-key-cell-reset { width: 118px; flex-shrink: 0; }
+.aurora-key-cell-action { width: 56px; flex-shrink: 0; display: flex; justify-content: center; }
+
+.aurora-key-delete-btn {
+  width: 56px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #EF4444;
+  font-size: 11.5px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.aurora-key-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.aurora-key-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(184, 111, 5, 0.4);
+  border-radius: 8px;
+  color: #B86F05;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Noto Sans SC', sans-serif;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.15s ease;
+}
+.aurora-key-add-btn:hover {
+  background: rgba(184, 111, 5, 0.08);
+  border-color: #B86F05;
+}
+
+.aurora-key-hint {
+  font-size: 11.5px;
+  color: #6B7280;
+  font-family: 'Noto Sans SC', sans-serif;
+  margin-top: 8px;
+  line-height: 1.5;
+}
 .ui.menu .item:hover {
   background-color: rgba(255, 255, 255, 0.04) !important;
   color: var(--aurora-text) !important;

@@ -23,19 +23,38 @@ const EditChannel = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(isEdit);
-  const [inputs, setInputs] = useState({ type: 1, name: '', key: '', base_url: '', models: [], groups: ['default'], priority: 0, weight: 0, multi_key_mode: 0 });
+  const [fetchingModels, setFetchingModels] = useState(false);
+  const [inputs, setInputs] = useState({
+    type: 1, name: '', key: '', base_url: '',
+    models: [], groups: ['default'],
+    priority: 0, weight: 0, multi_key_mode: 0,
+    model_mapping: '',
+  });
   const [keys, setKeys] = useState([]);
   const [modelOptions, setModelOptions] = useState([]);
-  const [customModel, setCustomModel] = useState('');
+  // modelAliases: [{original, alias}] — 设计稿 ModelMappingTable 每行
+  const [modelAliases, setModelAliases] = useState([]);
 
   useEffect(() => {
     if (isEdit) {
       API.get(`/api/channel/${id}`).then((res) => {
         if (res.data.success) {
           const d = res.data.data;
+          const modelsArr = Array.isArray(d.models) ? d.models
+            : (typeof d.models === 'string' ? d.models.split(',').filter(Boolean) : []);
+          // 解析 model_mapping（JSON string → alias 数组）
+          let aliases = [];
+          if (d.model_mapping) {
+            try {
+              const mapping = typeof d.model_mapping === 'string' ? JSON.parse(d.model_mapping) : d.model_mapping;
+              aliases = modelsArr.map((m) => ({ original: m, alias: mapping[m] || '' }));
+            } catch { aliases = modelsArr.map((m) => ({ original: m, alias: '' })); }
+          } else {
+            aliases = modelsArr.map((m) => ({ original: m, alias: '' }));
+          }
           setInputs({
             ...d,
-            models: Array.isArray(d.models) ? d.models : (typeof d.models === 'string' ? d.models.split(',').filter(Boolean) : []),
+            models: modelsArr,
             groups: Array.isArray(d.groups) ? d.groups : (typeof d.groups === 'string' ? d.groups.split(',').filter(Boolean) : ['default']),
             multi_key_mode: d.multi_key_mode ?? 0,
             priority: d.priority ?? 0,
@@ -43,7 +62,9 @@ const EditChannel = () => {
             key: d.key || '',
             base_url: d.base_url || '',
             name: d.name || '',
+            model_mapping: d.model_mapping || '',
           });
+          setModelAliases(aliases);
           if (Array.isArray(d.keys)) setKeys(d.keys);
         }
         setLoading(false);
@@ -52,7 +73,7 @@ const EditChannel = () => {
       setLoading(false);
     }
     API.get('/api/models').then((res) => {
-      if (res.data.success && Array.isArray(res.data.data)) setModelOptions(res.data.data.map((m) => ({ value: m, label: m })));
+      if (res.data.success && Array.isArray(res.data.data)) setModelOptions(res.data.data);
     }).catch(() => {});
   }, []);
 
@@ -61,20 +82,90 @@ const EditChannel = () => {
     setInputs((prev) => ({ ...prev, [name]: value }));
   };
 
+  // === 多 Key ===
   const addKey = () => setKeys([...keys, { key_value: '', remark: '', priority: 0, daily_quota_limit: 0, quota_reset_rule: '' }]);
   const removeKey = (idx) => setKeys(keys.filter((_, i) => i !== idx));
   const updateKey = (idx, field, value) => setKeys(keys.map((k, i) => i === idx ? { ...k, [field]: value } : k));
 
-  const addCustomModel = () => {
-    if (customModel && !inputs.models.includes(customModel)) {
-      setInputs({ ...inputs, models: [...inputs.models, customModel] });
-      setCustomModel('');
+  // === 模型映射（设计稿 Section-Mapping 3:2408） ===
+
+  // 从上游获取模型 — 设计稿 FetchModelsBtn 12:11
+  const fetchUpstreamModels = async () => {
+    setFetchingModels(true);
+    try {
+      let res;
+      if (isEdit) {
+        res = await API.get(`/api/channel/fetch_models/${id}`);
+      } else {
+        // 新建模式：用 type + base_url + key 请求
+        res = await API.post('/api/channel/fetch_models', {
+          type: parseInt(inputs.type),
+          key: inputs.key,
+          base_url: inputs.base_url,
+        });
+      }
+      const { success, message, data } = res.data;
+      if (success && Array.isArray(data)) {
+        const newModels = data.filter((m) => !inputs.models.includes(m));
+        const newAliases = [...modelAliases, ...newModels.map((m) => ({ original: m, alias: '' }))];
+        setInputs({ ...inputs, models: [...inputs.models, ...newModels] });
+        setModelAliases(newAliases);
+        showSuccess(`已获取 ${data.length} 个模型（新增 ${newModels.length}）`);
+      } else {
+        showError(message || '获取模型失败');
+      }
+    } catch (e) {
+      showError(e.message || '获取模型失败');
     }
+    setFetchingModels(false);
+  };
+
+  // 手动添加模型行 — 设计稿 AddRow 12:83
+  const addModelRow = (modelName) => {
+    const name = modelName || '';
+    if (name && inputs.models.includes(name)) {
+      showInfo('该模型已存在');
+      return;
+    }
+    setInputs({ ...inputs, models: [...inputs.models, name] });
+    setModelAliases([...modelAliases, { original: name, alias: '' }]);
+  };
+
+  // 移除模型行 — 设计稿 "移除" 按钮
+  const removeModelRow = (idx) => {
+    setInputs({ ...inputs, models: inputs.models.filter((_, i) => i !== idx) });
+    setModelAliases(modelAliases.filter((_, i) => i !== idx));
+  };
+
+  // 更新别名 — 设计稿 Alias 列可编辑 input
+  const updateModelAlias = (idx, alias) => {
+    setModelAliases(modelAliases.map((a, i) => i === idx ? { ...a, alias } : a));
+  };
+
+  // 更新模型名（手动添加的空行可以编辑模型名）
+  const updateModelName = (idx, name) => {
+    setInputs({ ...inputs, models: inputs.models.map((m, i) => i === idx ? name : m) });
+    setModelAliases(modelAliases.map((a, i) => i === idx ? { ...a, original: name } : a));
+  };
+
+  // 清空所有模型
+  const clearAllModels = () => {
+    setInputs({ ...inputs, models: [] });
+    setModelAliases([]);
   };
 
   const handleSubmit = async () => {
     if (!inputs.name) { showError('请输入名称'); return; }
-    const payload = { ...inputs, keys: inputs.multi_key_mode !== 0 ? keys : undefined };
+    // 构建 model_mapping 对象
+    const mapping = {};
+    modelAliases.forEach((a) => {
+      if (a.alias && a.original) mapping[a.original] = a.alias;
+    });
+    const payload = {
+      ...inputs,
+      model_mapping: Object.keys(mapping).length > 0 ? JSON.stringify(mapping) : '',
+      keys: inputs.multi_key_mode !== 0 ? keys : undefined,
+    };
     if (isEdit) payload.id = parseInt(id);
     const res = await (isEdit ? API.put('/api/channel/', payload) : API.post('/api/channel/', payload));
     if (res.data.success) {
@@ -133,7 +224,6 @@ const EditChannel = () => {
             </select>
           </div>
 
-          {/* 单 Key 模式 */}
           {inputs.multi_key_mode === 0 && (
             <div>
               <label style={labelStyle}>密钥</label>
@@ -141,7 +231,6 @@ const EditChannel = () => {
             </div>
           )}
 
-          {/* 多 Key 表格 */}
           {inputs.multi_key_mode !== 0 && (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -177,19 +266,140 @@ const EditChannel = () => {
           )}
         </div>
 
-        {/* Section 3: 模型 */}
+        {/* Section 3: 模型映射 — 按设计稿 3:2408 1:1 还原 */}
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 13, fontWeight: 500, color: '#A1A1AA', marginBottom: 12 }}>模型</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {inputs.models.map((m) => (
-                <span key={m} className='aurora-badge aurora-badge-cyan' style={{ cursor: 'pointer' }} onClick={() => setInputs({ ...inputs, models: inputs.models.filter((x) => x !== m) })}>{m} ✕</span>
-              ))}
+          {/* MappingHeader: 标题 + 右侧按钮组 */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <span style={{ fontSize: 13, fontWeight: 500, color: '#7A8290' }}>模型映射</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {/* FetchModelsBtn — 设计稿 12:11: 金色边框透明底, "从上游获取模型" */}
+              <button
+                onClick={fetchUpstreamModels}
+                disabled={fetchingModels}
+                style={{
+                  height: 28, padding: '0 12px',
+                  background: 'rgba(184,111,5,0.12)',
+                  border: '1px solid rgba(184,111,5,0.5)',
+                  borderRadius: 6,
+                  color: '#B86F05', fontSize: 12, fontWeight: 600,
+                  cursor: fetchingModels ? 'not-allowed' : 'pointer',
+                  opacity: fetchingModels ? 0.6 : 1,
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}
+              >
+                {fetchingModels ? '获取中…' : '从上游获取模型'}
+              </button>
+              {/* 清空按钮 */}
+              {modelAliases.length > 0 && (
+                <button
+                  onClick={clearAllModels}
+                  style={{
+                    height: 28, padding: '0 12px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 6,
+                    color: '#A1A1AA', fontSize: 12, fontWeight: 500,
+                    cursor: 'pointer',
+                  }}
+                >
+                  清空
+                </button>
+              )}
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input value={customModel} onChange={(e) => setCustomModel(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { addCustomModel(); e.preventDefault(); } }} placeholder='输入模型名称' style={{ ...inputStyle, flex: 1 }} />
-              <button className='aurora-btn aurora-btn-ghost' onClick={addCustomModel}>添加</button>
+          </div>
+
+          {/* ModelMappingTable — 设计稿 12:57: 4列表格 */}
+          <div style={{
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 8, overflow: 'hidden',
+            background: 'rgba(255,255,255,0.03)',
+          }}>
+            {/* HeaderRow — 设计稿 12:58: 32px高, bg=rgba(255,255,255,0.05) */}
+            <div style={{
+              display: 'flex', height: 32, alignItems: 'center',
+              background: 'rgba(255,255,255,0.05)',
+            }}>
+              <span style={{ width: 48, fontSize: 11, fontWeight: 600, color: '#7A8290', textAlign: 'center' }}>#</span>
+              <span style={{ flex: 1, fontSize: 11, fontWeight: 600, color: '#7A8290' }}>模型</span>
+              <span style={{ width: 220, fontSize: 11, fontWeight: 600, color: '#7A8290' }}>别名</span>
+              <span style={{ width: 64, fontSize: 11, fontWeight: 600, color: '#7A8290', textAlign: 'center' }}>操作</span>
             </div>
+
+            {/* DataRows — 设计稿 12:63~12:82: 36px高, 交替背景 */}
+            {modelAliases.map((row, idx) => (
+              <div key={idx} style={{
+                display: 'flex', height: 36, alignItems: 'center',
+                background: idx % 2 === 1 ? 'rgba(255,255,255,0.02)' : 'transparent',
+                borderTop: '1px solid rgba(255,255,255,0.04)',
+              }}>
+                {/* # — 序号 12px Regular #7A8290 center */}
+                <span style={{ width: 48, fontSize: 12, color: '#7A8290', textAlign: 'center' }}>{idx + 1}</span>
+                {/* 模型 — 12px JetBrains Mono #FFFFFF，空行可编辑 */}
+                <div style={{ flex: 1, padding: '0 8px' }}>
+                  <input
+                    value={row.original}
+                    onChange={(e) => updateModelName(idx, e.target.value)}
+                    placeholder='输入模型名称'
+                    style={{
+                      width: '100%', height: 28,
+                      background: 'transparent', border: '1px solid transparent',
+                      borderRadius: 4, color: '#FFFFFF',
+                      fontSize: 12, fontFamily: 'JetBrains Mono, monospace',
+                      padding: '0 6px',
+                    }}
+                    onFocus={(e) => { e.target.style.border = '1px solid rgba(255,255,255,0.15)'; e.target.style.background = 'rgba(255,255,255,0.05)'; }}
+                    onBlur={(e) => { e.target.style.border = '1px solid transparent'; e.target.style.background = 'transparent'; }}
+                  />
+                </div>
+                {/* 别名 — 11px JetBrains Mono, 有值=#2DD4BF, 无值=placeholder #71717A */}
+                <div style={{ width: 220, padding: '0 8px' }}>
+                  <input
+                    value={row.alias}
+                    onChange={(e) => updateModelAlias(idx, e.target.value)}
+                    placeholder='点击设置别名'
+                    style={{
+                      width: '100%', height: 28,
+                      background: 'transparent', border: '1px solid transparent',
+                      borderRadius: 4,
+                      color: row.alias ? '#2DD4BF' : '#71717A',
+                      fontSize: 11, fontFamily: 'JetBrains Mono, monospace',
+                      padding: '0 6px',
+                    }}
+                    onFocus={(e) => { e.target.style.border = '1px solid rgba(255,255,255,0.15)'; e.target.style.background = 'rgba(255,255,255,0.05)'; }}
+                    onBlur={(e) => { e.target.style.border = '1px solid transparent'; e.target.style.background = 'transparent'; }}
+                  />
+                </div>
+                {/* 操作 — "移除" 11px Medium #EF4444 center */}
+                <div style={{ width: 64, textAlign: 'center' }}>
+                  <button
+                    onClick={() => removeModelRow(idx)}
+                    style={{
+                      background: 'none', border: 'none',
+                      color: '#EF4444', fontSize: 11, fontWeight: 500,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    移除
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {/* AddRow — 设计稿 12:83: 金色虚线, "手动添加模型" */}
+            <div style={{
+              display: 'flex', height: 36, alignItems: 'center', justifyContent: 'center',
+              borderTop: '1px solid rgba(184,111,5,0.3)',
+              gap: 6, cursor: 'pointer',
+            }} onClick={() => addModelRow('')}>
+              <span style={{ color: '#B86F05', fontSize: 16, fontWeight: 700 }}>+</span>
+              <span style={{ color: '#B86F05', fontSize: 12, fontWeight: 500 }}>手动添加模型</span>
+            </div>
+          </div>
+
+          {/* TableHint — 设计稿 12:87: 提示文字 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
+            <span style={{ width: 12, height: 12, borderRadius: '50%', border: '1px solid #71717A', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#71717A' }}>i</span>
+            <span style={{ fontSize: 11, color: '#71717A' }}>点击「从上游获取模型」自动填充模型列表；别名不填则使用上游模型名；可手动添加行录入自定义模型</span>
           </div>
         </div>
 

@@ -234,9 +234,10 @@ input[type='number'] {
 
 /* —— Content —— */
 .aurora-content {
-  flex: 1; padding: 32px 108px;
+  flex: 1; padding: 32px 40px;
   max-width: 100%;
   position: relative; z-index: 1;
+  overflow-x: hidden;
 }
 
 /* —— Auth page（登录/注册/重置） —— */
@@ -342,11 +343,12 @@ input[type='number'] {
 .aurora-toolbar-right { display: flex; align-items: center; gap: 8px; }
 
 /* —— Table (div+flex) —— */
-.aurora-table { width: 100%; border: 1px solid var(--border); border-radius: var(--r-xl); overflow: hidden; }
+.aurora-table { width: 100%; min-width: 100%; border: 1px solid var(--border); border-radius: var(--r-xl); overflow-x: auto; }
 .aurora-table-header {
   display: flex; align-items: center; height: 44px; padding: 0 24px;
   background: rgba(255,255,255,0.04);
   border-bottom: 1px solid var(--divider);
+  min-width: max-content;
 }
 .aurora-table-header > span { font-size: 12px; font-weight: 500; color: var(--text-muted); flex-shrink: 0; }
 .aurora-table-row {
@@ -354,6 +356,7 @@ input[type='number'] {
   background: rgba(255,255,255,0.02);
   border-bottom: 1px solid rgba(255,255,255,0.04);
   transition: background 0.15s ease;
+  min-width: max-content;
 }
 .aurora-table-row:hover { background: rgba(255,255,255,0.04); }
 .aurora-table-row > span, .aurora-table-row > div { flex-shrink: 0; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

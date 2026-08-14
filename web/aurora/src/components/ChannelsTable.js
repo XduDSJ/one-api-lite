@@ -190,7 +190,7 @@ const ChannelsTable = () => {
           <span style={{ width: 80 }}>状态</span>
           <span style={{ width: 90 }}>响应</span>
           <span style={{ width: 90 }}>余额</span>
-          <span style={{ flex: 1, textAlign: 'right' }}>操作</span>
+          <span style={{ width: 120, textAlign: 'right' }}>操作</span>
         </div>
         {pageChannels.map((ch, idx) => {
           if (ch.deleted) return null;
@@ -219,15 +219,9 @@ const ChannelsTable = () => {
                 </span>
                 <span style={{ width: 90, color: responseColor, fontWeight: 500 }}>{ch.response_time > 0 ? `${ch.response_time}ms` : '—'}</span>
                 <span style={{ width: 90, color: ch.balance ? '#D1D5DB' : '#52525B' }}>{ch.balance ? `$${renderNumber(ch.balance)}` : '—'}</span>
-                <span style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                  <Link to={`/channel/edit/${ch.id}`} style={{ fontSize: 12, color: '#B86F05', fontWeight: 500, cursor: 'pointer' }}>编辑</Link>
+                <span style={{ width: 120, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                  <Link to={`/channel/edit/${ch.id}`} style={{ fontSize: 12, color: '#F5A623', fontWeight: 500, cursor: 'pointer' }}>编辑</Link>
                   <span onClick={() => setTestChannelData(ch)} style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 500, cursor: 'pointer' }}>测试</span>
-                  <span onClick={() => updateBalance(ch.id, ch.name)} style={{ fontSize: 12, color: '#2DD4BF', fontWeight: 500, cursor: 'pointer' }}>余额</span>
-                  {ch.status === 1 ? (
-                    <span onClick={() => manageChannel(ch.id, 'disable', idx)} style={{ fontSize: 12, color: '#F5A623', fontWeight: 500, cursor: 'pointer' }}>禁用</span>
-                  ) : (
-                    <span onClick={() => manageChannel(ch.id, 'enable', idx)} style={{ fontSize: 12, color: '#2DD4BF', fontWeight: 500, cursor: 'pointer' }}>启用</span>
-                  )}
                   <span onClick={() => manageChannel(ch.id, 'delete', idx)} style={{ fontSize: 12, color: '#EF4444', fontWeight: 500, cursor: 'pointer' }}>删除</span>
                 </span>
               </div>

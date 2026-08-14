@@ -427,32 +427,55 @@ const ChannelsTable = () => {
 
   return (
     <>
-      <div className='channel-toolbar'>
-        <div className='channel-toolbar__actions'>
-          <Button size='tiny' as={Link} to='/channel/add' loading={loading}>
-            {t('channel.buttons.add')}
-          </Button>
+      {/* 顶部工具栏：搜索 + 过滤 + 操作按钮组（设计稿布局） */}
+      <div className='aurora-channel-toolbar'>
+        <div className='aurora-channel-toolbar__left'>
+          <Form onSubmit={searchChannels} style={{ margin: 0, flex: 1, maxWidth: 320 }}>
+            <Form.Input
+              icon='search'
+              fluid
+              iconPosition='left'
+              placeholder={t('channel.search')}
+              value={searchKeyword}
+              loading={searching}
+              onChange={handleKeywordChange}
+            />
+          </Form>
+          <Dropdown
+            selection
+            compact
+            options={[
+              { key: 'all_type', value: '', text: t('channel.filter.all_type', '全类型') },
+              ...CHANNEL_OPTIONS.map((opt) => ({ key: opt.value, value: opt.value, text: opt.text })),
+            ]}
+            placeholder={t('channel.filter.all_type', '全类型')}
+            style={{ minWidth: 120 }}
+          />
+          <Dropdown
+            selection
+            compact
+            options={[
+              { key: 'all_status', value: '', text: t('channel.filter.all_status', '全状态') },
+              { key: 'enabled', value: '1', text: t('channel.table.status_enabled') },
+              { key: 'disabled', value: '2', text: t('channel.table.status_disabled') },
+              { key: 'auto_disabled', value: '3', text: t('channel.table.status_auto_disabled') },
+            ]}
+            placeholder={t('channel.filter.all_status', '全状态')}
+            style={{ minWidth: 120 }}
+          />
+        </div>
+        <div className='aurora-channel-toolbar__right'>
           <Button
-            size='tiny'
+            size='small'
+            basic
             loading={loading}
-            onClick={() => {
-              testChannels('all');
-            }}
+            onClick={() => testChannels('all')}
           >
             {t('channel.buttons.test_all')}
           </Button>
-          <Button
-            size='tiny'
-            loading={loading}
-            onClick={() => {
-              testChannels('disabled');
-            }}
-          >
-            {t('channel.buttons.test_disabled')}
-          </Button>
           <Popup
             trigger={
-              <Button size='tiny' loading={loading}>
+              <Button size='small' basic color='red' loading={loading}>
                 {t('channel.buttons.delete_disabled')}
               </Button>
             }
@@ -468,26 +491,33 @@ const ChannelsTable = () => {
               {t('channel.buttons.confirm_delete_disabled')}
             </Button>
           </Popup>
-          <Button size='tiny' onClick={refresh} loading={loading}>
-            {t('channel.buttons.refresh')}
-          </Button>
-          <Button size='tiny' onClick={toggleShowDetail}>
-            {showDetail
-              ? t('channel.buttons.hide_detail')
-              : t('channel.buttons.show_detail')}
+          <Button
+            size='small'
+            as={Link}
+            to='/channel/add'
+            className='aurora-btn-primary'
+            style={{
+              background: 'var(--aurora-accent)',
+              color: '#fff',
+              borderColor: 'var(--aurora-accent)',
+            }}
+            loading={loading}
+          >
+            + {t('channel.buttons.add')}
           </Button>
         </div>
-        <Form onSubmit={searchChannels} style={{ margin: 0, minWidth: 260 }}>
-          <Form.Input
-            icon='search'
-            fluid
-            iconPosition='left'
-            placeholder={t('channel.search')}
-            value={searchKeyword}
-            loading={searching}
-            onChange={handleKeywordChange}
-          />
-        </Form>
+      </div>
+
+      {/* 自动刷新状态条（设计稿元素） */}
+      <div className='aurora-status-bar'>
+        <span>
+          {t('channel.status_bar.summary', {
+            total: channels.length,
+            enabled: channels.filter((c) => c.status === 1).length,
+            disabled: channels.filter((c) => c.status === 2 || c.status === 3).length,
+          })}
+        </span>
+        <span>{t('channel.status_bar.auto_refresh')}</span>
       </div>
       {showPrompt && (
         <Message

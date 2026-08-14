@@ -1,109 +1,329 @@
-.dashboard-container {
-    padding: var(--space-5) var(--space-6) var(--space-7);
-    background-color: transparent;
-    margin-top: 0;
+/* ============================================================
+   Aurora Dashboard — 按设计稿 3:442 实现
+   4 统计卡 + 3 图表 + 渠道表格摘要
+   ============================================================ */
+
+.aurora-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    padding: 0;
     max-width: 1440px;
-    margin-left: auto;
-    margin-right: auto;
+    margin: 0 auto;
 }
 
-.stat-card {
-    background: linear-gradient(135deg, var(--aurora-primary) 0%, var(--aurora-primary-hover) 100%) !important;
-    color: #fff !important;
-    box-shadow: var(--shadow-card-dark) !important;
-    transition: transform 0.2s ease !important;
-    margin-bottom: 1rem !important;
+/* —— 4 统计卡横向排列 —— */
+.aurora-stat-grid {
+    margin-bottom: 0 !important;
 }
-
-.stat-card:hover {
-    transform: translateY(-5px);
-}
-
-.stat-card .statistic {
-    color: white !important;
-}
-
-.charts-grid {
-    margin-bottom: 1rem !important;
-}
-
-.charts-grid .column {
-    padding: 0.5rem !important;
-}
-
-.chart-card {
-    height: 100%;
-    box-shadow: var(--shadow-card-dark) !important;
-    border: 1px solid var(--aurora-border) !important;
-    border-radius: var(--radius-lg) !important;
+.aurora-stat-grid .column {
     padding: var(--space-2) !important;
 }
 
-.chart-container {
-    margin-top: 2px;
-    padding: 16px;
-    background-color: var(--aurora-surface);
-    border-radius: var(--radius-lg);
+.aurora-stat-card {
+    background: var(--aurora-surface) !important;
+    border: 1px solid var(--aurora-border) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: var(--shadow-card-dark) !important;
+    margin: 0 !important;
+    overflow: hidden;
+}
+.aurora-stat-card > .content {
+    padding: var(--space-5) !important;
 }
 
-.ui.card > .content > .header {
+.aurora-stat-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.aurora-stat-letter {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 16px;
+    font-family: 'Noto Sans SC', sans-serif;
+    flex-shrink: 0;
+}
+
+.aurora-stat-label {
+    color: var(--aurora-text-muted);
+    font-size: 14px;
+    font-weight: 500;
+    flex: 1;
+}
+
+.aurora-stat-value {
     color: var(--aurora-text);
-    font-size: 1.2em;
-    margin-bottom: var(--space-4);
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: var(--space-2);
+    font-family: 'Noto Sans SC', sans-serif;
+}
+
+.aurora-stat-unit {
+    font-size: 14px;
+    color: var(--aurora-text-muted);
+    font-weight: 500;
+    margin-left: var(--space-1);
+}
+
+.aurora-stat-compare {
+    color: var(--aurora-text-muted);
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* —— 3 图表横向 —— */
+.aurora-chart-grid {
+    margin-bottom: 0 !important;
+}
+.aurora-chart-grid .column {
+    padding: var(--space-2) !important;
+}
+
+.aurora-chart-card {
+    background: var(--aurora-surface) !important;
+    border: 1px solid var(--aurora-border) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: var(--shadow-card-dark) !important;
+    margin: 0 !important;
+    height: 100%;
+}
+
+.aurora-chart-card > .content {
+    padding: var(--space-5) !important;
+}
+
+.aurora-chart-card .header {
+    color: var(--aurora-text) !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    border-bottom: none !important;
+    margin-bottom: var(--space-3) !important;
+    padding-bottom: 0 !important;
+}
+
+.aurora-chart-container {
+    width: 100%;
+    height: 260px;
+}
+
+.aurora-pie-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.aurora-pie-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+}
+
+.aurora-pie-center-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--aurora-text);
+    line-height: 1;
+}
+
+.aurora-pie-center-label {
+    font-size: 12px;
+    color: var(--aurora-text-muted);
+    margin-top: 4px;
+}
+
+.aurora-pie-legend {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--aurora-text-muted);
+}
+
+.aurora-pie-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.aurora-pie-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+/* —— 渠道表格摘要 —— */
+.aurora-table-card {
+    background: var(--aurora-surface) !important;
+    border: 1px solid var(--aurora-border) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: var(--shadow-card-dark) !important;
+    margin: 0 !important;
+}
+
+.aurora-table-card > .content {
+    padding: var(--space-5) !important;
+}
+
+.aurora-table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-3);
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.aurora-table-subtitle {
+    color: var(--aurora-text-muted);
+    font-size: 13px;
+}
+
+.aurora-table-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.aurora-table-action-btn {
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.aurora-btn-ghost {
+    background: transparent;
+    color: var(--aurora-text-muted);
+    border: 1px solid var(--aurora-border);
+}
+.aurora-btn-ghost:hover {
+    color: var(--aurora-text);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.aurora-btn-primary {
+    background: var(--aurora-accent);
+    color: #fff;
+    border: 1px solid var(--aurora-accent);
+}
+.aurora-btn-primary:hover {
+    background: var(--aurora-accent);
+    filter: brightness(1.15);
+}
+
+/* 状态条 */
+.aurora-status-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-weight: 600;
-    gap: var(--space-3);
-}
-
-.stat-value {
-    color: var(--aurora-primary);
-    font-weight: bold;
-    font-size: 1.1em;
-    background: var(--aurora-primary-soft);
-    padding: var(--space-1) var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: rgba(245, 230, 178, 0.06);
+    border: 1px solid rgba(245, 230, 178, 0.12);
     border-radius: var(--radius-sm);
-    white-space: nowrap;
-    margin-left: var(--space-4);
+    margin-bottom: var(--space-3);
+    font-size: 13px;
+    color: var(--aurora-text-muted);
 }
 
-/* 优化图表响应式布局 */
-@media (max-width: 768px) {
-    .dashboard-container {
-        padding: 10px 16px;   /* 移动端也相应减小内边距 */
-        max-width: 100%;      /* 移动端占满全宽 */
-    }
-    
-    .chart-container {
-        padding: 12px;
-    }
-    
-    .charts-grid .column {
-        padding: 0.25rem !important;
-    }
-}
-
-/* 设置页面的 Tab 样式 */
-.settings-tab {
-    margin-top: 1rem !important;
-    border-bottom: none !important;
-}
-
-.settings-tab .item {
-    color: var(--aurora-text-muted) !important;
-    font-weight: 500 !important;
-    padding: var(--space-3) var(--space-4) !important;
-}
-
-.settings-tab .active.item {
-    color: var(--aurora-primary) !important;
-    font-weight: 600 !important;
-    border-color: var(--aurora-primary) !important;
-}
-
-.ui.tab.segment {
+/* 渠道表格 */
+.aurora-channel-table {
+    background: transparent !important;
     border: none !important;
-    box-shadow: none !important;
-    padding: 1rem 0 !important;
-} 
+}
+.aurora-channel-table thead th {
+    background: var(--aurora-surface-2) !important;
+    color: var(--aurora-text-muted) !important;
+    font-weight: 600 !important;
+    font-size: 12px;
+    border-color: var(--aurora-border) !important;
+    padding: var(--space-3) !important;
+}
+.aurora-channel-table tbody td {
+    border-color: var(--aurora-divider) !important;
+    color: var(--aurora-text) !important;
+    padding: var(--space-3) !important;
+    font-size: 14px;
+}
+.aurora-channel-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03) !important;
+}
+
+.aurora-channel-name {
+    display: flex;
+    align-items: center;
+}
+
+/* —— 响应式：≤1366 紧凑 —— */
+@media screen and (max-width: 1366px) {
+    .aurora-stat-value {
+        font-size: 26px;
+    }
+    .aurora-pie-center-value {
+        font-size: 26px;
+    }
+    .aurora-chart-container {
+        height: 220px;
+    }
+}
+
+/* —— 响应式：移动端 ≤768 转卡片视图 —— */
+@media screen and (max-width: 768px) {
+    .aurora-stat-grid .column,
+    .aurora-chart-grid .column {
+        width: 100% !important;
+    }
+    .aurora-stat-value {
+        font-size: 24px;
+    }
+    .aurora-chart-container {
+        height: 200px;
+    }
+    .aurora-status-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    /* 移动端：渠道表格转卡片视图 */
+    .aurora-channel-table thead {
+        display: none;
+    }
+    .aurora-channel-table tbody tr {
+        display: block;
+        margin-bottom: var(--space-3);
+        background: var(--aurora-surface-2);
+        border: 1px solid var(--aurora-border);
+        border-radius: var(--radius-sm);
+        padding: var(--space-3);
+    }
+    .aurora-channel-table tbody td {
+        display: block;
+        border: none !important;
+        padding: 4px 0 !important;
+    }
+    .aurora-channel-table tbody td::before {
+        content: attr(data-label);
+        color: var(--aurora-text-muted);
+        font-size: 12px;
+        margin-right: 8px;
+    }
+}

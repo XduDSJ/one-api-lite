@@ -284,6 +284,220 @@ body::before {
   z-index: 1;
 }
 
+/* —— 登录页（设计稿 12:543） —— */
+.aurora-login-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+/* 双侧氛围光晕 */
+.aurora-glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+.aurora-glow-tl {
+  top: -100px;
+  left: -100px;
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(
+    circle at center,
+    rgba(184, 111, 5, 0.15) 0%,
+    rgba(184, 111, 5, 0) 70%
+  );
+}
+.aurora-glow-br {
+  bottom: -100px;
+  right: -100px;
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(
+    circle at center,
+    rgba(45, 212, 191, 0.08) 0%,
+    rgba(45, 212, 191, 0) 70%
+  );
+}
+
+.aurora-login-card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 440px;
+  background: var(--aurora-surface);
+  border: 1px solid var(--aurora-border);
+  border-radius: 16px;
+  padding: 48px 40px;
+  box-shadow: var(--shadow-card-dark);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.aurora-login-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.aurora-login-logo {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: var(--radius-sm);
+}
+
+.aurora-login-brandname {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--aurora-text);
+  font-family: 'Noto Sans SC', sans-serif;
+}
+
+.aurora-login-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--aurora-text);
+  margin: 0;
+  text-align: center;
+  font-family: 'Noto Sans SC', sans-serif;
+}
+
+.aurora-login-subtitle {
+  font-size: 14px;
+  color: var(--aurora-text-muted);
+  margin: 0;
+  text-align: center;
+  margin-top: calc(-1 * var(--space-3));
+}
+
+.aurora-login-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.aurora-login-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--aurora-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.aurora-login-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 var(--space-4);
+  background-color: var(--aurora-bg) !important;
+  color: var(--aurora-text) !important;
+  border: 1px solid var(--aurora-border) !important;
+  border-radius: var(--radius-sm) !important;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.15s ease;
+}
+.aurora-login-input:focus {
+  border-color: var(--aurora-primary) !important;
+  box-shadow: 0 0 0 3px var(--aurora-primary-soft) !important;
+}
+.aurora-login-input::placeholder {
+  color: var(--aurora-text-muted);
+  opacity: 0.6;
+}
+
+.aurora-login-btn {
+  width: 100%;
+  height: 44px;
+  margin-top: var(--space-2);
+  background: var(--aurora-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.aurora-login-btn:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+.aurora-login-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.aurora-login-divider {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.aurora-login-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--aurora-divider);
+}
+
+.aurora-login-divider-text {
+  font-size: 12px;
+  color: var(--aurora-text-muted);
+}
+
+.aurora-login-oauth {
+  width: 100%;
+  display: flex;
+  gap: var(--space-3);
+}
+
+.aurora-oauth-btn {
+  flex: 1;
+  height: 44px;
+  background: transparent;
+  color: var(--aurora-text-muted);
+  border: 1px solid var(--aurora-border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  transition: all 0.15s ease;
+}
+.aurora-oauth-btn:hover {
+  color: var(--aurora-text);
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.aurora-login-footer {
+  width: 100%;
+  text-align: center;
+  font-size: 13px;
+}
+
+.aurora-login-link {
+  color: var(--aurora-primary);
+  font-weight: 500;
+  text-decoration: none;
+  margin-left: var(--space-2);
+}
+.aurora-login-link:hover {
+  text-decoration: underline;
+}
+
 /* 移动端抽屉 */
 .aurora-sidebar-overlay {
   display: none;

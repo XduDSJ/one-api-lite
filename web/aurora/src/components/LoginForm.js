@@ -3,12 +3,9 @@ import {
   Button,
   Divider,
   Form,
-  Grid,
-  Header,
+  Icon,
   Image,
   Message,
-  Segment,
-  Card,
 } from 'semantic-ui-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -21,15 +18,15 @@ const LoginForm = () => {
     username: '',
     password: '',
   });
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [submitted, setSubmitted] = useState(false);
   const { username, password } = inputs;
   const [userState, userDispatch] = useContext(UserContext);
-  let navigate = useNavigate();
+  const navigate = useNavigate();
   const [status, setStatus] = useState({});
   const logo = getLogo();
 
-  useEffect(() => {
+useEffect(() => {
     if (searchParams.get('expired')) {
       showError(t('messages.error.login_expired'));
     }
@@ -71,92 +68,85 @@ const LoginForm = () => {
   }
 
   return (
-    <Grid textAlign='center' style={{ minHeight: '100vh', margin: '0' }} verticalAlign='middle'>
-      <Grid.Column style={{ maxWidth: 450 }}>
-        <Card
-          fluid
-          className='auth-card'
-        >
-          <Card.Content>
-            <Card.Header>
-              <Header
-                as='h2'
-                textAlign='center'
-                style={{ marginBottom: '1.5em' }}
-              >
-                <Image src={logo} style={{ marginBottom: '10px' }} />
-                <Header.Content>{t('auth.login.title')}</Header.Content>
-              </Header>
-            </Card.Header>
-            <Form size='large'>
-              <Form.Input
-                fluid
-                icon='user'
-                iconPosition='left'
-                placeholder={t('auth.login.username')}
-                name='username'
-                value={username}
-                onChange={handleChange}
-                style={{ marginBottom: '1em' }}
-              />
-              <Form.Input
-                fluid
-                icon='lock'
-                iconPosition='left'
-                placeholder={t('auth.login.password')}
-                name='password'
-                type='password'
-                value={password}
-                onChange={handleChange}
-                style={{ marginBottom: '1.5em' }}
-              />
-              <Button
-                fluid
-                size='large'
-                primary
-                onClick={handleSubmit}
-                style={{
-                  marginBottom: '1.5em',
-                }}
-              >
-                {t('auth.login.button')}
-              </Button>
-            </Form>
+    <div className='aurora-login-page'>
+      {/* 双侧氛围光晕（设计稿 12:543） */}
+      <div className='aurora-glow aurora-glow-tl' aria-hidden='true' />
+      <div className='aurora-glow aurora-glow-br' aria-hidden='true' />
 
-            <Divider />
-            <Message style={{ background: 'transparent', boxShadow: 'none' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  fontSize: '0.9em',
-                  color: 'var(--aurora-text-muted)',
-                }}
-              >
-                <div>
-                  {t('auth.login.forgot_password')}
-                  <Link
-                    to='/reset'
-                    style={{ color: 'var(--aurora-primary)', marginLeft: '2px' }}
-                  >
-                    {t('auth.login.reset_password')}
-                  </Link>
-                </div>
-                <div>
-                  {t('auth.login.no_account')}
-                  <Link
-                    to='/register'
-                    style={{ color: 'var(--aurora-primary)', marginLeft: '2px' }}
-                  >
-                    {t('auth.login.register')}
-                  </Link>
-                </div>
-              </div>
-            </Message>
-          </Card.Content>
-        </Card>
-      </Grid.Column>
-    </Grid>
+      <div className='aurora-login-card'>
+        {/* 品牌区（设计稿核心元素） */}
+        <div className='aurora-login-brand'>
+          <Image src={logo} className='aurora-login-logo' />
+          <span className='aurora-login-brandname'>One API Lite</span>
+        </div>
+
+        {/* 大标题 */}
+        <h1 className='aurora-login-title'>{t('auth.login.welcome_title', '欢迎回来')}</h1>
+        <p className='aurora-login-subtitle'>{t('auth.login.welcome_subtitle', '登录到您的控制台')}</p>
+
+        {/* 表单 */}
+        <Form size='large' className='aurora-login-form'>
+          <Form.Field>
+            <label className='aurora-login-label'>{t('auth.login.username')}</label>
+            <input
+              name='username'
+              value={username}
+              onChange={handleChange}
+              placeholder={t('auth.login.username')}
+              className='aurora-login-input'
+            />
+          </Form.Field>
+          <Form.Field>
+            <label className='aurora-login-label'>{t('auth.login.password')}</label>
+            <input
+              name='password'
+              type='password'
+              value={password}
+              onChange={handleChange}
+              placeholder={t('auth.login.password')}
+              className='aurora-login-input'
+            />
+          </Form.Field>
+          <button
+            type='button'
+            onClick={handleSubmit}
+            className='aurora-login-btn'
+            disabled={!username || !password}
+          >
+            {t('auth.login.button')}
+          </button>
+        </Form>
+
+        {/* 分隔线 + "或" */}
+        <div className='aurora-login-divider'>
+          <span className='aurora-login-divider-line' />
+          <span className='aurora-login-divider-text'>{t('auth.login.or', '或')}</span>
+          <span className='aurora-login-divider-line' />
+        </div>
+
+        {/* 第三方登录（设计稿 GitHub + 微信） */}
+        <div className='aurora-login-oauth'>
+          <button type='button' className='aurora-oauth-btn'>
+            <Icon name='github' />
+            {t('auth.login.github', 'GitHub')}
+          </button>
+          <button type='button' className='aurora-oauth-btn'>
+            <Icon name='wechat' />
+            {t('auth.login.wechat', '微信')}
+          </button>
+        </div>
+
+        {/* 底部链接 */}
+        <div className='aurora-login-footer'>
+          <span style={{ color: 'var(--aurora-text-muted)' }}>
+            {t('auth.login.no_account')}
+          </span>
+          <Link to='/register' className='aurora-login-link'>
+            {t('auth.login.register')}
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -103,8 +103,16 @@
     }
   },
   "channel": {
-    "title": "管理渠道",
-    "search": "搜索渠道的 ID，名称和密钥 ...",
+    "title": "渠道管理",
+    "search": "输入即搜索渠道名称…",
+    "filter": {
+      "all_type": "全类型",
+      "all_status": "全状态"
+    },
+    "status_bar": {
+      "summary": "共 {{total}} 个渠道 · {{enabled}} 个启用 · {{disabled}} 个禁用",
+      "auto_refresh": "余额每 5 分钟自动刷新 · 最后测试: 2 分钟前"
+    },
     "balance_notice": "OpenAI 渠道已经不再支持通过 key 获取余额，因此余额显示为 0。对于支持的渠道类型，请点击余额进行刷新。",
     "test_notice": "渠道测试仅支持 chat 模型，优先使用你所配置的模型列表中的第一个模型。",
     "detail_notice": "点击下方详情按钮可以显示余额以及设置额外的测试模型。",
@@ -569,9 +577,22 @@
     }
   },
   "dashboard": {
+    "title": "仪表盘",
+    "subtitle": "控制台 / 总表盘",
+    "channels": "渠道",
+    "stat": {
+      "total_channels": "渠道总数",
+      "today_requests": "今日请求",
+      "today_cost": "今日消耗",
+      "active_tokens": "活跃令牌",
+      "compare_month": "较上月 +{{delta}}",
+      "compare_yesterday": "较昨日 +{{delta}}",
+      "compare_yesterday_cost": "较昨日 -{{delta}}",
+      "compare_week": "较上周 +{{delta}}"
+    },
     "charts": {
       "requests": {
-        "title": "模型请求趋势",
+        "title": "7天请求趋势",
         "tooltip": "请求次数"
       },
       "quota": {
@@ -581,7 +602,9 @@
       "tokens": {
         "title": "Token 消费趋势",
         "tooltip": "Token 数量"
-      }
+      },
+      "model_dist": "模型消耗分布",
+      "channel_status": "渠道状态分布"
     },
     "statistics": {
       "title": "统计",
@@ -877,13 +900,18 @@
   "auth": {
     "login": {
       "title": "用户登录",
+      "welcome_title": "欢迎回来",
+      "welcome_subtitle": "登录到您的控制台",
       "username": "用户名 / 邮箱地址",
       "password": "密码",
-      "button": "登录",
+      "button": "登 录",
       "forgot_password": "忘记密码？",
       "reset_password": "点击重置",
-      "no_account": "没有账户？",
-      "register": "点击注册",
+      "no_account": "还没有账户？",
+      "register": "立即注册",
+      "or": "或",
+      "github": "GitHub",
+      "wechat": "微信",
       "other_methods": "使用其他方式登录",
       "wechat": {
         "scan_tip": "微信扫码关注公众号，输入「验证码」获取验证码（三分钟内有效）",

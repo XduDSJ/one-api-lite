@@ -104,7 +104,15 @@
   },
   "channel": {
     "title": "Channel Management",
-    "search": "Search channels by ID, name and key...",
+    "search": "Search channels by name…",
+    "filter": {
+      "all_type": "All Types",
+      "all_status": "All Status"
+    },
+    "status_bar": {
+      "summary": "{{total}} channels · {{enabled}} enabled · {{disabled}} disabled",
+      "auto_refresh": "Balance refreshes every 5 min · Last test: 2 min ago"
+    },
     "balance_notice": "OpenAI channels no longer support getting balance via key, so balance shows as 0. For supported channel types, click balance to refresh.",
     "test_notice": "Channel testing only supports chat models, using the first model in your configured list.",
     "detail_notice": "Click the detail button below to show balance and set additional test models.",
@@ -569,9 +577,22 @@
     }
   },
   "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Console / Overview",
+    "channels": "Channels",
+    "stat": {
+      "total_channels": "Total Channels",
+      "today_requests": "Today Requests",
+      "today_cost": "Today Cost",
+      "active_tokens": "Active Tokens",
+      "compare_month": "Up +{{delta}} vs last month",
+      "compare_yesterday": "Up +{{delta}} vs yesterday",
+      "compare_yesterday_cost": "Down -{{delta}} vs yesterday",
+      "compare_week": "Up +{{delta}} vs last week"
+    },
     "charts": {
       "requests": {
-        "title": "Model Request Trend",
+        "title": "7-Day Request Trend",
         "tooltip": "Request Count"
       },
       "quota": {
@@ -581,7 +602,9 @@
       "tokens": {
         "title": "Token Usage Trend",
         "tooltip": "Token Count"
-      }
+      },
+      "model_dist": "Model Cost Distribution",
+      "channel_status": "Channel Status"
     },
     "statistics": {
       "title": "Statistics",
@@ -872,15 +895,20 @@
   },
   "auth": {
     "login": {
-      "title": "User Login",
+      "title": "Sign In",
+      "welcome_title": "Welcome Back",
+      "welcome_subtitle": "Sign in to your console",
       "username": "Username / Email",
       "password": "Password",
-      "button": "Login",
+      "button": "Sign In",
       "forgot_password": "Forgot password?",
       "reset_password": "Reset",
-      "no_account": "No account?",
-      "register": "Register",
-      "other_methods": "Other login methods",
+      "no_account": "Don't have an account?",
+      "register": "Sign Up",
+      "or": "or",
+      "github": "GitHub",
+      "wechat": "WeChat",
+      "other_methods": "Other sign-in methods",
       "wechat": {
         "scan_tip": "Scan QR code to follow WeChat Official Account, enter 'code' to get verification code (valid for 3 minutes)",
         "code_placeholder": "Verification code"

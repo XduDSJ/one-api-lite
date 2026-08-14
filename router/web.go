@@ -15,11 +15,17 @@ import (
 )
 
 func SetWebRouter(router *gin.Engine, buildFS embed.FS) {
-	indexPageData, _ := buildFS.ReadFile(fmt.Sprintf("web/build/%s/index.html", config.Theme))
+	themePath := fmt.Sprintf("web/build/%s", config.Theme)
+	indexPageData, err := buildFS.ReadFile(fmt.Sprintf("%s/index.html", themePath))
+	if err != nil {
+		// 主题不存在时回退到 aurora（避免白屏）
+		themePath = "web/build/aurora"
+		indexPageData, _ = buildFS.ReadFile(fmt.Sprintf("%s/index.html", themePath))
+	}
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
 	router.Use(middleware.GlobalWebRateLimit())
 	router.Use(middleware.Cache())
-	router.Use(static.Serve("/", common.EmbedFolder(buildFS, fmt.Sprintf("web/build/%s", config.Theme))))
+	router.Use(static.Serve("/", common.EmbedFolder(buildFS, themePath)))
 	router.NoRoute(func(c *gin.Context) {
 		if strings.HasPrefix(c.Request.RequestURI, "/v1") || strings.HasPrefix(c.Request.RequestURI, "/api") {
 			controller.RelayNotFound(c)

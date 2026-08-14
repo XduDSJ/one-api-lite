@@ -95,12 +95,9 @@ var RelayTimeout = env.Int("RELAY_TIMEOUT", 0) // unit is second
 
 var GeminiSafetySetting = env.String("GEMINI_SAFETY_SETTING", "BLOCK_NONE")
 
-var Theme = env.String("THEME", "default")
+var Theme = env.String("THEME", "aurora")
 var ValidThemes = map[string]bool{
-	"default": true,
-	"berry":   true,
-	"air":     true,
-	"aurora":  true,
+	"aurora": true,
 }
 
 // All duration's unit is seconds

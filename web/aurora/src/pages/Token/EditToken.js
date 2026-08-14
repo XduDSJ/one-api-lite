@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { API, showError, showSuccess } from '../../helpers';
 import { renderQuota } from '../../helpers/render';
+import NumberStepper from '../../components/NumberStepper';
 
 const EditToken = () => {
   const { id } = useParams();
@@ -105,7 +106,7 @@ const EditToken = () => {
           <div>
             <label style={labelStyle}>剩余额度</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <input type='number' name='remain_quota' value={inputs.remain_quota} onChange={handleChange} disabled={inputs.unlimited_quota} style={{ ...inputStyle, opacity: inputs.unlimited_quota ? 0.4 : 1 }} />
+              <NumberStepper name='remain_quota' value={inputs.remain_quota} onChange={(v) => setInputs({ ...inputs, remain_quota: v })} style={{ ...inputStyle, opacity: inputs.unlimited_quota ? 0.4 : 1 }} />
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#A1A1AA', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                 <input type='checkbox' name='unlimited_quota' checked={inputs.unlimited_quota} onChange={handleChange} /> 无限额度
               </label>
@@ -133,13 +134,13 @@ const EditToken = () => {
           {expireMode === 'days' && (
             <div>
               <label style={labelStyle}>有效天数</label>
-              <input type='number' value={expireDays} onChange={(e) => setExpireDays(parseInt(e.target.value) || 30)} style={inputStyle} />
+              <NumberStepper value={expireDays} onChange={(v) => setExpireDays(v || 30)} style={inputStyle} />
             </div>
           )}
           {expireMode === 'custom' && (
             <div>
               <label style={labelStyle}>过期时间戳（Unix 秒，-1=永不过期）</label>
-              <input type='number' name='expired_time' value={inputs.expired_time} onChange={handleChange} style={inputStyle} />
+              <NumberStepper name='expired_time' value={inputs.expired_time} onChange={(v) => setInputs({ ...inputs, expired_time: v })} style={inputStyle} />
             </div>
           )}
         </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { API, showError, showSuccess } from '../../helpers';
 import { renderQuota } from '../../helpers/render';
+import NumberStepper from '../../components/NumberStepper';
 
 const EditUser = () => {
   const { id } = useParams();
@@ -58,7 +59,7 @@ const EditUser = () => {
           <div><label style={labelStyle}>用户名</label><input value={inputs.username} onChange={(e) => setInputs({ ...inputs, username: e.target.value })} placeholder='输入用户名' style={inputStyle} /></div>
           <div><label style={labelStyle}>显示名称</label><input value={inputs.display_name} onChange={(e) => setInputs({ ...inputs, display_name: e.target.value })} placeholder='可选' style={inputStyle} /></div>
           <div><label style={labelStyle}>密码{isEdit ? '（留空不修改）' : ''}</label><input type='password' value={inputs.password} onChange={(e) => setInputs({ ...inputs, password: e.target.value })} placeholder='输入密码' style={inputStyle} /></div>
-          <div><label style={labelStyle}>额度</label><input type='number' value={inputs.quota} onChange={(e) => setInputs({ ...inputs, quota: parseInt(e.target.value) || 0 })} style={inputStyle} /></div>
+          <div><label style={labelStyle}>额度</label><NumberStepper value={inputs.quota} onChange={(v) => setInputs({ ...inputs, quota: v })} style={inputStyle} /></div>
           <div><label style={labelStyle}>分组</label><input value={inputs.group} onChange={(e) => setInputs({ ...inputs, group: e.target.value })} placeholder='default' style={inputStyle} /></div>
           <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
             <Link to='/user' className='aurora-btn aurora-btn-ghost'>取消</Link>

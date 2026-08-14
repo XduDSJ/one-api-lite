@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { API, showError, showSuccess, showInfo, copy } from '../../helpers';
 import { CHANNEL_OPTIONS } from '../../constants';
+import NumberStepper from '../../components/NumberStepper';
 
 const typeMap = {};
 CHANNEL_OPTIONS.forEach((o) => { typeMap[o.value] = o; });
@@ -256,8 +257,8 @@ const EditChannel = () => {
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', padding: '8px 4px', gap: 8, background: 'rgba(255,255,255,0.02)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
                       <input value={k.key_value} onChange={(e) => updateKey(idx, 'key_value', e.target.value)} placeholder='sk-...' style={{ width: 248, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#FFFFFF', fontSize: 12, padding: '0 8px', fontFamily: 'JetBrains Mono, monospace' }} />
                       <input value={k.remark} onChange={(e) => updateKey(idx, 'remark', e.target.value)} placeholder='—' style={{ width: 118, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#FFFFFF', fontSize: 12, padding: '0 8px' }} />
-                      <input type='number' value={k.priority} onChange={(e) => updateKey(idx, 'priority', parseInt(e.target.value) || 0)} style={{ width: 68, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#FFFFFF', fontSize: 12, padding: '0 8px', textAlign: 'center' }} />
-                      <input type='number' value={k.daily_quota_limit} onChange={(e) => updateKey(idx, 'daily_quota_limit', parseInt(e.target.value) || 0)} placeholder='0' style={{ width: 118, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#FFFFFF', fontSize: 12, padding: '0 8px' }} />
+                      <NumberStepper value={k.priority} onChange={(v) => updateKey(idx, 'priority', v)} width={68} height={36} center style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, fontSize: 12 }} />
+                      <NumberStepper value={k.daily_quota_limit} onChange={(v) => updateKey(idx, 'daily_quota_limit', v)} width={118} height={36} placeholder='0' style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, fontSize: 12 }} />
                       <select value={k.quota_reset_rule} onChange={(e) => updateKey(idx, 'quota_reset_rule', e.target.value)} style={{ width: 118, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#FFFFFF', fontSize: 12, padding: '0 8px' }}>
                         {resetOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
@@ -415,11 +416,11 @@ const EditChannel = () => {
           <div style={{ display: 'flex', gap: 16 }}>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>优先级</label>
-              <input type='number' name='priority' value={inputs.priority} onChange={handleInputChange} style={inputStyle} />
+              <NumberStepper name='priority' value={inputs.priority} onChange={(v) => setInputs({ ...inputs, priority: v })} style={inputStyle} />
             </div>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>权重</label>
-              <input type='number' name='weight' value={inputs.weight} onChange={handleInputChange} style={inputStyle} />
+              <NumberStepper name='weight' value={inputs.weight} onChange={(v) => setInputs({ ...inputs, weight: v })} style={inputStyle} />
             </div>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>分组</label>

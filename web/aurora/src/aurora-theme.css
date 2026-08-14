@@ -772,6 +772,25 @@ body::before {
   background-color: var(--aurora-surface) !important;
   color: var(--aurora-text) !important;
   border-color: var(--aurora-divider) !important;
+  font-weight: 700;
+}
+
+/* 通用 aurora-modal-header（带强调色边框） */
+.aurora-modal-header {
+  border-bottom: 1px solid var(--aurora-divider);
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+/* 充值弹窗专属样式 */
+.aurora-recharge-modal .quick-amount-btn {
+  min-width: 80px;
+}
+.aurora-recharge-modal .preview-equation {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
 }
 .ui.modal > .content {
   background-color: var(--aurora-surface) !important;

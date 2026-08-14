@@ -78,8 +78,8 @@ const RechargeModal = ({ open, onClose, user, onSuccess }) => {
   if (!user) return null;
 
   return (
-    <Modal open={open} onClose={handleClose} size='small'>
-      <Header>{t('user.recharge.title')}</Header>
+    <Modal open={open} onClose={handleClose} size='small' className='aurora-recharge-modal'>
+      <Header className='aurora-modal-header'>{t('user.recharge.title')}</Header>
       <Modal.Content>
         <Form>
           {/* 用户信息 */}

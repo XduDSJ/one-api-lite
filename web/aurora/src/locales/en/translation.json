@@ -445,6 +445,9 @@
     "usage_details": "Usage Details",
     "total_quota": "Total Quota Used",
     "click_to_view": "Click to View",
+    "status_bar": {
+      "tip": "Last query: just now"
+    },
     "type": {
       "select": "Select Log Type",
       "all": "All",

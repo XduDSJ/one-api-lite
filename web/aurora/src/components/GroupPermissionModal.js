@@ -251,13 +251,15 @@ const GroupPermissionModal = ({ open, onClose, group, allGroups, onUpdate }) => 
     <Modal
       open={open}
       onClose={onClose}
-      size='large'
+      size='small'
       closeIcon
+      className='aurora-permission-modal'
+      style={{ maxWidth: 560 }}
     >
-      <Header>
+      <Header className='aurora-modal-header'>
         <Icon name='shield' />
         <Header.Content>
-          {t('group.permission.title')} — {group.name}
+          {t('group.permission.title')} — <span style={{ color: 'var(--aurora-accent)' }}>{group.name}</span>
         </Header.Content>
       </Header>
       <Modal.Content>
@@ -268,7 +270,7 @@ const GroupPermissionModal = ({ open, onClose, group, allGroups, onUpdate }) => 
         />
       </Modal.Content>
       <Modal.Actions>
-        <Button onClick={onClose}>{t('group.permission.buttons.close')}</Button>
+        <Button primary onClick={onClose}>{t('group.permission.buttons.close')}</Button>
       </Modal.Actions>
     </Modal>
   );

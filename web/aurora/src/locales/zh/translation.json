@@ -441,10 +441,13 @@
   },
   "log": {
     "title": "操作日志",
-    "search": "搜索日志...",
+    "search": "搜索日志…",
     "usage_details": "使用明细",
     "total_quota": "总消耗额度",
     "click_to_view": "点击查看",
+    "status_bar": {
+      "tip": "最近查询: 刚刚"
+    },
     "type": {
       "select": "选择明细分类",
       "all": "全部",

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Button,
+  Dropdown,
   Form,
   Header,
   Label,
@@ -310,19 +311,48 @@ const LogsTable = () => {
 
   return (
     <>
-      <Header as='h3'>
-        {t('log.usage_details')}（{t('log.total_quota')}：
-        {showStat && renderQuota(stat.quota, t)}
-        {!showStat && (
-          <span
-            onClick={handleEyeClick}
-            style={{ cursor: 'pointer', color: 'var(--aurora-text-muted)' }}
-          >
-            {t('log.click_to_view')}
-          </span>
-        )}
-        ）
-      </Header>
+      {/* 顶部工具栏：类型筛选 + 总消费统计 */}
+      <div className='aurora-channel-toolbar'>
+        <div className='aurora-channel-toolbar__left'>
+          <Dropdown
+            selection
+            compact
+            value={logType}
+            onChange={(_, { value }) => {
+              setLogType(value);
+              loadLogs(0);
+            }}
+            options={[
+              { key: 0, value: 0, text: t('log.type.all') },
+              { key: 1, value: 2, text: t('log.type.topup') },
+              { key: 2, value: 3, text: t('log.type.usage') },
+              { key: 3, value: 4, text: t('log.type.admin') },
+              { key: 4, value: 5, text: t('log.type.system') },
+              { key: 5, value: 1, text: t('log.type.test') },
+            ]}
+            style={{ minWidth: 160 }}
+          />
+        </div>
+      </div>
+
+      {/* 状态条：总消费统计 */}
+      <div className='aurora-status-bar'>
+        <span>
+          {t('log.usage_details')}（{t('log.total_quota')}：
+          {showStat && renderQuota(stat.quota, t)}
+          {!showStat && (
+            <span
+              onClick={handleEyeClick}
+              style={{ cursor: 'pointer' }}
+            >
+              {t('log.click_to_view')}
+            </span>
+          )}
+          ）
+        </span>
+        <span>{t('log.status_bar.tip', '最近查询: 刚刚')}</span>
+      </div>
+
       <Form>
         <Form.Group>
           <Form.Input

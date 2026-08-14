@@ -390,10 +390,23 @@ func GetChannelKeysStatus(c *gin.Context) {
 		})
 		return
 	}
+	// 每条 key 附带派生的 quota_state（active/low_quota/exhausted/cooling/disabled），
+	// 让 UI 徽章反映「软预判已跳过→已转移」等运行态，而非仅看 status 字段。
+	type keyWithState struct {
+		model.ChannelKey
+		QuotaState string `json:"quota_state"`
+	}
+	data := make([]keyWithState, 0, len(keys))
+	for i := range keys {
+		data = append(data, keyWithState{
+			ChannelKey: keys[i],
+			QuotaState: keys[i].QuotaState(),
+		})
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data":    keys,
+		"data":    data,
 	})
 	return
 }

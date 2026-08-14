@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Label, Table } from 'semantic-ui-react';
+import { Button, Label, Progress, Table } from 'semantic-ui-react';
 import { API, showError, showSuccess } from '../helpers';
 
 // 密钥掩码：前 4 + **** + 后 4；不足 8 字符则全部掩码
@@ -13,6 +13,16 @@ function maskKey(keyValue) {
   }
   return keyValue.slice(0, 4) + '****' + keyValue.slice(-4);
 }
+
+// 千分位格式化，避免长数字难读
+const fmtNum = (n) => Number(n || 0).toLocaleString();
+
+// 进度条百分比，封顶 100%；真实百分比仍由文字单独显示（不封顶）
+const quotaPct = (used, limit) => {
+  if (!limit) return 0;
+  const p = (Number(used || 0) / limit) * 100;
+  return p > 100 ? 100 : p;
+};
 
 // 状态 → 颜色与文案 key
 const STATUS_META = {
@@ -41,6 +51,29 @@ function renderStatus(status, t) {
   return (
     <Label basic color={meta.color}>
       {t(meta.key, STATUS_DEFAULT_TEXT[status])}
+    </Label>
+  );
+}
+
+// quota_state（后端派生字段）→ 颜色与文案。比 status 更准：软预判跳过的 key
+// 仍是 status=1(启用)，但 quota_state=low_quota 会显示黄色「额度不足·已转移」。
+// 后端未返回 quota_state（旧版兼容）时回退 renderStatus(k.status)。
+const QUOTA_STATE_META = {
+  active: { color: 'green', key: 'channel.key_list.state_active', text: '启用' },
+  low_quota: { color: 'yellow', key: 'channel.key_list.state_low_quota', text: '额度不足·已转移' },
+  exhausted: { color: 'orange', key: 'channel.key_list.state_exhausted', text: '配额耗尽' },
+  cooling: { color: 'yellow', key: 'channel.key_list.state_cooling', text: '冷却中' },
+  disabled: { color: 'red', key: 'channel.key_list.state_disabled', text: '手动禁用' },
+};
+
+function renderQuotaState(state, status, t) {
+  const meta = QUOTA_STATE_META[state];
+  if (!meta) {
+    return renderStatus(status, t); // 兼容旧后端无 quota_state
+  }
+  return (
+    <Label basic color={meta.color}>
+      {t(meta.key, meta.text)}
     </Label>
   );
 }
@@ -163,13 +196,26 @@ const ChannelKeyList = ({ channelId }) => {
         {keys.map((k) => (
           <Table.Row key={k.id}>
             <Table.Cell>{maskKey(k.key_value)}</Table.Cell>
-            <Table.Cell>{renderStatus(k.status, t)}</Table.Cell>
+            <Table.Cell>{renderQuotaState(k.quota_state, k.status, t)}</Table.Cell>
             <Table.Cell>{k.priority}</Table.Cell>
             <Table.Cell>
               {k.daily_quota_limit === 0 ? (
                 '∞'
               ) : (
-                `${k.daily_used_quota || 0} / ${k.daily_quota_limit}`
+                <div style={{ minWidth: 140 }}>
+                  <div style={{ fontSize: '0.85em' }}>
+                    {t('channel.key_list.used_label', '已用')} {fmtNum(k.daily_used_quota)} / {fmtNum(k.daily_quota_limit)}
+                  </div>
+                  <Progress
+                    percent={quotaPct(k.daily_used_quota, k.daily_quota_limit)}
+                    size='tiny'
+                    indicating
+                    style={{ margin: '2px 0 0 0', height: '4px' }}
+                  />
+                  <span style={{ fontSize: '0.75em', color: 'rgba(0,0,0,.55)' }}>
+                    {((Number(k.daily_used_quota || 0) / k.daily_quota_limit) * 100).toFixed(2)}%
+                  </span>
+                </div>
               )}
             </Table.Cell>
             <Table.Cell>{k.quota_reset_rule || '-'}</Table.Cell>

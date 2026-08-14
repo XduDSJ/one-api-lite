@@ -21,3 +21,7 @@ todo.md
 
 # 本地运行时产物统一归入 .local/
 .local/
+
+# WorkBuddy 工作目录（截图、记忆、临时文件）
+.workbuddy/
+.git.corrupted/

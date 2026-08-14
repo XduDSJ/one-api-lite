@@ -73,6 +73,10 @@ func BatchInsertChannelKeys(keys []ChannelKey) error {
 	if len(keys) == 0 {
 		return nil
 	}
+	now := time.Now().Unix()
+	for i := range keys {
+		armQuotaReset(&keys[i], now)
+	}
 	return DB.Create(&keys).Error
 }
 
@@ -83,6 +87,7 @@ func DeleteChannelKeysByChannelId(channelId int) error {
 
 // UpdateChannelKey 更新单个 key
 func UpdateChannelKey(key *ChannelKey) error {
+	armQuotaReset(key, time.Now().Unix())
 	return DB.Save(key).Error
 }
 
@@ -119,6 +124,38 @@ func filterUsableKeys(channelId int, keys []ChannelKey, model string) []ChannelK
 		usable = append(usable, k)
 	}
 	return usable
+}
+
+// QuotaState 返回 key 的「显示状态」字符串，供 UI 徽章使用。
+// 判定镜像 filterUsableKeys 的关卡 1/3/4，但只读不改 status（软预判跳过的 key
+// 仍保持 status=Enabled，这里把它显式标成 low_quota，让 UI 一眼看出「已转移」）。
+// 与 filterUsableKeys 保持同步：若后者调整门槛，这里同步调整。
+//   - disabled / cooling / exhausted：直接由 status 映射
+//   - active：status=启用 且 配额充足（硬未到顶 且 剩余≥1.5×avg）
+//   - low_quota：status=启用 但 剩余<1.5×avg（软预判会跳过，已转移到次优先级 key）
+//   - exhausted：status=启用 但 used>=limit（硬到顶但尚未被标 status=4 的罕见态）
+func (k ChannelKey) QuotaState() string {
+	switch k.Status {
+	case KeyStatusDisabled:
+		return "disabled"
+	case KeyStatusCooling:
+		return "cooling"
+	case KeyStatusExhausted:
+		return "exhausted"
+	}
+	// status == KeyStatusEnabled
+	if k.DailyQuotaLimit > 0 {
+		if k.DailyUsedQuota >= k.DailyQuotaLimit {
+			return "exhausted"
+		}
+		if k.AvgTokensPerReq > 0 {
+			remaining := k.DailyQuotaLimit - k.DailyUsedQuota
+			if remaining < int64(1.5*k.AvgTokensPerReq) {
+				return "low_quota"
+			}
+		}
+	}
+	return "active"
 }
 
 // pickByPriority 优先级模式：keys 已按 priority desc 排序，
@@ -266,6 +303,8 @@ func MarkChannelKeyExhaustedIfQuota(keyId int64) {
 
 // parseNextResetTime 解析 "HH:MM" 规则，计算从 now 起下一个 HH:MM 时刻的 unix 秒。
 // rule 为空或解析失败返回 0。例如 rule="00:00" 表示每天 0 点重置。
+// 时刻基于服务器本地时区（time.Local）：容器需设 TZ=Asia/Shanghai（或目标时区），
+// 否则 UTC 容器的 "00:00" 会变成北京时间 08:00。
 func parseNextResetTime(rule string, now int64) int64 {
 	if rule == "" {
 		return 0
@@ -282,7 +321,30 @@ func parseNextResetTime(rule string, now int64) int64 {
 	return next.Unix()
 }
 
-// StartQuotaResetScanner 每 30s 扫描配额耗尽的 key，到期则重置
+// armQuotaReset 按 key 当前 QuotaResetRule 重新上「重置闹钟」。
+// 规则合法(HH:MM) → QuotaResetAt = 下一次该时刻；规则为空/非法 → QuotaResetAt = 0（不重置）。
+// 在 BatchInsertChannelKeys/UpdateChannelKey 写入前调用，保证：
+//  1. 新建 key 立即有闹钟，扫描器能在到点重置（修复旧的 quota_reset_at 永远为 0 的鸡生蛋 bug）；
+//  2. 编辑 key（改限额/改规则/撤销软删）后闹钟按当前规则重算，额度变化时重置时刻自动跟随。
+func armQuotaReset(key *ChannelKey, now int64) {
+	if key.QuotaResetRule == "" {
+		key.QuotaResetAt = 0
+		return
+	}
+	next := parseNextResetTime(key.QuotaResetRule, now)
+	if next <= 0 {
+		key.QuotaResetAt = 0
+		return
+	}
+	key.QuotaResetAt = next
+}
+
+// StartQuotaResetScanner 每 30s 扫描设了 quota_reset_rule 的 key，到点清零 daily_used_quota。
+// 语义：真·每日重置——不要求 key 已撞顶/已耗尽，规则时间一到就把当日已用清零。
+// 同时兼容修复前「从未上闹钟(quota_reset_at=0)」的老数据：若今日规则时刻已过，立即补偿清零。
+// 状态处理：仅当 key 处于「配额耗尽(4)」时随重置恢复为启用(1)；手动禁用(2)只清零不动状态
+// （避免半夜自动启用被人工下线的 key）；启用(1)等其他状态不动。
+// 规则非法(非 HH:MM)的 key 记一次 warning 后跳过，不每 30s 空转刷日志。
 func StartQuotaResetScanner() {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
@@ -295,28 +357,60 @@ func StartQuotaResetScanner() {
 			}()
 			now := time.Now().Unix()
 			var keys []ChannelKey
-			if err := DB.Where("quota_reset_at > 0 AND quota_reset_at <= ? AND status = ?", now, KeyStatusExhausted).Find(&keys).Error; err != nil {
+			// 取所有设了规则的 key，不硬性要求 status==4 或 quota_reset_at>0。
+			// quota_reset_at==0 表示从没上闹钟（修复前老数据 / 规则刚改），由循环内自愈上闹钟。
+			if err := DB.Where("quota_reset_rule != ''").Find(&keys).Error; err != nil {
 				logger.SysError("quota reset scanner query error: " + err.Error())
 				return
 			}
 			for _, key := range keys {
+				nextReset := parseNextResetTime(key.QuotaResetRule, now)
+				if nextReset <= 0 {
+					// 规则非法（非 HH:MM）：清空 quota_reset_at 防止旧值误导，记一次 warning，跳过。
+					if key.QuotaResetAt != 0 {
+						_ = DB.Model(&ChannelKey{}).Where("id = ?", key.Id).Update("quota_reset_at", 0).Error
+					}
+					logger.SysError(fmt.Sprintf("quota reset scanner: key %d has invalid rule %q, skipped", key.Id, key.QuotaResetRule))
+					continue
+				}
+				// 到点判定：闹钟已上且到期，或从没上闹钟且今日规则时刻已过（补偿错过的重置）。
+				due := key.QuotaResetAt > 0 && key.QuotaResetAt <= now
+				missed := key.QuotaResetAt == 0 && todayRulePassed(key.QuotaResetRule, now)
+				if !due && !missed {
+					// 未到点：仅给没上闹钟的 key 补上闹钟，不碰配额。
+					if key.QuotaResetAt == 0 {
+						_ = DB.Model(&ChannelKey{}).Where("id = ?", key.Id).Update("quota_reset_at", nextReset).Error
+					}
+					continue
+				}
 				updates := map[string]interface{}{
 					"daily_used_quota": 0,
-					"status":           KeyStatusEnabled,
+					"quota_reset_at":   nextReset, // 上到下一次该时刻
 				}
-				// 按 QuotaResetRule 解析下一次重置时刻，rule 为空则不设 QuotaResetAt
-				if key.QuotaResetRule != "" {
-					nextReset := parseNextResetTime(key.QuotaResetRule, now)
-					if nextReset > 0 {
-						updates["quota_reset_at"] = nextReset
-					}
+				// 仅「配额耗尽(4)」随重置恢复启用；手动禁用(2)/启用(1)等不动状态。
+				if key.Status == KeyStatusExhausted {
+					updates["status"] = KeyStatusEnabled
 				}
 				if err := DB.Model(&ChannelKey{}).Where("id = ?", key.Id).Updates(updates).Error; err != nil {
 					logger.SysError(fmt.Sprintf("quota reset scanner update key %d error: %s", key.Id, err.Error()))
+				} else {
+					logger.SysLog(fmt.Sprintf("quota reset scanner: reset key %d (rule=%s, cleared daily_used_quota=%d, status %d→kept)", key.Id, key.QuotaResetRule, key.DailyUsedQuota, key.Status))
 				}
 			}
 		}()
 	}
+}
+
+// todayRulePassed 判断「今日规则时刻 HH:MM 是否已过 now」（均按服务器本地时区）。
+// 用于补偿修复前从未上闹钟的老数据：若今日该时刻已过，应立即清零。
+func todayRulePassed(rule string, now int64) bool {
+	t, err := time.Parse("15:04", rule)
+	if err != nil {
+		return false
+	}
+	nowTime := time.Unix(now, 0)
+	todayRule := time.Date(nowTime.Year(), nowTime.Month(), nowTime.Day(), t.Hour(), t.Minute(), 0, 0, nowTime.Location())
+	return !todayRule.After(nowTime)
 }
 
 // StartCooldownScanner 每 10s 扫描冷却到期的 key，恢复为启用

@@ -85,11 +85,10 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 		return respErr
 	}
 	// post-consume quota
-	var totalTokens int64
-	if usage != nil {
-		totalTokens = int64(usage.TotalTokens)
-	}
-	reportKeyResult(meta, http.StatusOK, totalTokens, true)
+	// key 配额回写用「已计费 quota」而非原始 totalTokens，与 postConsumeQuota 口径一致，
+	// 保证 channel_keys.daily_used_quota 与用户/渠道计费同单位（修复与 image/audio 的单位不一致）。
+	quota := getUsageQuota(usage, textRequest.Model, meta.ChannelType, ratio)
+	reportKeyResult(meta, http.StatusOK, quota, true)
 	go postConsumeQuota(ctx, usage, meta, textRequest, ratio, preConsumedQuota, modelRatio, groupRatio, systemPromptReset)
 	return nil
 }

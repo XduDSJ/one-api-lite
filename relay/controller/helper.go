@@ -102,20 +102,12 @@ func postConsumeQuota(ctx context.Context, usage *relaymodel.Usage, meta *meta.M
 		logger.Error(ctx, "usage is nil, which is unexpected")
 		return
 	}
-	var quota int64
-	completionRatio := billingratio.GetCompletionRatio(textRequest.Model, meta.ChannelType)
+	// quota 口径与 getUsageQuota 完全一致（单一真相源），保证 key 配额回写与用户/渠道计费同单位。
+	quota := getUsageQuota(usage, textRequest.Model, meta.ChannelType, ratio)
 	promptTokens := usage.PromptTokens
 	completionTokens := usage.CompletionTokens
-	quota = int64(math.Ceil((float64(promptTokens) + float64(completionTokens)*completionRatio) * ratio))
-	if ratio != 0 && quota <= 0 {
-		quota = 1
-	}
-	totalTokens := promptTokens + completionTokens
-	if totalTokens == 0 {
-		// in this case, must be some error happened
-		// we cannot just return, because we may have to return the pre-consumed quota
-		quota = 0
-	}
+	// completionRatio 仅供日志展示，已在 getUsageQuota 内参与计费，此处重取仅用于日志文案。
+	completionRatio := billingratio.GetCompletionRatio(textRequest.Model, meta.ChannelType)
 	quotaDelta := quota - preConsumedQuota
 	err := model.PostConsumeTokenQuota(meta.TokenId, quotaDelta)
 	if err != nil {
@@ -142,6 +134,27 @@ func postConsumeQuota(ctx context.Context, usage *relaymodel.Usage, meta *meta.M
 	})
 	model.UpdateUserUsedQuotaAndRequestCount(meta.UserId, quota)
 	model.UpdateChannelUsedQuota(meta.ChannelId, quota)
+}
+
+// getUsageQuota 按「prompt + completion×completionRatio」再乘 ratio 算计费 quota，
+// 与 postConsumeQuota 口径完全一致。抽出为单一真相源，供 text.go 把「已计费 quota」
+// （而非原始 totalTokens）回写给 key 配额，确保 channel_keys.daily_used_quota 与
+// 用户/渠道计费、日志 Quota 同单位（修复 text 路径与 image/audio 的单位不一致）。
+// ratio=0 时按 0 计（保留原行为，避免除零路径）；prompt+completion=0 时按 0 计
+// （此时通常已发生错误，需走 pre-consume 退还，不应记 1）。
+func getUsageQuota(usage *relaymodel.Usage, modelName string, channelType int, ratio float64) int64 {
+	if usage == nil {
+		return 0
+	}
+	completionRatio := billingratio.GetCompletionRatio(modelName, channelType)
+	quota := int64(math.Ceil((float64(usage.PromptTokens) + float64(usage.CompletionTokens)*completionRatio) * ratio))
+	if ratio != 0 && quota <= 0 {
+		quota = 1
+	}
+	if usage.PromptTokens+usage.CompletionTokens == 0 {
+		quota = 0
+	}
+	return quota
 }
 
 func getMappedModelName(modelName string, mapping map[string]string) (string, bool) {

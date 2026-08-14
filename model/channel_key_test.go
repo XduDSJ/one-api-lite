@@ -7,6 +7,202 @@ import (
 	"github.com/songquanpeng/one-api/relay/breaker"
 )
 
+// TestParseNextResetTime 锁定 "HH:MM" 规则解析：今天已过则顺延到明天、未过则今天。
+// 时区按 time.Local（测试机本地时区）。相对时刻，不依赖绝对时间戳。
+func TestParseNextResetTime(t *testing.T) {
+	now := time.Now()
+	nowTs := now.Unix()
+
+	tests := []struct {
+		name string
+		rule string
+		// want 是「从 now 起下一个 rule 时刻」相对 now 的期望：
+		// todayRulePassed=true → 明天该时刻；false → 今天该时刻。
+		passed bool
+		hh, mm int
+	}{
+		{"00:00 今天已过(凌晨已过)", "00:00", true, 0, 0},
+		{"23:59 今天未过(晚上还没到)", "23:59", false, 23, 59},
+		{"空规则返回0", "", false, 0, 0},
+		{"非法规则返回0", "daily", false, 0, 0},
+		{"非法格式返回0", "25:99", false, 0, 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := parseNextResetTime(tt.rule, nowTs)
+			if tt.rule == "" || tt.rule == "daily" || tt.rule == "25:99" {
+				if got != 0 {
+					t.Errorf("rule=%q: got %d, want 0", tt.rule, got)
+				}
+				return
+			}
+			if got <= 0 {
+				t.Fatalf("rule=%q: got %d, want >0", tt.rule, got)
+			}
+			// 校验时刻落在期望的「今天或明天的 hh:mm」
+			gotT := time.Unix(got, 0)
+			if gotT.Hour() != tt.hh || gotT.Minute() != tt.mm {
+				t.Errorf("rule=%q: got time %02d:%02d, want %02d:%02d", tt.rule, gotT.Hour(), gotT.Minute(), tt.hh, tt.mm)
+			}
+			// 校验是「未来」且不超过 24h
+			d := gotT.Sub(now)
+			if d <= 0 {
+				t.Errorf("rule=%q: next reset %v not after now", tt.rule, gotT)
+			}
+			if d > 25*time.Hour {
+				t.Errorf("rule=%q: next reset %v more than 24h ahead", tt.rule, gotT)
+			}
+		})
+	}
+}
+
+// TestTodayRulePassed 锁定「今日规则时刻是否已过」判定。
+func TestTodayRulePassed(t *testing.T) {
+	now := time.Now()
+	// 用当前小时构造：上一小时已过，下一小时未过
+	prevHH := (now.Hour() + 23) % 24
+	nextHH := (now.Hour() + 1) % 24
+	prevRule := timeFormatter(prevHH, now.Minute())
+	nextRule := timeFormatter(nextHH, now.Minute())
+
+	if !todayRulePassed(prevRule, now.Unix()) {
+		t.Errorf("rule=%s (上一小时) 应判定为已过", prevRule)
+	}
+	if todayRulePassed(nextRule, now.Unix()) {
+		t.Errorf("rule=%s (下一小时) 应判定为未过", nextRule)
+	}
+	if todayRulePassed("", now.Unix()) {
+		t.Errorf("空规则应返回 false")
+	}
+	if todayRulePassed("daily", now.Unix()) {
+		t.Errorf("非法规则应返回 false")
+	}
+}
+
+// timeFormatter 把 HH:MM 拼成字符串（辅助 TestTodayRulePassed）。
+func timeFormatter(hh, mm int) string {
+	return formatTwo(hh) + ":" + formatTwo(mm)
+}
+func formatTwo(n int) string {
+	if n < 10 {
+		return "0" + itoa(n)
+	}
+	return itoa(n)
+}
+func itoa(n int) string {
+	if n == 0 {
+		return "0"
+	}
+	var b []byte
+	for n > 0 {
+		b = append([]byte{byte('0' + n%10)}, b...)
+		n /= 10
+	}
+	return string(b)
+}
+
+// TestArmQuotaReset 锁定「上闹钟」逻辑：合法规则→QuotaResetAt>0；空/非法→0。
+func TestArmQuotaReset(t *testing.T) {
+	now := time.Now().Unix()
+	cases := []struct {
+		name      string
+		rule      string
+		wantZero  bool // true=期望 QuotaResetAt==0
+	}{
+		{"合法 00:00 上闹钟", "00:00", false},
+		{"合法 03:30 上闹钟", "03:30", false},
+		{"空规则→0", "", true},
+		{"非法 daily→0", "daily", true},
+		{"非法 25:99→0", "25:99", true},
+	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			k := &ChannelKey{QuotaResetRule: tt.rule}
+			armQuotaReset(k, now)
+			if tt.wantZero {
+				if k.QuotaResetAt != 0 {
+					t.Errorf("rule=%q: QuotaResetAt=%d, want 0", tt.rule, k.QuotaResetAt)
+				}
+			} else {
+				if k.QuotaResetAt <= 0 {
+					t.Errorf("rule=%q: QuotaResetAt=%d, want >0", tt.rule, k.QuotaResetAt)
+				}
+			}
+		})
+	}
+}
+
+// TestBatchInsertChannelKeysArmsReset DB 驱动：插入带规则的 key 应自动上闹钟。
+func TestBatchInsertChannelKeysArmsReset(t *testing.T) {
+	const ch = 9001
+	keys := []ChannelKey{
+		{ChannelId: ch, KeyValue: "sk-with-rule", Status: KeyStatusEnabled, Priority: 1, QuotaResetRule: "00:00"},
+		{ChannelId: ch, KeyValue: "sk-no-rule", Status: KeyStatusEnabled, Priority: 2, QuotaResetRule: ""},
+	}
+	if err := BatchInsertChannelKeys(keys); err != nil {
+		t.Fatalf("BatchInsertChannelKeys failed: %v", err)
+	}
+	defer DeleteChannelKeysByChannelId(ch)
+
+	all, err := GetChannelKeysByChannelId(ch)
+	if err != nil {
+		t.Fatalf("GetChannelKeysByChannelId failed: %v", err)
+	}
+	for _, k := range all {
+		switch k.KeyValue {
+		case "sk-with-rule":
+			if k.QuotaResetAt <= 0 {
+				t.Errorf("sk-with-rule: QuotaResetAt=%d, want >0 (应自动上闹钟)", k.QuotaResetAt)
+			}
+		case "sk-no-rule":
+			if k.QuotaResetAt != 0 {
+				t.Errorf("sk-no-rule: QuotaResetAt=%d, want 0", k.QuotaResetAt)
+			}
+		}
+	}
+}
+
+// TestUpdateChannelKeyRearmsReset DB 驱动：编辑 key（改规则）后闹钟应按新规则重算。
+// 验证「额度/规则变化→重置时刻跟随」。
+func TestUpdateChannelKeyRearmsReset(t *testing.T) {
+	const ch = 9002
+	keys := []ChannelKey{
+		{ChannelId: ch, KeyValue: "sk-edit", Status: KeyStatusEnabled, Priority: 1, QuotaResetRule: "00:00"},
+	}
+	if err := BatchInsertChannelKeys(keys); err != nil {
+		t.Fatalf("BatchInsertChannelKeys failed: %v", err)
+	}
+	defer DeleteChannelKeysByChannelId(ch)
+
+	all, _ := GetChannelKeysByChannelId(ch)
+	if len(all) != 1 {
+		t.Fatalf("expected 1 key, got %d", len(all))
+	}
+	oldResetAt := all[0].QuotaResetAt
+	if oldResetAt <= 0 {
+		t.Fatalf("初始 QuotaResetAt 应 >0，实际 %d", oldResetAt)
+	}
+
+	// 改规则为 03:30，更新后闹钟应重算
+	all[0].QuotaResetRule = "03:30"
+	if err := UpdateChannelKey(&all[0]); err != nil {
+		t.Fatalf("UpdateChannelKey failed: %v", err)
+	}
+	after, _ := GetChannelKeysByChannelId(ch)
+	if after[0].QuotaResetAt <= 0 {
+		t.Fatalf("改规则后 QuotaResetAt 应 >0，实际 %d", after[0].QuotaResetAt)
+	}
+	// 03:30 的下一次时刻应与 00:00 的不同（除非正好跨在两次重置之间，但 3.5h 差异保证不同）
+	if after[0].QuotaResetAt == oldResetAt {
+		t.Errorf("改规则后闹钟未重算：QuotaResetAt 仍=%d（旧），期望变化", oldResetAt)
+	}
+	// 闹钟时刻应是 03:30
+	gotT := time.Unix(after[0].QuotaResetAt, 0)
+	if gotT.Hour() != 3 || gotT.Minute() != 30 {
+		t.Errorf("改规则后闹钟时刻=%02d:%02d, want 03:30", gotT.Hour(), gotT.Minute())
+	}
+}
+
 func TestChannelKeyCRUD(t *testing.T) {
 	// 准备：插入 3 个 key，priority 10/5/1，其中 priority=1 的 status=Disabled
 	keys := []ChannelKey{
@@ -194,5 +390,65 @@ func TestHasUsableKey(t *testing.T) {
 	InvalidateChannelKeyUsableCache()
 	if HasUsableKey(chMulti, MultiKeyModePriority, model) {
 		t.Errorf("所有 key 冷却中应返回 false")
+	}
+}
+
+// TestQuotaState 锁定 ChannelKey.QuotaState() 的 5 态映射。
+// 判定镜像 filterUsableKeys 关卡 1/3/4，但只读不改 status。
+func TestQuotaState(t *testing.T) {
+	cases := []struct {
+		name string
+		key  ChannelKey
+		want string
+	}{
+		{
+			name: "active: 启用 + 配额充足",
+			key:  ChannelKey{Status: KeyStatusEnabled, DailyQuotaLimit: 50000000, DailyUsedQuota: 1000000, AvgTokensPerReq: 100000},
+			want: "active",
+		},
+		{
+			name: "low_quota: 启用 + 剩余 < 1.5×avg（软预判会跳过，实测的 key 1 场景）",
+			key:  ChannelKey{Status: KeyStatusEnabled, DailyQuotaLimit: 50000000, DailyUsedQuota: 49925479, AvgTokensPerReq: 126543.4},
+			want: "low_quota",
+		},
+		{
+			name: "exhausted: 启用 + used>=limit（硬到顶但未被标 status=4）",
+			key:  ChannelKey{Status: KeyStatusEnabled, DailyQuotaLimit: 50000000, DailyUsedQuota: 50000000, AvgTokensPerReq: 100000},
+			want: "exhausted",
+		},
+		{
+			name: "exhausted: status=4（配额耗尽）",
+			key:  ChannelKey{Status: KeyStatusExhausted, DailyQuotaLimit: 50000000, DailyUsedQuota: 50000000},
+			want: "exhausted",
+		},
+		{
+			name: "cooling: status=3（冷却中）",
+			key:  ChannelKey{Status: KeyStatusCooling},
+			want: "cooling",
+		},
+		{
+			name: "disabled: status=2（手动禁用）",
+			key:  ChannelKey{Status: KeyStatusDisabled},
+			want: "disabled",
+		},
+		{
+			name: "active: limit=0（不设上限，恒 active）",
+			key:  ChannelKey{Status: KeyStatusEnabled, DailyQuotaLimit: 0, DailyUsedQuota: 999999, AvgTokensPerReq: 1000},
+			want: "active",
+		},
+		{
+			name: "active: avg=0 时不触发 low_quota（无历史平均，无法预判）",
+			key:  ChannelKey{Status: KeyStatusEnabled, DailyQuotaLimit: 50000000, DailyUsedQuota: 49999999, AvgTokensPerReq: 0},
+			want: "active",
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.key.QuotaState()
+			if got != tt.want {
+				t.Errorf("QuotaState() = %q, want %q (status=%d used=%d limit=%d avg=%.1f)",
+					got, tt.want, tt.key.Status, tt.key.DailyUsedQuota, tt.key.DailyQuotaLimit, tt.key.AvgTokensPerReq)
+			}
+		})
 	}
 }

@@ -184,11 +184,11 @@ const ChannelsTable = () => {
           <span style={{ width: 150 }}>名称</span>
           <span style={{ width: 100 }}>类型</span>
           <span style={{ width: 80 }}>分组</span>
-          <span style={{ width: 200 }}>支持模型</span>
+          <span style={{ width: 220 }}>支持模型</span>
           <span style={{ width: 70 }}>优先级</span>
           <span style={{ width: 60 }}>权重</span>
           <span style={{ width: 80 }}>状态</span>
-          <span style={{ width: 90 }}>响应</span>
+          <span style={{ width: 90 }}>响应时间</span>
           <span style={{ width: 90 }}>余额</span>
           <span style={{ width: 120, textAlign: 'right' }}>操作</span>
         </div>
@@ -206,10 +206,10 @@ const ChannelsTable = () => {
                   <span className={`aurora-badge aurora-badge-${badgeColor}`}>{typeMap[ch.type]?.text || `#${ch.type}`}</span>
                 </span>
                 <span style={{ width: 80, color: '#9CA3AF', fontSize: 12 }}>{ch.group || 'default'}</span>
-                <span style={{ width: 200, color: '#D1D5DB', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {Array.isArray(ch.models) ? (ch.models.length > 3 ? ch.models.slice(0, 3).join(', ') + ` +${ch.models.length - 3}` : ch.models.join(', ')) : (typeof ch.models === 'string' && ch.models ? ch.models.split(',').slice(0, 3).join(', ') : '—')}
+                <span style={{ width: 220, color: '#D1D5DB', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {Array.isArray(ch.models) ? (ch.models.length > 2 ? ch.models.slice(0, 2).join(', ') + `  +${ch.models.length - 2}` : ch.models.join(', ')) : (typeof ch.models === 'string' && ch.models ? ch.models.split(',').slice(0, 2).join(', ') : '—')}
                 </span>
-                <span style={{ width: 70, color: '#B86F05', fontWeight: 700 }}>{ch.priority ?? 0}</span>
+                <span style={{ width: 70, color: '#F5A623', fontWeight: 700 }}>{ch.priority ?? 0}</span>
                 <span style={{ width: 60, color: '#D1D5DB' }}>{ch.weight ?? 0}</span>
                 <span style={{ width: 80 }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -217,7 +217,7 @@ const ChannelsTable = () => {
                     <span style={{ fontSize: 12, fontWeight: 500, color: statusInfo.color }}>{statusInfo.label}</span>
                   </span>
                 </span>
-                <span style={{ width: 90, color: responseColor, fontWeight: 500 }}>{ch.response_time > 0 ? `${ch.response_time}ms` : '—'}</span>
+                <span style={{ width: 90, color: responseColor, fontWeight: 400 }}>{ch.response_time > 0 ? `${ch.response_time}ms` : '—'}</span>
                 <span style={{ width: 90, color: ch.balance ? '#D1D5DB' : '#52525B' }}>{ch.balance ? `$${renderNumber(ch.balance)}` : '—'}</span>
                 <span style={{ width: 120, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                   <Link to={`/channel/edit/${ch.id}`} style={{ fontSize: 12, color: '#F5A623', fontWeight: 500, cursor: 'pointer' }}>编辑</Link>

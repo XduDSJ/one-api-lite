@@ -134,6 +134,11 @@ const Layout = ({ children }) => {
 
       {/* Main */}
       <div className={`aurora-main ${collapsed ? 'aurora-main-collapsed' : ''}`}>
+        {/* Glow 光晕 — 设计稿所有内页共享：GlowGold/GlowPurple/GlowCyan */}
+        <div style={{ position: 'absolute', top: 400, left: -200, width: 700, height: 700, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,230,178,0.18) 0%, rgba(245,230,178,0) 70%)', pointerEvents: 'none', zIndex: 0 }} />
+        <div style={{ position: 'absolute', top: -100, right: -100, width: 800, height: 800, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,166,35,0.12) 0%, rgba(245,166,35,0) 70%)', pointerEvents: 'none', zIndex: 0 }} />
+        <div style={{ position: 'absolute', bottom: 0, left: '40%', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(45,212,191,0.10) 0%, rgba(45,212,191,0) 70%)', pointerEvents: 'none', zIndex: 0 }} />
+
         {/* TopBar */}
         <header className='aurora-topbar'>
           <div className='aurora-topbar-left'>

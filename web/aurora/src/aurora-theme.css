@@ -135,6 +135,7 @@ input, select, textarea { font-family: inherit; outline: none; }
 .aurora-main {
   flex: 1; display: flex; flex-direction: column;
   margin-left: 264px; min-height: 100vh;
+  position: relative; overflow: hidden;
 }
 .aurora-main-collapsed { margin-left: 72px; }
 
@@ -188,6 +189,7 @@ input, select, textarea { font-family: inherit; outline: none; }
 .aurora-content {
   flex: 1; padding: 32px 108px;
   max-width: 100%;
+  position: relative; z-index: 1;
 }
 
 /* —— Auth page（登录/注册/重置） —— */

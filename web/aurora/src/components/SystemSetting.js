@@ -90,6 +90,77 @@ const SystemSetting = () => {
           <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => submitOption('About')}>保存</button>
         </div>
       </Section>
+
+      <Section title='登录注册设置'>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label style={labelStyle}>允许注册</label>
+            <select name='RegisterEnabled' value={inputs.RegisterEnabled || 'true'} onChange={handleInputChange} style={inputStyle}>
+              <option value='true'>允许</option>
+              <option value='false'>禁止</option>
+            </select>
+          </div>
+          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => submitOption('RegisterEnabled')}>保存</button>
+          <div>
+            <label style={labelStyle}>邮箱验证</label>
+            <select name='EmailVerificationEnabled' value={inputs.EmailVerificationEnabled || 'false'} onChange={handleInputChange} style={inputStyle}>
+              <option value='false'>关闭</option>
+              <option value='true'>开启</option>
+            </select>
+          </div>
+          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => submitOption('EmailVerificationEnabled')}>保存</button>
+        </div>
+      </Section>
+
+      <Section title='邮件 SMTP 设置'>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label style={labelStyle}>SMTP 服务器</label>
+            <input name='SMTPServer' value={inputs.SMTPServer || ''} onChange={handleInputChange} placeholder='smtp.example.com' style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>SMTP 端口</label>
+            <input name='SMTPPort' value={inputs.SMTPPort || ''} onChange={handleInputChange} placeholder='587' style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>SMTP 账号</label>
+            <input name='SMTPAccount' value={inputs.SMTPAccount || ''} onChange={handleInputChange} placeholder='user@example.com' style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>SMTP 密码/Token</label>
+            <input type='password' name='SMTPToken' value={inputs.SMTPToken || ''} onChange={handleInputChange} placeholder='••••••••' style={inputStyle} />
+          </div>
+          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => { submitOption('SMTPServer'); submitOption('SMTPPort'); submitOption('SMTPAccount'); submitOption('SMTPToken'); }}>保存全部</button>
+        </div>
+      </Section>
+
+      <Section title='额度与计费'>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label style={labelStyle}>额度提醒倍率</label>
+            <input name='QuotaPerUnit' value={inputs.QuotaPerUnit || ''} onChange={handleInputChange} placeholder='500000' style={inputStyle} />
+          </div>
+          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => submitOption('QuotaPerUnit')}>保存</button>
+          <div>
+            <label style={labelStyle}>显示金额</label>
+            <select name='DisplayInCurrency' value={inputs.DisplayInCurrency || 'false'} onChange={handleInputChange} style={inputStyle}>
+              <option value='false'>否</option>
+              <option value='true'>是</option>
+            </select>
+          </div>
+          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => submitOption('DisplayInCurrency')}>保存</button>
+        </div>
+      </Section>
+
+      <Section title='首页内容'>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label style={labelStyle}>首页内容（支持 Markdown 或 URL）</label>
+            <textarea name='HomePageContent' value={inputs.HomePageContent || ''} onChange={handleInputChange} placeholder='输入首页内容…' style={{ ...inputStyle, height: 150, paddingTop: 12, fontFamily: 'JetBrains Mono, monospace' }} />
+          </div>
+          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => submitOption('HomePageContent')}>保存</button>
+        </div>
+      </Section>
     </div>
   );
 };

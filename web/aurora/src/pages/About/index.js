@@ -25,18 +25,35 @@ const About = () => {
 
   if (!about) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '48px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <img src={logo} alt='logo' style={{ width: 48, height: 48, borderRadius: 12 }} />
-          <span style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF' }}>One API Lite</span>
-        </div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#FFFFFF' }}>关于</h2>
-        <p style={{ fontSize: 14, color: '#A1A1AA' }}>LLM API 管理 & 分发系统，支持多种模型统一 API 适配</p>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 20px', background: '#1A1A22', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10 }}>
-          <span style={{ fontSize: 14 }}>GitHub:</span>
-          <a href='https://github.com/XduDSJ/one-api-lite' target='_blank' rel='noopener noreferrer' style={{ color: '#B86F05', fontWeight: 500, fontSize: 14 }}>
-            github.com/XduDSJ/one-api-lite
-          </a>
+      <div style={{ position: 'relative', minHeight: 'calc(100vh - 72px)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* Glow — 设计稿 19:2/19:3/19:4 */}
+        <div style={{ position: 'absolute', top: 400, left: -200, width: 700, height: 700, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,230,178,0.18) 0%, rgba(245,230,178,0) 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: -100, right: -100, width: 800, height: 800, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,166,35,0.12) 0%, rgba(245,166,35,0) 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: 0, left: '40%', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(45,212,191,0.10) 0%, rgba(45,212,191,0) 70%)', pointerEvents: 'none' }} />
+
+        {/* 品牌卡 — 设计稿 19:6 Content */}
+        <div style={{ position: 'relative', zIndex: 2, maxWidth: 600, width: '100%' }}>
+          <div className='aurora-card' style={{ padding: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <img src={logo} alt='logo' style={{ width: 56, height: 56, borderRadius: 14 }} />
+              <span style={{ fontSize: 28, fontWeight: 700, color: '#FFFFFF' }}>One API Lite</span>
+            </div>
+            <div style={{ fontSize: 16, color: '#A1A1AA', textAlign: 'center' }}>LLM API 管理 & 分发系统</div>
+            <div style={{ fontSize: 14, color: '#71717A', textAlign: 'center', lineHeight: 1.6 }}>支持多种模型统一 API 适配，包括 OpenAI / Anthropic / Gemini / Azure 等，可用于二次分发管理 key</div>
+
+            {/* GitHub 链接区 */}
+            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+              <a href='https://github.com/XduDSJ/one-api-lite' target='_blank' rel='noopener noreferrer' className='aurora-btn aurora-btn-primary'>GitHub 仓库</a>
+              <a href='https://github.com/XduDSJ/one-api-lite/issues' target='_blank' rel='noopener noreferrer' className='aurora-btn aurora-btn-ghost'>问题反馈</a>
+            </div>
+
+            {/* 技术栈标签 */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 8 }}>
+              {['Go', 'Gin', 'GORM', 'React', 'Recharts', 'Docker'].map((tech) => (
+                <span key={tech} className='aurora-badge aurora-badge-gray'>{tech}</span>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );

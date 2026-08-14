@@ -1,0 +1,163 @@
+import React, { useContext, useEffect, useState } from 'react';
+import {
+  Button,
+  Divider,
+  Form,
+  Grid,
+  Header,
+  Image,
+  Message,
+  Segment,
+  Card,
+} from 'semantic-ui-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { UserContext } from '../context/User';
+import { API, getLogo, showError, showSuccess, showWarning } from '../helpers';
+
+const LoginForm = () => {
+  const { t } = useTranslation();
+  const [inputs, setInputs] = useState({
+    username: '',
+    password: '',
+  });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [submitted, setSubmitted] = useState(false);
+  const { username, password } = inputs;
+  const [userState, userDispatch] = useContext(UserContext);
+  let navigate = useNavigate();
+  const [status, setStatus] = useState({});
+  const logo = getLogo();
+
+  useEffect(() => {
+    if (searchParams.get('expired')) {
+      showError(t('messages.error.login_expired'));
+    }
+    let status = localStorage.getItem('status');
+    if (status) {
+      status = JSON.parse(status);
+      setStatus(status);
+    }
+  }, []);
+
+  function handleChange(e) {
+    const { name, value } = e.target;
+    setInputs((inputs) => ({ ...inputs, [name]: value }));
+  }
+
+  async function handleSubmit(e) {
+    setSubmitted(true);
+    if (username && password) {
+      const res = await API.post(`/api/user/login`, {
+        username,
+        password,
+      });
+      const { success, message, data } = res.data;
+      if (success) {
+        userDispatch({ type: 'login', payload: data });
+        localStorage.setItem('user', JSON.stringify(data));
+        if (username === 'root' && password === '123456') {
+          navigate('/user/edit');
+          showSuccess(t('messages.success.login'));
+          showWarning(t('messages.error.root_password'));
+        } else {
+          navigate('/token');
+          showSuccess(t('messages.success.login'));
+        }
+      } else {
+        showError(message);
+      }
+    }
+  }
+
+  return (
+    <Grid textAlign='center' style={{ minHeight: '100vh', margin: '0' }} verticalAlign='middle'>
+      <Grid.Column style={{ maxWidth: 450 }}>
+        <Card
+          fluid
+          className='auth-card'
+        >
+          <Card.Content>
+            <Card.Header>
+              <Header
+                as='h2'
+                textAlign='center'
+                style={{ marginBottom: '1.5em' }}
+              >
+                <Image src={logo} style={{ marginBottom: '10px' }} />
+                <Header.Content>{t('auth.login.title')}</Header.Content>
+              </Header>
+            </Card.Header>
+            <Form size='large'>
+              <Form.Input
+                fluid
+                icon='user'
+                iconPosition='left'
+                placeholder={t('auth.login.username')}
+                name='username'
+                value={username}
+                onChange={handleChange}
+                style={{ marginBottom: '1em' }}
+              />
+              <Form.Input
+                fluid
+                icon='lock'
+                iconPosition='left'
+                placeholder={t('auth.login.password')}
+                name='password'
+                type='password'
+                value={password}
+                onChange={handleChange}
+                style={{ marginBottom: '1.5em' }}
+              />
+              <Button
+                fluid
+                size='large'
+                primary
+                onClick={handleSubmit}
+                style={{
+                  marginBottom: '1.5em',
+                }}
+              >
+                {t('auth.login.button')}
+              </Button>
+            </Form>
+
+            <Divider />
+            <Message style={{ background: 'transparent', boxShadow: 'none' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '0.9em',
+                  color: 'var(--aurora-text-muted)',
+                }}
+              >
+                <div>
+                  {t('auth.login.forgot_password')}
+                  <Link
+                    to='/reset'
+                    style={{ color: 'var(--aurora-primary)', marginLeft: '2px' }}
+                  >
+                    {t('auth.login.reset_password')}
+                  </Link>
+                </div>
+                <div>
+                  {t('auth.login.no_account')}
+                  <Link
+                    to='/register'
+                    style={{ color: 'var(--aurora-primary)', marginLeft: '2px' }}
+                  >
+                    {t('auth.login.register')}
+                  </Link>
+                </div>
+              </div>
+            </Message>
+          </Card.Content>
+        </Card>
+      </Grid.Column>
+    </Grid>
+  );
+};
+
+export default LoginForm;

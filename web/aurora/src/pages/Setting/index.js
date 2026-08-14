@@ -1,0 +1,52 @@
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Card, Tab } from 'semantic-ui-react';
+import SystemSetting from '../../components/SystemSetting';
+import { isRoot } from '../../helpers';
+import PersonalSetting from '../../components/PersonalSetting';
+
+const Setting = () => {
+  const { t } = useTranslation();
+
+  let panes = [
+    {
+      menuItem: t('setting.tabs.personal'),
+      render: () => (
+        <Tab.Pane attached={false}>
+          <PersonalSetting />
+        </Tab.Pane>
+      ),
+    },
+  ];
+
+  if (isRoot()) {
+    panes.push({
+      menuItem: t('setting.tabs.system'),
+      render: () => (
+        <Tab.Pane attached={false}>
+          <SystemSetting />
+        </Tab.Pane>
+      ),
+    });
+  }
+
+  return (
+    <div className='dashboard-container'>
+      <Card fluid className='page-card'>
+        <Card.Content>
+          <Card.Header className='header'>{t('setting.title')}</Card.Header>
+          <Tab
+            menu={{
+              secondary: true,
+              pointing: true,
+              className: 'settings-tab',
+            }}
+            panes={panes}
+          />
+        </Card.Content>
+      </Card>
+    </div>
+  );
+};
+
+export default Setting;

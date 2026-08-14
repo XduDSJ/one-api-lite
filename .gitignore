@@ -9,6 +9,7 @@ build
 logs
 data
 /web/node_modules
+node_modules
 cmd.md
 .env
 /one-api

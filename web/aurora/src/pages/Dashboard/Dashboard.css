@@ -1,0 +1,109 @@
+.dashboard-container {
+    padding: var(--space-5) var(--space-6) var(--space-7);
+    background-color: transparent;
+    margin-top: 0;
+    max-width: 1440px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--aurora-primary) 0%, var(--aurora-primary-hover) 100%) !important;
+    color: #fff !important;
+    box-shadow: var(--shadow-card-dark) !important;
+    transition: transform 0.2s ease !important;
+    margin-bottom: 1rem !important;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-card .statistic {
+    color: white !important;
+}
+
+.charts-grid {
+    margin-bottom: 1rem !important;
+}
+
+.charts-grid .column {
+    padding: 0.5rem !important;
+}
+
+.chart-card {
+    height: 100%;
+    box-shadow: var(--shadow-card-dark) !important;
+    border: 1px solid var(--aurora-border) !important;
+    border-radius: var(--radius-lg) !important;
+    padding: var(--space-2) !important;
+}
+
+.chart-container {
+    margin-top: 2px;
+    padding: 16px;
+    background-color: var(--aurora-surface);
+    border-radius: var(--radius-lg);
+}
+
+.ui.card > .content > .header {
+    color: var(--aurora-text);
+    font-size: 1.2em;
+    margin-bottom: var(--space-4);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    gap: var(--space-3);
+}
+
+.stat-value {
+    color: var(--aurora-primary);
+    font-weight: bold;
+    font-size: 1.1em;
+    background: var(--aurora-primary-soft);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+    margin-left: var(--space-4);
+}
+
+/* 优化图表响应式布局 */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 10px 16px;   /* 移动端也相应减小内边距 */
+        max-width: 100%;      /* 移动端占满全宽 */
+    }
+    
+    .chart-container {
+        padding: 12px;
+    }
+    
+    .charts-grid .column {
+        padding: 0.25rem !important;
+    }
+}
+
+/* 设置页面的 Tab 样式 */
+.settings-tab {
+    margin-top: 1rem !important;
+    border-bottom: none !important;
+}
+
+.settings-tab .item {
+    color: var(--aurora-text-muted) !important;
+    font-weight: 500 !important;
+    padding: var(--space-3) var(--space-4) !important;
+}
+
+.settings-tab .active.item {
+    color: var(--aurora-primary) !important;
+    font-weight: 600 !important;
+    border-color: var(--aurora-primary) !important;
+}
+
+.ui.tab.segment {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 1rem 0 !important;
+} 

@@ -42,6 +42,7 @@ jobs:
           images: ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=dev,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=preview,enable=${{ github.ref == 'refs/heads/frontend-ui-design' }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix=sha-

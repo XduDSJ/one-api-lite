@@ -175,8 +175,15 @@
         "step3_title": "Model Selection",
         "step3_desc": "Supported models and aliases",
         "previous": "Previous",
-        "next": "Next"
+        "next": "Next",
+        "badge": "Wizard"
       },
+      "section_basic": "Basic Info",
+      "section_key": "Key Management",
+      "section_model": "Model Mapping",
+      "section_advanced": "Advanced Settings",
+      "footer_hint": "Re-test channel availability after modification",
+      "weight": "Weight",
       "type": "Type",
       "name": "Name",
       "name_placeholder": "Please enter name",

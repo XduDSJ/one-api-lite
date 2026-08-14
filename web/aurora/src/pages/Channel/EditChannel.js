@@ -445,15 +445,517 @@ const EditChannel = () => {
     });
   };
 
+  // ====== 渲染：基本信息 Section（编辑模式 + 向导 Step 1 共用） ======
+  const renderBasicSection = () => (
+    <>
+      <Form.Field>
+        <Form.Select
+          label={t('channel.edit.type')}
+          name='type'
+          required
+          search
+          options={CHANNEL_OPTIONS}
+          value={inputs.type}
+          onChange={handleInputChange}
+        />
+      </Form.Field>
+      <Form.Field>
+        <Form.Input
+          label={t('channel.edit.name')}
+          name='name'
+          placeholder={t('channel.edit.name_placeholder')}
+          onChange={handleInputChange}
+          value={inputs.name}
+          required
+        />
+      </Form.Field>
+      {renderChannelTip(inputs.type)}
+
+      {/* Azure / Custom / 其他类型特殊字段 */}
+      {inputs.type === 3 && (
+        <>
+          <Message>
+            注意，<strong>模型部署名称必须和模型名称保持一致</strong>，
+            因为 One API 会把请求体中的 model 参数替换为你的部署名称（模型名称中的点会被剔除）。
+          </Message>
+          <Form.Field>
+            <Form.Input
+              label='AZURE_OPENAI_ENDPOINT'
+              name='base_url'
+              placeholder='请输入 AZURE_OPENAI_ENDPOINT，例如：https://docs-test-001.openai.azure.com'
+              onChange={handleInputChange}
+              value={inputs.base_url}
+              autoComplete='new-password'
+            />
+          </Form.Field>
+          <Form.Field>
+            <Form.Input
+              label='默认 API 版本'
+              name='other'
+              placeholder='请输入默认 API 版本，例如：2024-03-01-preview'
+              onChange={handleInputChange}
+              value={inputs.other}
+              autoComplete='new-password'
+            />
+          </Form.Field>
+        </>
+      )}
+      {inputs.type === 8 && (
+        <Form.Field>
+          <Form.Input
+            required
+            label={t('channel.edit.proxy_url')}
+            name='base_url'
+            placeholder={t('channel.edit.proxy_url_placeholder')}
+            onChange={handleInputChange}
+            value={inputs.base_url}
+            autoComplete='new-password'
+          />
+        </Form.Field>
+      )}
+      {inputs.type === 50 && (
+        <Form.Field>
+          <Form.Input
+            required
+            label={t('channel.edit.base_url')}
+            name='base_url'
+            placeholder={t('channel.edit.base_url_placeholder')}
+            onChange={handleInputChange}
+            value={inputs.base_url}
+            autoComplete='new-password'
+          />
+        </Form.Field>
+      )}
+      {inputs.type === 18 && (
+        <Form.Field>
+          <Form.Input
+            label={t('channel.edit.spark_version')}
+            name='other'
+            placeholder={t('channel.edit.spark_version_placeholder')}
+            onChange={handleInputChange}
+            value={inputs.other}
+            autoComplete='new-password'
+          />
+        </Form.Field>
+      )}
+      {inputs.type === 21 && (
+        <Form.Field>
+          <Form.Input
+            label={t('channel.edit.knowledge_id')}
+            name='other'
+            placeholder={t('channel.edit.knowledge_id_placeholder')}
+            onChange={handleInputChange}
+            value={inputs.other}
+            autoComplete='new-password'
+          />
+        </Form.Field>
+      )}
+      {inputs.type === 17 && (
+        <Form.Field>
+          <Form.Input
+            label={t('channel.edit.plugin_param')}
+            name='other'
+            placeholder={t('channel.edit.plugin_param_placeholder')}
+            onChange={handleInputChange}
+            value={inputs.other}
+            autoComplete='new-password'
+          />
+        </Form.Field>
+      )}
+      {inputs.type === 34 && <Message>{t('channel.edit.coze_notice')}</Message>}
+      {inputs.type === 40 && (
+        <Message>
+          {t('channel.edit.douban_notice')}
+          <a target='_blank' href='https://console.volcengine.com/ark/region:ark+cn-beijing/endpoint'>
+            {t('channel.edit.douban_notice_link')}
+          </a>
+          {t('channel.edit.douban_notice_2')}
+        </Message>
+      )}
+      {inputs.type !== 3 && inputs.type !== 33 && inputs.type !== 8 && inputs.type !== 50 && inputs.type !== 22 && (
+        <Form.Field>
+          <Form.Input
+            label={t('channel.edit.proxy_url')}
+            name='base_url'
+            placeholder={t('channel.edit.proxy_url_placeholder')}
+            onChange={handleInputChange}
+            value={inputs.base_url}
+            autoComplete='new-password'
+          />
+        </Form.Field>
+      )}
+      {inputs.type === 22 && (
+        <Form.Field>
+          <Form.Input
+            label='私有部署地址'
+            name='base_url'
+            placeholder='请输入私有部署地址，格式为：https://fastgpt.run/api/openapi'
+            onChange={handleInputChange}
+            value={inputs.base_url}
+            autoComplete='new-password'
+          />
+        </Form.Field>
+      )}
+    </>
+  );
+
+  // ====== 渲染：密钥 Section（编辑模式 + 向导 Step 2 共用） ======
+  const renderKeySection = () => (
+    <>
+      {/* 多 Key 模式选择 */}
+      {inputs.type !== 33 && inputs.type !== 42 && (
+        <Form.Field>
+          <Form.Dropdown
+            label={t('channel.edit.multi_key_mode', '多 Key 模式')}
+            name='multi_key_mode'
+            selection
+            value={inputs.multi_key_mode}
+            onChange={handleInputChange}
+            options={[
+              { key: 0, text: t('channel.edit.multi_key_off', '关闭（单 key 兼容）'), value: 0 },
+              { key: 1, text: t('channel.edit.multi_key_priority', '优先级 + 故障转移'), value: 1 },
+              { key: 2, text: t('channel.edit.multi_key_prefix_shard', '前缀分片'), value: 2 },
+              { key: 3, text: t('channel.edit.multi_key_polling', '轮询'), value: 3 },
+              { key: 4, text: t('channel.edit.multi_key_lur', '最少已用比例优先'), value: 4 },
+            ]}
+          />
+        </Form.Field>
+      )}
+      {/* 多 Key 动态列表 */}
+      {inputs.type !== 33 && inputs.type !== 42 && inputs.multi_key_mode !== 0 && (
+        <Form.Field>
+          <div className='key-editor-header-bar'>
+            <label>{t('channel.edit.keys_list', '密钥列表')}</label>
+            <Label size='tiny' className='multi-key-badge'>
+              {t('channel.edit.key_count', '共')} {inputs.keys.length}
+            </Label>
+            <Button type='button' primary size='mini' onClick={addKey}>
+              {t('channel.edit.add_key', '+ 添加密钥')}
+            </Button>
+          </div>
+          {inputs.keys.length === 0 && (
+            <Message size='tiny' style={{ marginTop: 0 }}>
+              {t('channel.edit.no_key_hint', '暂无密钥，点击「添加密钥」新建')}
+            </Message>
+          )}
+          {inputs.keys.length > 0 && (
+            <div className='key-editor-list'>
+              {inputs.keys.map((k, index) => (
+                <div className='key-editor-row' key={index + '_' + k.key_value}>
+                  <Form.Input
+                    className='key-field-key'
+                    label={t('channel.edit.key_value', '密钥')}
+                    required
+                    value={k.key_value}
+                    onChange={(e, { value }) => updateKeyField(index, 'key_value', value)}
+                    autoComplete='new-password'
+                  />
+                  <Form.Input
+                    label={t('channel.edit.key_remark', '备注')}
+                    value={k.remark}
+                    onChange={(e, { value }) => updateKeyField(index, 'remark', value)}
+                  />
+                  <Form.Input
+                    label={t('channel.edit.key_priority', '优先级')}
+                    type='number'
+                    value={k.priority}
+                    onChange={(e, { value }) => updateKeyField(index, 'priority', parseInt(value) || 0)}
+                  />
+                  <Form.Input
+                    label={t('channel.edit.key_daily_quota', '每日配额(token)')}
+                    type='number'
+                    value={k.daily_quota_limit}
+                    onChange={(e, { value }) => updateKeyField(index, 'daily_quota_limit', parseInt(value) || 0)}
+                  />
+                  <Form.Dropdown
+                    label={t('channel.edit.key_reset_rule', '重置时刻')}
+                    selection
+                    value={k.quota_reset_rule}
+                    onChange={(e, { value }) => updateKeyField(index, 'quota_reset_rule', value)}
+                    options={[
+                      { key: '', text: t('channel.edit.no_reset', '不自动重置'), value: '' },
+                      { key: '00:00', text: '00:00', value: '00:00' },
+                      { key: '04:00', text: '04:00', value: '04:00' },
+                      { key: '08:00', text: '08:00', value: '08:00' },
+                      { key: '12:00', text: '12:00', value: '12:00' },
+                      { key: '16:00', text: '16:00', value: '16:00' },
+                      { key: '20:00', text: '20:00', value: '20:00' },
+                    ]}
+                  />
+                  <Button
+                    className='key-field-delete'
+                    type='button'
+                    negative
+                    size='mini'
+                    icon='trash'
+                    aria-label={t('channel.edit.remove_key', '删除')}
+                    title={t('channel.edit.remove_key', '删除')}
+                    onClick={() => removeKey(index)}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </Form.Field>
+      )}
+      {/* 单 Key 模式 */}
+      {inputs.type !== 33 && inputs.type !== 42 && inputs.multi_key_mode === 0 && (
+        batch ? (
+          <Form.Field>
+            <Form.TextArea
+              label={t('channel.edit.key')}
+              name='key'
+              required
+              placeholder={t('channel.edit.batch_placeholder')}
+              onChange={handleInputChange}
+              value={inputs.key}
+              style={{ minHeight: 150, fontFamily: 'JetBrains Mono, Consolas' }}
+              autoComplete='new-password'
+            />
+          </Form.Field>
+        ) : (
+          <Form.Field>
+            <Form.Input
+              label={t('channel.edit.key')}
+              name='key'
+              required
+              placeholder={type2secretPrompt(inputs.type, t)}
+              onChange={handleInputChange}
+              value={inputs.key}
+              autoComplete='new-password'
+            />
+          </Form.Field>
+        )
+      )}
+      {inputs.type !== 33 && !isEdit && inputs.multi_key_mode === 0 && (
+        <Form.Checkbox
+          checked={batch}
+          label={t('channel.edit.batch')}
+          name='batch'
+          onChange={() => setBatch(!batch)}
+        />
+      )}
+      {/* AWS / Vertex AI / Coze / Lambda 特殊配置 */}
+      {inputs.type === 33 && (
+        <Form.Field>
+          <Form.Input label='Region' name='region' required placeholder={t('channel.edit.aws_region_placeholder')} onChange={handleConfigChange} value={config.region} autoComplete='' />
+          <Form.Input label='AK' name='ak' required placeholder={t('channel.edit.aws_ak_placeholder')} onChange={handleConfigChange} value={config.ak} autoComplete='' />
+          <Form.Input label='SK' name='sk' required placeholder={t('channel.edit.aws_sk_placeholder')} onChange={handleConfigChange} value={config.sk} autoComplete='' />
+        </Form.Field>
+      )}
+      {inputs.type === 42 && (
+        <Form.Field>
+          <Form.Input label='Region' name='region' required placeholder={t('channel.edit.vertex_region_placeholder')} onChange={handleConfigChange} value={config.region} autoComplete='' />
+          <Form.Input label={t('channel.edit.vertex_project_id')} name='vertex_ai_project_id' required placeholder={t('channel.edit.vertex_project_id_placeholder')} onChange={handleConfigChange} value={config.vertex_ai_project_id} autoComplete='' />
+          <Form.Input label={t('channel.edit.vertex_credentials')} name='vertex_ai_adc' required placeholder={t('channel.edit.vertex_credentials_placeholder')} onChange={handleConfigChange} value={config.vertex_ai_adc} autoComplete='' />
+        </Form.Field>
+      )}
+      {inputs.type === 34 && (
+        <Form.Input label={t('channel.edit.user_id')} name='user_id' required placeholder={t('channel.edit.user_id_placeholder')} onChange={handleConfigChange} value={config.user_id} autoComplete='' />
+      )}
+      {inputs.type === 37 && (
+        <Form.Field>
+          <Form.Input label='Account ID' name='user_id' required placeholder='请输入 Account ID' onChange={handleConfigChange} value={config.user_id} autoComplete='' />
+        </Form.Field>
+      )}
+    </>
+  );
+
+  // ====== 渲染：模型映射 Section（编辑模式 + 向导 Step 3 共用） ======
+  const renderModelSection = () => (
+    <>
+      {inputs.type !== 43 && (
+        <Form.Field>
+          <Form.Dropdown
+            label={t('channel.edit.models')}
+            placeholder={t('channel.edit.models_placeholder')}
+            name='models'
+            required
+            fluid
+            multiple
+            search
+            onLabelClick={(e, { value }) => { copy(value).then(); }}
+            selection
+            onChange={handleModelsChange}
+            value={inputs.models}
+            autoComplete='new-password'
+            options={modelOptions}
+          />
+        </Form.Field>
+      )}
+      {inputs.type !== 43 && (
+        <div style={{ lineHeight: '40px', marginBottom: '12px' }}>
+          <Button type={'button'} loading={fetchingModels} disabled={fetchingModels} onClick={fetchUpstreamModels}>
+            {t('channel.edit.buttons.fetch_upstream')}
+          </Button>
+          <Button type={'button'} onClick={() => { handleInputChange(null, { name: 'models', value: [] }); setModelAliases([]); setModelOptions([]); }}>
+            {t('channel.edit.buttons.clear')}
+          </Button>
+          <Input
+            action={<Button type={'button'} onClick={addCustomModel}>{t('channel.edit.buttons.add_custom')}</Button>}
+            placeholder={t('channel.edit.buttons.custom_placeholder')}
+            value={customModel}
+            onChange={(e, { value }) => { setCustomModel(value); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { addCustomModel(); e.preventDefault(); } }}
+          />
+        </div>
+      )}
+      {inputs.type !== 43 && modelAliases.length > 0 && (
+        <Form.Field>
+          <label>{t('channel.edit.model_aliases')}</label>
+          <p style={{ color: 'var(--aurora-text-muted)', fontSize: '0.85em', marginTop: '-5px' }}>
+            {t('channel.edit.model_aliases_hint')}
+          </p>
+          <Table compact size='small' unstackable>
+            <Table.Header>
+              <Table.Row>
+                <Table.HeaderCell width={7}>{t('channel.edit.alias_original')}</Table.HeaderCell>
+                <Table.HeaderCell width={7}>{t('channel.edit.alias_name')}</Table.HeaderCell>
+                <Table.HeaderCell width={2}>{t('channel.edit.alias_actions')}</Table.HeaderCell>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {modelAliases.map((item, index) => (
+                <Table.Row key={index}>
+                  <Table.Cell>{item.original}</Table.Cell>
+                  <Table.Cell>
+                    <Input fluid size='small' placeholder={item.original} value={item.alias} onChange={(e, { value }) => updateModelAlias(index, value)} />
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Button size='mini' negative type='button' onClick={() => removeModelAlias(index)}>
+                      {t('channel.edit.alias_remove')}
+                    </Button>
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table>
+        </Form.Field>
+      )}
+    </>
+  );
+
+  // ====== 渲染：高级设置 Section（编辑模式专用） ======
+  const renderAdvancedSection = () => (
+    <Form.Group widths='equal'>
+      <Form.Input
+        label={t('channel.edit.priority', '优先级')}
+        name='priority'
+        type='number'
+        value={inputs.priority}
+        onChange={handleInputChange}
+      />
+      <Form.Input
+        label={t('channel.edit.weight', '权重')}
+        name='weight'
+        type='number'
+        value={inputs.weight}
+        onChange={handleInputChange}
+      />
+      <Form.Dropdown
+        label={t('channel.edit.group', '分组')}
+        placeholder={t('channel.edit.group_placeholder')}
+        name='groups'
+        required
+        fluid
+        multiple
+        selection
+        allowAdditions
+        additionLabel={t('channel.edit.group_addition')}
+        onChange={handleInputChange}
+        value={inputs.groups}
+        autoComplete='new-password'
+        options={groupOptions}
+      />
+    </Form.Group>
+  );
+
+  // ====== 编辑模式：单页弹窗（设计稿 3:2379） ======
+  if (isEdit) {
+    return (
+      <div className='aurora-dashboard'>
+        <Card fluid className='aurora-chart-card aurora-edit-channel-modal'>
+          <Card.Content>
+            {/* HeaderBar */}
+            <div className='aurora-edit-channel-header'>
+              <span className='aurora-edit-channel-title'>
+                {t('channel.edit.title_edit')}
+              </span>
+            </div>
+
+            <Form loading={loading} autoComplete='new-password'>
+              {/* Section 1: 基本信息 */}
+              <div className='aurora-setting-section-header'>
+                <span className='aurora-setting-section-title'>
+                  {t('channel.edit.section_basic', '基本信息')}
+                </span>
+              </div>
+              {renderBasicSection()}
+
+              {/* Section 2: 密钥管理 */}
+              <div className='aurora-setting-section-header' style={{ marginTop: 'var(--space-5)' }}>
+                <span className='aurora-setting-section-title'>
+                  {t('channel.edit.section_key', '密钥管理')}
+                </span>
+              </div>
+              {renderKeySection()}
+
+              {/* Section 3: 模型映射 */}
+              <div className='aurora-setting-section-header' style={{ marginTop: 'var(--space-5)' }}>
+                <span className='aurora-setting-section-title'>
+                  {t('channel.edit.section_model', '模型映射')}
+                </span>
+              </div>
+              {renderModelSection()}
+
+              {/* Section 4: 高级设置 */}
+              <div className='aurora-setting-section-header' style={{ marginTop: 'var(--space-5)' }}>
+                <span className='aurora-setting-section-title'>
+                  {t('channel.edit.section_advanced', '高级设置')}
+                </span>
+              </div>
+              {renderAdvancedSection()}
+            </Form>
+
+            {/* FooterBar（设计稿：提示 + 取消 + 金色保存按钮） */}
+            <div className='aurora-edit-channel-footer'>
+              <span className='aurora-edit-channel-hint'>
+                {t('channel.edit.footer_hint', '修改后需重新测试渠道可用性')}
+              </span>
+              <div className='aurora-edit-channel-actions'>
+                <Button type='button' basic onClick={handleCancel}>
+                  {t('channel.edit.buttons.cancel')}
+                </Button>
+                <button
+                  type='button'
+                  className='aurora-save-btn'
+                  onClick={submit}
+                  disabled={loading}
+                >
+                  {t('channel.edit.buttons.submit')}
+                </button>
+              </div>
+            </div>
+          </Card.Content>
+        </Card>
+      </div>
+    );
+  }
+
+  // ====== 添加模式：3步向导（设计稿 3:2660） ======
   return (
-    <div className='dashboard-container'>
-      <Card fluid className='page-card'>
+    <div className='aurora-dashboard'>
+      <Card fluid className='aurora-chart-card'>
         <Card.Content>
-          <Card.Header className='header'>
-            {isEdit
-              ? t('channel.edit.title_edit')
-              : t('channel.edit.title_create')}
-          </Card.Header>
+          <div className='aurora-edit-channel-header'>
+            <span className='aurora-edit-channel-title'>
+              {t('channel.edit.title_create')}
+            </span>
+            <Label style={{ background: 'var(--aurora-accent)', color: '#fff' }}>
+              {t('channel.edit.wizard.badge', '向导模式')}
+            </Label>
+          </div>
+
           {/* 步骤指示器 */}
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px', marginTop: '16px' }}>
             <Step.Group widths={3}>
@@ -477,585 +979,48 @@ const EditChannel = () => {
               </Step>
             </Step.Group>
           </div>
+
           <Form loading={loading} autoComplete='new-password'>
-            {/* ====== Step 1: 基本信息 ====== */}
-            {step === 1 && (
-              <>
-            <Form.Field>
-              <Form.Select
-                label={t('channel.edit.type')}
-                name='type'
-                required
-                search
-                options={CHANNEL_OPTIONS}
-                value={inputs.type}
-                onChange={handleInputChange}
-              />
-            </Form.Field>
-            <Form.Field>
-              <Form.Input
-                label={t('channel.edit.name')}
-                name='name'
-                placeholder={t('channel.edit.name_placeholder')}
-                onChange={handleInputChange}
-                value={inputs.name}
-                required
-              />
-            </Form.Field>
-            <Form.Field>
-              <Form.Dropdown
-                label={t('channel.edit.group')}
-                placeholder={t('channel.edit.group_placeholder')}
-                name='groups'
-                required
-                fluid
-                multiple
-                selection
-                allowAdditions
-                additionLabel={t('channel.edit.group_addition')}
-                onChange={handleInputChange}
-                value={inputs.groups}
-                autoComplete='new-password'
-                options={groupOptions}
-              />
-            </Form.Field>
-            {renderChannelTip(inputs.type)}
-
-            {/* Azure OpenAI specific fields */}
-            {inputs.type === 3 && (
-              <>
-                <Message>
-                  注意，<strong>模型部署名称必须和模型名称保持一致</strong>
-                  ，因为 One API 会把请求体中的 model
-                  参数替换为你的部署名称（模型名称中的点会被剔除），
-                  <a
-                    target='_blank'
-                    href='https://github.com/songquanpeng/one-api/issues/133?notification_referrer_id=NT_kwDOAmJSYrM2NjIwMzI3NDgyOjM5OTk4MDUw#issuecomment-1571602271'
-                  >
-                    图片演示
-                  </a>
-                  。
-                </Message>
-                <Form.Field>
-                  <Form.Input
-                    label='AZURE_OPENAI_ENDPOINT'
-                    name='base_url'
-                    placeholder='请输入 AZURE_OPENAI_ENDPOINT，例如：https://docs-test-001.openai.azure.com'
-                    onChange={handleInputChange}
-                    value={inputs.base_url}
-                    autoComplete='new-password'
-                  />
-                </Form.Field>
-                <Form.Field>
-                  <Form.Input
-                    label='默认 API 版本'
-                    name='other'
-                    placeholder='请输入默认 API 版本，例如：2024-03-01-preview，该配置可以被实际的请求查询参数所覆盖'
-                    onChange={handleInputChange}
-                    value={inputs.other}
-                    autoComplete='new-password'
-                  />
-                </Form.Field>
-              </>
-            )}
-
-            {/* Custom base URL field */}
-            {inputs.type === 8 && (
-              <Form.Field>
-                <Form.Input
-                    required
-                    label={t('channel.edit.proxy_url')}
-                    name='base_url'
-                    placeholder={t('channel.edit.proxy_url_placeholder')}
-                    onChange={handleInputChange}
-                    value={inputs.base_url}
-                    autoComplete='new-password'
-                />
-              </Form.Field>
-            )}
-            {inputs.type === 50 && (
-                <Form.Field>
-                  <Form.Input
-                      required
-                  label={t('channel.edit.base_url')}
-                  name='base_url'
-                  placeholder={t('channel.edit.base_url_placeholder')}
-                  onChange={handleInputChange}
-                  value={inputs.base_url}
-                  autoComplete='new-password'
-                />
-              </Form.Field>
-            )}
-
-            {inputs.type === 18 && (
-              <Form.Field>
-                <Form.Input
-                  label={t('channel.edit.spark_version')}
-                  name='other'
-                  placeholder={t('channel.edit.spark_version_placeholder')}
-                  onChange={handleInputChange}
-                  value={inputs.other}
-                  autoComplete='new-password'
-                />
-              </Form.Field>
-            )}
-            {inputs.type === 21 && (
-              <Form.Field>
-                <Form.Input
-                  label={t('channel.edit.knowledge_id')}
-                  name='other'
-                  placeholder={t('channel.edit.knowledge_id_placeholder')}
-                  onChange={handleInputChange}
-                  value={inputs.other}
-                  autoComplete='new-password'
-                />
-              </Form.Field>
-            )}
-            {inputs.type === 17 && (
-              <Form.Field>
-                <Form.Input
-                  label={t('channel.edit.plugin_param')}
-                  name='other'
-                  placeholder={t('channel.edit.plugin_param_placeholder')}
-                  onChange={handleInputChange}
-                  value={inputs.other}
-                  autoComplete='new-password'
-                />
-              </Form.Field>
-            )}
-            {inputs.type === 34 && (
-              <Message>{t('channel.edit.coze_notice')}</Message>
-            )}
-            {inputs.type === 40 && (
-              <Message>
-                {t('channel.edit.douban_notice')}
-                <a
-                  target='_blank'
-                  href='https://console.volcengine.com/ark/region:ark+cn-beijing/endpoint'
-                >
-                  {t('channel.edit.douban_notice_link')}
-                </a>
-                {t('channel.edit.douban_notice_2')}
-              </Message>
-            )}
-            {inputs.type !== 3 &&
-              inputs.type !== 33 &&
-              inputs.type !== 8 &&
-                inputs.type !== 50 &&
-              inputs.type !== 22 && (
-                <Form.Field>
-                  <Form.Input
-                      label={t('channel.edit.proxy_url')}
-                    name='base_url'
-                      placeholder={t('channel.edit.proxy_url_placeholder')}
-                    onChange={handleInputChange}
-                    value={inputs.base_url}
-                    autoComplete='new-password'
-                  />
-                </Form.Field>
-              )}
-            {inputs.type === 22 && (
-              <Form.Field>
-                <Form.Input
-                  label='私有部署地址'
-                  name='base_url'
-                  placeholder={
-                    '请输入私有部署地址，格式为：https://fastgpt.run/api/openapi'
-                  }
-                  onChange={handleInputChange}
-                  value={inputs.base_url}
-                  autoComplete='new-password'
-                />
-              </Form.Field>
-            )}
-            </>
-            )}
-            {/* ====== Step 1 end ====== */}
-            {/* ====== Step 2: 密钥配置 ====== */}
-            {step === 2 && (
-              <>
-            {/* 多 Key 模式选择 */}
-            {inputs.type !== 33 && inputs.type !== 42 && (
-              <Form.Field>
-                <Form.Dropdown
-                  label={t('channel.edit.multi_key_mode', '多 Key 模式')}
-                  name='multi_key_mode'
-                  selection
-                  value={inputs.multi_key_mode}
-                  onChange={handleInputChange}
-                  options={[
-                    { key: 0, text: t('channel.edit.multi_key_off', '关闭（单 key 兼容）'), value: 0 },
-                    { key: 1, text: t('channel.edit.multi_key_priority', '优先级 + 故障转移'), value: 1 },
-                    { key: 2, text: t('channel.edit.multi_key_prefix_shard', '前缀分片'), value: 2 },
-                    { key: 3, text: t('channel.edit.multi_key_polling', '轮询'), value: 3 },
-                    { key: 4, text: t('channel.edit.multi_key_lur', '最少已用比例优先'), value: 4 },
-                  ]}
-                />
-              </Form.Field>
-            )}
-            {/* 多 Key 动态列表 —— 紧凑单行编辑器 */}
-            {inputs.type !== 33 && inputs.type !== 42 && inputs.multi_key_mode !== 0 && (
-              <Form.Field>
-                <div className='key-editor-header-bar'>
-                  <label>{t('channel.edit.keys_list', '密钥列表')}</label>
-                  <Label size='tiny' className='multi-key-badge'>
-                    {t('channel.edit.key_count', '共')} {inputs.keys.length}
-                  </Label>
-                  <Button type='button' primary size='mini' onClick={addKey}>
-                    {t('channel.edit.add_key', '+ 添加密钥')}
-                  </Button>
-                </div>
-                {inputs.keys.length === 0 && (
-                  <Message size='tiny' style={{ marginTop: 0 }}>
-                    {t('channel.edit.no_key_hint', '暂无密钥，点击「添加密钥」新建')}
-                  </Message>
-                )}
-                {inputs.keys.length > 0 && (
-                  <div className='key-editor-list'>
-                    {inputs.keys.map((k, index) => (
-                      <div className='key-editor-row' key={index + '_' + k.key_value}>
-                        <Form.Input
-                          className='key-field-key'
-                          label={t('channel.edit.key_value', '密钥')}
-                          required
-                          value={k.key_value}
-                          onChange={(e, { value }) => updateKeyField(index, 'key_value', value)}
-                          autoComplete='new-password'
-                        />
-                        <Form.Input
-                          label={t('channel.edit.key_remark', '备注')}
-                          value={k.remark}
-                          onChange={(e, { value }) => updateKeyField(index, 'remark', value)}
-                        />
-                        <Form.Input
-                          label={t('channel.edit.key_priority', '优先级')}
-                          type='number'
-                          value={k.priority}
-                          onChange={(e, { value }) => updateKeyField(index, 'priority', parseInt(value) || 0)}
-                        />
-                        <Form.Input
-                          label={t('channel.edit.key_daily_quota', '每日配额(token)')}
-                          type='number'
-                          value={k.daily_quota_limit}
-                          onChange={(e, { value }) => updateKeyField(index, 'daily_quota_limit', parseInt(value) || 0)}
-                        />
-                        <Form.Dropdown
-                          label={t('channel.edit.key_reset_rule', '重置时刻')}
-                          selection
-                          value={k.quota_reset_rule}
-                          onChange={(e, { value }) => updateKeyField(index, 'quota_reset_rule', value)}
-                          options={[
-                            { key: '', text: t('channel.edit.no_reset', '不自动重置'), value: '' },
-                            { key: '00:00', text: '00:00', value: '00:00' },
-                            { key: '06:00', text: '06:00', value: '06:00' },
-                            { key: '12:00', text: '12:00', value: '12:00' },
-                            { key: '18:00', text: '18:00', value: '18:00' },
-                          ]}
-                        />
-                        <Button
-                          className='key-field-delete'
-                          type='button'
-                          negative
-                          size='mini'
-                          icon='trash'
-                          aria-label={t('channel.edit.remove_key', '删除')}
-                          title={t('channel.edit.remove_key', '删除')}
-                          onClick={() => removeKey(index)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </Form.Field>
-            )}
-            {inputs.type !== 33 &&
-              inputs.type !== 42 &&
-              inputs.multi_key_mode === 0 &&
-              (batch ? (
-                <Form.Field>
-                  <Form.TextArea
-                    label={t('channel.edit.key')}
-                    name='key'
-                    required
-                    placeholder={t('channel.edit.batch_placeholder')}
-                    onChange={handleInputChange}
-                    value={inputs.key}
-                    style={{
-                      minHeight: 150,
-                      fontFamily: 'JetBrains Mono, Consolas',
-                    }}
-                    autoComplete='new-password'
-                  />
-                </Form.Field>
-              ) : (
-                <Form.Field>
-                  <Form.Input
-                    label={t('channel.edit.key')}
-                    name='key'
-                    required
-                    placeholder={type2secretPrompt(inputs.type, t)}
-                    onChange={handleInputChange}
-                    value={inputs.key}
-                    autoComplete='new-password'
-                  />
-                </Form.Field>
-              ))}
-            {inputs.type !== 33 && !isEdit && inputs.multi_key_mode === 0 && (
-              <Form.Checkbox
-                checked={batch}
-                label={t('channel.edit.batch')}
-                name='batch'
-                onChange={() => setBatch(!batch)}
-              />
-            )}
-            {inputs.type === 33 && (
-              <Form.Field>
-                <Form.Input
-                  label='Region'
-                  name='region'
-                  required
-                  placeholder={t('channel.edit.aws_region_placeholder')}
-                  onChange={handleConfigChange}
-                  value={config.region}
-                  autoComplete=''
-                />
-                <Form.Input
-                  label='AK'
-                  name='ak'
-                  required
-                  placeholder={t('channel.edit.aws_ak_placeholder')}
-                  onChange={handleConfigChange}
-                  value={config.ak}
-                  autoComplete=''
-                />
-                <Form.Input
-                  label='SK'
-                  name='sk'
-                  required
-                  placeholder={t('channel.edit.aws_sk_placeholder')}
-                  onChange={handleConfigChange}
-                  value={config.sk}
-                  autoComplete=''
-                />
-              </Form.Field>
-            )}
-            {inputs.type === 42 && (
-              <Form.Field>
-                <Form.Input
-                  label='Region'
-                  name='region'
-                  required
-                  placeholder={t('channel.edit.vertex_region_placeholder')}
-                  onChange={handleConfigChange}
-                  value={config.region}
-                  autoComplete=''
-                />
-                <Form.Input
-                  label={t('channel.edit.vertex_project_id')}
-                  name='vertex_ai_project_id'
-                  required
-                  placeholder={t('channel.edit.vertex_project_id_placeholder')}
-                  onChange={handleConfigChange}
-                  value={config.vertex_ai_project_id}
-                  autoComplete=''
-                />
-                <Form.Input
-                  label={t('channel.edit.vertex_credentials')}
-                  name='vertex_ai_adc'
-                  required
-                  placeholder={t('channel.edit.vertex_credentials_placeholder')}
-                  onChange={handleConfigChange}
-                  value={config.vertex_ai_adc}
-                  autoComplete=''
-                />
-              </Form.Field>
-            )}
-            {inputs.type === 34 && (
-              <Form.Input
-                label={t('channel.edit.user_id')}
-                name='user_id'
-                required
-                placeholder={t('channel.edit.user_id_placeholder')}
-                onChange={handleConfigChange}
-                value={config.user_id}
-                autoComplete=''
-              />
-            )}
-            {inputs.type === 37 && (
-              <Form.Field>
-                <Form.Input
-                  label='Account ID'
-                  name='user_id'
-                  required
-                  placeholder={
-                    '请输入 Account ID，例如：d8d7c61dbc334c32d3ced580e4bf42b4'
-                  }
-                  onChange={handleConfigChange}
-                  value={config.user_id}
-                  autoComplete=''
-                />
-              </Form.Field>
-            )}
-            </>
-            )}
-            {/* ====== Step 2 end ====== */}
-            {/* ====== Step 3: 模型选择 ====== */}
-            {step === 3 && (
-              <>
-            {inputs.type !== 43 && (
-              <Form.Field>
-                <Form.Dropdown
-                  label={t('channel.edit.models')}
-                  placeholder={t('channel.edit.models_placeholder')}
-                  name='models'
-                  required
-                  fluid
-                  multiple
-                  search
-                  onLabelClick={(e, { value }) => {
-                    copy(value).then();
-                  }}
-                  selection
-                  onChange={handleModelsChange}
-                  value={inputs.models}
-                  autoComplete='new-password'
-                  options={modelOptions}
-                />
-              </Form.Field>
-            )}
-            {inputs.type !== 43 && (
-              <div style={{ lineHeight: '40px', marginBottom: '12px' }}>
-                <Button
-                  type={'button'}
-                  loading={fetchingModels}
-                  disabled={fetchingModels}
-                  onClick={fetchUpstreamModels}
-                >
-                  {t('channel.edit.buttons.fetch_upstream')}
-                </Button>
-                <Button
-                  type={'button'}
-                  onClick={() => {
-                    handleInputChange(null, { name: 'models', value: [] });
-                    setModelAliases([]);
-                    setModelOptions([]);
-                  }}
-                >
-                  {t('channel.edit.buttons.clear')}
-                </Button>
-                <Input
-                  action={
-                    <Button type={'button'} onClick={addCustomModel}>
-                      {t('channel.edit.buttons.add_custom')}
-                    </Button>
-                  }
-                  placeholder={t('channel.edit.buttons.custom_placeholder')}
-                  value={customModel}
-                  onChange={(e, { value }) => {
-                    setCustomModel(value);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      addCustomModel();
-                      e.preventDefault();
-                    }
-                  }}
-                />
-              </div>
-            )}
-            {inputs.type !== 43 && modelAliases.length > 0 && (
-              <Form.Field>
-                <label>{t('channel.edit.model_aliases')}</label>
-                <p style={{ color: 'var(--aurora-text-muted)', fontSize: '0.85em', marginTop: '-5px' }}>
-                  {t('channel.edit.model_aliases_hint')}
-                </p>
-                <Table compact size='small' unstackable>
-                  <Table.Header>
-                    <Table.Row>
-                      <Table.HeaderCell width={7}>
-                        {t('channel.edit.alias_original')}
-                      </Table.HeaderCell>
-                      <Table.HeaderCell width={7}>
-                        {t('channel.edit.alias_name')}
-                      </Table.HeaderCell>
-                      <Table.HeaderCell width={2}>
-                        {t('channel.edit.alias_actions')}
-                      </Table.HeaderCell>
-                    </Table.Row>
-                  </Table.Header>
-                  <Table.Body>
-                    {modelAliases.map((item, index) => (
-                      <Table.Row key={index}>
-                        <Table.Cell>{item.original}</Table.Cell>
-                        <Table.Cell>
-                          <Input
-                            fluid
-                            size='small'
-                            placeholder={item.original}
-                            value={item.alias}
-                            onChange={(e, { value }) =>
-                              updateModelAlias(index, value)
-                            }
-                          />
-                        </Table.Cell>
-                        <Table.Cell>
-                          <Button
-                            size='mini'
-                            negative
-                            type='button'
-                            onClick={() => removeModelAlias(index)}
-                          >
-                            {t('channel.edit.alias_remove')}
-                          </Button>
-                        </Table.Cell>
-                      </Table.Row>
-                    ))}
-                  </Table.Body>
-                </Table>
-              </Form.Field>
-            )}
-            </>
-            )}
-            {/* ====== Step 3 end ====== */}
+            {step === 1 && renderBasicSection()}
+            {step === 2 && renderKeySection()}
+            {step === 3 && renderModelSection()}
           </Form>
+
           {/* 步骤导航按钮 */}
-          <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between' }}>
-            <Button onClick={handleCancel}>
+          <div className='aurora-edit-channel-footer'>
+            <Button basic onClick={handleCancel}>
               {t('channel.edit.buttons.cancel')}
             </Button>
             <div>
               {step > 1 && (
-                <Button
-                  onClick={() => setStep(step - 1)}
-                  style={{ marginRight: '8px' }}
-                >
+                <Button basic onClick={() => setStep(step - 1)} style={{ marginRight: '8px' }}>
                   {t('channel.edit.wizard.previous')}
                 </Button>
               )}
               {step < 3 && (
-                <Button
-                  positive
+                <button
+                  type='button'
+                  className='aurora-save-btn'
                   onClick={() => {
-                    if (step === 1) {
-                      // Step 1 → 2 验证：名称必填
-                      if (!isEdit && inputs.name === '') {
-                        showInfo(t('channel.edit.messages.name_required'));
-                        return;
-                      }
+                    if (step === 1 && inputs.name === '') {
+                      showInfo(t('channel.edit.messages.name_required'));
+                      return;
                     }
                     setStep(step + 1);
                   }}
                 >
                   {t('channel.edit.wizard.next')}
-                </Button>
+                </button>
               )}
               {step === 3 && (
-                <Button
-                  positive
+                <button
+                  type='button'
+                  className='aurora-save-btn'
                   onClick={submit}
+                  disabled={loading}
                 >
                   {t('channel.edit.buttons.submit')}
-                </Button>
+                </button>
               )}
             </div>
           </div>

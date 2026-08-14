@@ -175,8 +175,15 @@
         "step3_title": "模型选择",
         "step3_desc": "支持的模型与别名设置",
         "previous": "上一步",
-        "next": "下一步"
+        "next": "下一步",
+        "badge": "向导模式"
       },
+      "section_basic": "基本信息",
+      "section_key": "密钥管理",
+      "section_model": "模型映射",
+      "section_advanced": "高级设置",
+      "footer_hint": "修改后需重新测试渠道可用性",
+      "weight": "权重",
       "type": "类型",
       "name": "名称",
       "name_placeholder": "请输入名称",

@@ -884,6 +884,64 @@ body::before {
 .aurora-error-retry:hover {
   filter: brightness(1.12);
 }
+
+/* —— 渠道编辑弹窗（设计稿 3:2379） —— */
+.aurora-edit-channel-modal {
+  max-width: 920px;
+  margin: 0 auto !important;
+}
+.aurora-edit-channel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--aurora-divider);
+}
+.aurora-edit-channel-title {
+  color: var(--aurora-text);
+  font-size: 16px;
+  font-weight: 600;
+  font-family: 'Noto Sans SC', sans-serif;
+}
+.aurora-edit-channel-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--space-4);
+  margin-top: var(--space-5);
+  border-top: 1px solid var(--aurora-divider);
+}
+.aurora-edit-channel-hint {
+  color: var(--aurora-text-muted);
+  font-size: 12px;
+}
+.aurora-edit-channel-actions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+/* 金色保存按钮（设计稿核心元素） */
+.aurora-save-btn {
+  height: 36px;
+  padding: 0 20px;
+  background: var(--aurora-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.aurora-save-btn:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+.aurora-save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .ui.modal > .content {
   background-color: var(--aurora-surface) !important;
   color: var(--aurora-text) !important;

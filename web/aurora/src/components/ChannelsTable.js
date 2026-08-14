@@ -53,15 +53,28 @@ const ChannelsTable = () => {
   };
 
   const manageChannel = async (id, action, idx) => {
-    const res = await API.put('/api/channel/', { id, status: action === 'enable' ? 1 : action === 'disable' ? 2 : 3 });
-    if (res.data.success) {
-      showSuccess(t('channel.messages.operation_success', '操作成功'));
-      const newCh = [...channels];
-      const realIdx = (activePage - 1) * ITEMS_PER_PAGE + idx;
-      if (action === 'delete') newCh[realIdx].deleted = true;
-      else newCh[realIdx].status = res.data.data.status;
-      setChannels(newCh);
-    } else showError(res.data.message);
+    try {
+      if (action === 'delete') {
+        const res = await API.delete(`/api/channel/${id}`);
+        if (res.data.success) {
+          showSuccess('已删除渠道');
+          const newCh = [...channels];
+          const realIdx = (activePage - 1) * ITEMS_PER_PAGE + idx;
+          newCh[realIdx].deleted = true;
+          setChannels(newCh);
+        } else showError(res.data.message);
+      } else {
+        const status = action === 'enable' ? 1 : action === 'disable' ? 2 : 3;
+        const res = await API.put('/api/channel/', { id, status });
+        if (res.data.success) {
+          showSuccess(action === 'enable' ? '已启用' : action === 'disable' ? '已禁用' : '已自动禁用');
+          const newCh = [...channels];
+          const realIdx = (activePage - 1) * ITEMS_PER_PAGE + idx;
+          newCh[realIdx].status = status;
+          setChannels(newCh);
+        } else showError(res.data.message);
+      }
+    } catch (e) { showError(e); }
   };
 
   const testChannel = async (id, name, idx) => {
@@ -82,6 +95,25 @@ const ChannelsTable = () => {
         setChannels(newCh);
       } else showError(message);
     } catch (e) { showError(e); }
+  };
+
+  const testAllChannels = async () => {
+    showInfo(`开始测试 ${channels.length} 个渠道…`);
+    let success = 0, fail = 0;
+    for (let i = 0; i < channels.length; i++) {
+      const ch = channels[i];
+      if (ch.deleted) continue;
+      try {
+        const res = await API.get(`/api/channel/test/${ch.id}`);
+        if (res.data.success) {
+          success++;
+          const newCh = [...channels];
+          newCh[i].response_time = res.data.time * 1000;
+          setChannels(newCh);
+        } else { fail++; }
+      } catch { fail++; }
+    }
+    showSuccess(`测试完成：${success} 成功，${fail} 失败`);
   };
 
   const updateBalance = async (id, name) => {
@@ -124,7 +156,7 @@ const ChannelsTable = () => {
           />
         </div>
         <div className='aurora-toolbar-right'>
-          <button className='aurora-btn aurora-btn-ghost aurora-btn-sm' onClick={() => { /* test all */ }}>
+          <button className='aurora-btn aurora-btn-ghost aurora-btn-sm' onClick={testAllChannels}>
             {t('channel.buttons.test_all', '测试全部')}
           </button>
           <button className='aurora-btn aurora-btn-danger aurora-btn-sm' onClick={deleteAllDisabled}>
@@ -187,10 +219,15 @@ const ChannelsTable = () => {
                 </span>
                 <span style={{ width: 90, color: responseColor, fontWeight: 500 }}>{ch.response_time > 0 ? `${ch.response_time}ms` : '—'}</span>
                 <span style={{ width: 90, color: ch.balance ? '#D1D5DB' : '#52525B' }}>{ch.balance ? `$${renderNumber(ch.balance)}` : '—'}</span>
-                <span style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                <span style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
                   <Link to={`/channel/edit/${ch.id}`} style={{ fontSize: 12, color: '#B86F05', fontWeight: 500, cursor: 'pointer' }}>编辑</Link>
                   <span onClick={() => setTestChannelData(ch)} style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 500, cursor: 'pointer' }}>测试</span>
                   <span onClick={() => updateBalance(ch.id, ch.name)} style={{ fontSize: 12, color: '#2DD4BF', fontWeight: 500, cursor: 'pointer' }}>余额</span>
+                  {ch.status === 1 ? (
+                    <span onClick={() => manageChannel(ch.id, 'disable', idx)} style={{ fontSize: 12, color: '#F5A623', fontWeight: 500, cursor: 'pointer' }}>禁用</span>
+                  ) : (
+                    <span onClick={() => manageChannel(ch.id, 'enable', idx)} style={{ fontSize: 12, color: '#2DD4BF', fontWeight: 500, cursor: 'pointer' }}>启用</span>
+                  )}
                   <span onClick={() => manageChannel(ch.id, 'delete', idx)} style={{ fontSize: 12, color: '#EF4444', fontWeight: 500, cursor: 'pointer' }}>删除</span>
                 </span>
               </div>

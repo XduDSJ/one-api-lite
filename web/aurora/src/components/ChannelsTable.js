@@ -65,9 +65,15 @@ const ChannelsTable = () => {
   const testChannel = async (id, name, idx) => {
     try {
       const res = await API.get(`/api/channel/test/${id}`);
-      const { success, message, time } = res.data;
+      const { success, message, time, modelName } = res.data;
       if (success) {
-        showSuccess(t('channel.messages.test_success', { name, time, defaultValue: `${name} 测试成功 (${time}s)` }));
+        showSuccess(t('channel.messages.test_success', {
+          name,
+          model: modelName || '',
+          time,
+          message: message || '',
+          defaultValue: `${name} 测试成功，模型 ${modelName || ''}，耗时 ${time}s`,
+        }));
         const newCh = [...channels];
         const realIdx = (activePage - 1) * ITEMS_PER_PAGE + idx;
         newCh[realIdx].response_time = time * 1000;

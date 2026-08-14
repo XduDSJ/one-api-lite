@@ -66,16 +66,20 @@ const EditToken = () => {
 
   const handleSubmit = async () => {
     if (!inputs.name) { showError('请输入名称'); return; }
-    const modelLimits = inputs.model_limits_enabled ? inputs.model_limits.split('\n').map((s) => s.trim()).filter(Boolean) : [];
-    const allowChannels = inputs.allow_channels ? inputs.allow_channels.split(',').map((s) => s.trim()).filter(Boolean) : [];
+    const modelLimitsStr = inputs.model_limits_enabled ? inputs.model_limits.split('\n').map((s) => s.trim()).filter(Boolean).join(',') : '';
+    const channelIdsStr = inputs.allow_channels ? inputs.allow_channels.split(',').map((s) => s.trim()).filter(Boolean).join(',') : '';
     const payload = {
       ...inputs,
       remain_quota: parseInt(inputs.remain_quota) || 0,
       expired_time: getExpiredTime(),
       status: parseInt(inputs.status) || 1,
-      model_limits: modelLimits,
-      allow_channels: allowChannels,
+      models: modelLimitsStr,
+      channel_ids: channelIdsStr,
     };
+    // 删除前端专用字段，不发给后端
+    delete payload.model_limits;
+    delete payload.allow_channels;
+    delete payload.model_limits_enabled;
     if (isEdit) payload.id = parseInt(id);
     const res = await (isEdit ? API.put('/api/token/', payload) : API.post('/api/token/', payload));
     if (res.data.success) {

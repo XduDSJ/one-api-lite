@@ -438,7 +438,8 @@ const LogsTable = () => {
           onChange={(e, { value }) => setSearchKeyword(value)}
         />
       </Form>
-      <Table basic={'very'} compact size='small'>
+      <div className='aurora-channel-table-card' style={{ padding: 0 }}>
+      <Table basic={'very'} compact size='small' className='aurora-inset-table'>
         <Table.Header>
           <Table.Row>
             <Table.HeaderCell
@@ -636,6 +637,7 @@ const LogsTable = () => {
           </Table.Row>
         </Table.Footer>
       </Table>
+      </div>
     </>
   );
 };

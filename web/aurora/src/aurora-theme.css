@@ -1609,3 +1609,36 @@ body::before {
     display: none;
   }
 }
+
+/* ============================================================
+   内嵌表格样式 — 让 Semantic UI Table 在深色卡片内正常显示
+   ============================================================ */
+.aurora-inset-table {
+  background: transparent !important;
+  border: none !important;
+}
+.aurora-inset-table thead th {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #6B7280 !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  font-family: 'Noto Sans SC', sans-serif !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+.aurora-inset-table tbody td {
+  background: rgba(255, 255, 255, 0.02) !important;
+  color: #FFFFFF !important;
+  font-size: 13px !important;
+  font-family: 'Noto Sans SC', sans-serif !important;
+  border-color: rgba(255, 255, 255, 0.04) !important;
+  padding: 14px 16px !important;
+}
+.aurora-inset-table tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+.aurora-inset-table tfoot th {
+  background: transparent !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}

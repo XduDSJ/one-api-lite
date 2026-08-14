@@ -358,7 +358,8 @@ const TokensTable = () => {
         <span>{t('token.status_bar.tip')}</span>
       </div>
 
-      <Table basic={'very'} compact size='small'>
+      <div className='aurora-channel-table-card' style={{ padding: 0 }}>
+      <Table basic={'very'} compact size='small' className='aurora-inset-table'>
         <Table.Header>
           <Table.Row>
             <Table.HeaderCell
@@ -580,6 +581,7 @@ const TokensTable = () => {
           </Table.Row>
         </Table.Footer>
       </Table>
+      </div>
     </>
   );
 };

@@ -388,6 +388,16 @@
       "display": "等价金额：${{amount}}",
       "display_short": "${{amount}}",
       "unit": "$"
+    },
+    "empty": {
+      "default_title": "暂无数据"
+    },
+    "loading": {
+      "default": "加载中..."
+    },
+    "error": {
+      "default": "加载失败",
+      "retry": "重试"
     }
   },
   "redemption": {

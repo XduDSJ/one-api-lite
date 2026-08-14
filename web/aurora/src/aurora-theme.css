@@ -792,6 +792,98 @@ body::before {
   gap: var(--space-2);
   flex-wrap: wrap;
 }
+
+/* 系统设置 section 卡片 */
+.aurora-setting-section {
+  margin-bottom: var(--space-4) !important;
+}
+.aurora-setting-section > .content {
+  padding: var(--space-5) !important;
+}
+.aurora-setting-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--aurora-divider) !important;
+  padding-bottom: var(--space-3) !important;
+  margin-bottom: var(--space-4) !important;
+}
+.aurora-setting-section-title {
+  color: var(--aurora-text) !important;
+  font-size: 16px !important;
+  font-weight: 600;
+}
+
+/* —— 交互态规范：Empty/Loading/Error —— */
+.aurora-empty,
+.aurora-loading,
+.aurora-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--space-5);
+  text-align: center;
+}
+.aurora-empty-title {
+  color: var(--aurora-text);
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+.aurora-empty-description {
+  color: var(--aurora-text-muted);
+  font-size: 13px;
+  max-width: 400px;
+  line-height: 1.6;
+}
+.aurora-empty-action {
+  margin-top: var(--space-4);
+}
+
+.aurora-loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--aurora-border);
+  border-top-color: var(--aurora-accent);
+  border-radius: 50%;
+  animation: aurora-spin 0.8s linear infinite;
+  margin-bottom: var(--space-3);
+}
+@keyframes aurora-spin {
+  to { transform: rotate(360deg); }
+}
+.aurora-loading-text {
+  color: var(--aurora-text-muted);
+  font-size: 14px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .aurora-loading-spinner {
+    animation: none;
+    border-top-color: var(--aurora-border);
+  }
+}
+
+.aurora-error-message {
+  color: var(--aurora-text);
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: var(--space-3);
+}
+.aurora-error-retry {
+  padding: 8px 20px;
+  background: var(--aurora-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.aurora-error-retry:hover {
+  filter: brightness(1.12);
+}
 .ui.modal > .content {
   background-color: var(--aurora-surface) !important;
   color: var(--aurora-text) !important;

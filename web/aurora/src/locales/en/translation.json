@@ -388,6 +388,16 @@
       "display": "Equivalent: ${{amount}}",
       "display_short": "${{amount}}",
       "unit": "$"
+    },
+    "empty": {
+      "default_title": "No Data"
+    },
+    "loading": {
+      "default": "Loading..."
+    },
+    "error": {
+      "default": "Failed to load",
+      "retry": "Retry"
     }
   },
   "redemption": {

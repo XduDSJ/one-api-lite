@@ -194,35 +194,38 @@ const SystemSetting = () => {
   };
 
   return (
-    <Grid columns={1}>
-      <Grid.Column>
-        <Form loading={loading}>
-          {/* 1. 通用 */}
-          <Header as='h3'>{t('setting.other.system.title')}</Header>
-          <Form.Group widths='equal'>
-            <Form.Input
-              label={t('setting.other.system.name')}
-              placeholder={t('setting.other.system.name_placeholder')}
-              value={inputs.SystemName}
-              name='SystemName'
-              onChange={handleInputChange}
-            />
-          </Form.Group>
-          <Form.Button onClick={() => submitOption('SystemName')}>
-            {t('setting.other.system.buttons.save_name')}
-          </Form.Button>
-          <Form.Group widths='equal'>
-            <Form.Input
-              label={t('setting.other.system.logo')}
-              placeholder={t('setting.other.system.logo_placeholder')}
-              value={inputs.Logo}
-              name='Logo'
-              type='url'
-              onChange={handleInputChange}
-            />
-          </Form.Group>
-          <Form.Button onClick={() => submitOption('Logo')}>
-            {t('setting.other.system.buttons.save_logo')}
+    <div className='aurora-dashboard'>
+      <Form loading={loading}>
+        {/* 1. 通用 */}
+        <Card fluid className='aurora-chart-card aurora-setting-section'>
+          <Card.Content>
+            <Card.Header className='aurora-setting-section-header'>
+              <span className='aurora-setting-section-title'>{t('setting.other.system.title')}</span>
+            </Card.Header>
+            <Form.Group widths='equal'>
+              <Form.Input
+                label={t('setting.other.system.name')}
+                placeholder={t('setting.other.system.name_placeholder')}
+                value={inputs.SystemName}
+                name='SystemName'
+                onChange={handleInputChange}
+              />
+            </Form.Group>
+            <Form.Button onClick={() => submitOption('SystemName')}>
+              {t('setting.other.system.buttons.save_name')}
+            </Form.Button>
+            <Form.Group widths='equal'>
+              <Form.Input
+                label={t('setting.other.system.logo')}
+                placeholder={t('setting.other.system.logo_placeholder')}
+                value={inputs.Logo}
+                name='Logo'
+                type='url'
+                onChange={handleInputChange}
+              />
+            </Form.Group>
+            <Form.Button onClick={() => submitOption('Logo')}>
+              {t('setting.other.system.buttons.save_logo')}
           </Form.Button>
           <Form.Group widths='equal'>
             <Form.Input
@@ -271,9 +274,14 @@ const SystemSetting = () => {
             {t('setting.other.content.buttons.save_footer')}
           </Form.Button>
 
-          <Divider />
-          {/* 2. 登录注册 */}
-          <Header as='h3'>{t('setting.system.login.title')}</Header>
+          </Card.Content>
+        </Card>
+        {/* 2. 登录注册 */}
+        <Card fluid className='aurora-chart-card aurora-setting-section'>
+          <Card.Content>
+            <Card.Header className='aurora-setting-section-header'>
+              <span className='aurora-setting-section-title'>{t('setting.system.login.title')}</span>
+            </Card.Header>
           <Form.Group inline>
             <Form.Checkbox
               checked={inputs.PasswordLoginEnabled === 'true'}
@@ -332,9 +340,14 @@ const SystemSetting = () => {
             />
           </Form.Group>
 
-          <Divider />
-          {/* 3. 邮件 */}
-          <Header as='h3'>{t('setting.system.smtp.title')}</Header>
+          </Card.Content>
+        </Card>
+        {/* 3. 邮件 */}
+        <Card fluid className='aurora-chart-card aurora-setting-section'>
+          <Card.Content>
+            <Card.Header className='aurora-setting-section-header'>
+              <span className='aurora-setting-section-title'>{t('setting.system.smtp.title')}</span>
+            </Card.Header>
           <Message>{t('setting.system.smtp.subtitle')}</Message>
           <Form.Group widths={3}>
             <Form.Input
@@ -456,9 +469,14 @@ const SystemSetting = () => {
             {t('setting.system.email_restriction.buttons.save')}
           </Form.Button>
 
-          <Divider />
-          {/* 4. 运营 */}
-          <Header as='h3'>{t('setting.operation.quota.title')}</Header>
+          </Card.Content>
+        </Card>
+        {/* 4. 运营 */}
+        <Card fluid className='aurora-chart-card aurora-setting-section'>
+          <Card.Content>
+            <Card.Header className='aurora-setting-section-header'>
+              <span className='aurora-setting-section-title'>{t('setting.operation.quota.title')}</span>
+            </Card.Header>
           <Form.Group widths='equal'>
             <Form.Input
               label={t('setting.operation.quota.pre_consume')}
@@ -518,9 +536,14 @@ const SystemSetting = () => {
             {t('setting.operation.general.buttons.save')}
           </Form.Button>
 
-          <Divider />
-          {/* 5. 渠道监控 */}
-          <Header as='h3'>{t('setting.operation.monitor.title')}</Header>
+          </Card.Content>
+        </Card>
+        {/* 5. 渠道监控 */}
+        <Card fluid className='aurora-chart-card aurora-setting-section'>
+          <Card.Content>
+            <Card.Header className='aurora-setting-section-header'>
+              <span className='aurora-setting-section-title'>{t('setting.operation.monitor.title')}</span>
+            </Card.Header>
           <Form.Group widths='equal'>
             <Form.Input
               label={t('setting.operation.monitor.max_response_time')}
@@ -553,9 +576,14 @@ const SystemSetting = () => {
             {t('setting.operation.monitor.buttons.save')}
           </Form.Button>
 
-          <Divider />
-          {/* 5b. 多 Key 配置 */}
-          <Header as='h3'>{t('setting.operation.key.title')}</Header>
+          </Card.Content>
+        </Card>
+        {/* 5b. 多 Key 配置 */}
+        <Card fluid className='aurora-chart-card aurora-setting-section'>
+          <Card.Content>
+            <Card.Header className='aurora-setting-section-header'>
+              <span className='aurora-setting-section-title'>{t('setting.operation.key.title')}</span>
+            </Card.Header>
           <Form.Group inline>
             <Form.Checkbox
               checked={inputs.KeyRetryEnabled === 'true'}
@@ -598,9 +626,14 @@ const SystemSetting = () => {
             {t('setting.operation.key.buttons.save')}
           </Form.Button>
 
-          <Divider />
-          {/* 6. 日志 */}
-          <Header as='h3'>{t('setting.operation.log.title')}</Header>
+          </Card.Content>
+        </Card>
+        {/* 6. 日志 */}
+        <Card fluid className='aurora-chart-card aurora-setting-section'>
+          <Card.Content>
+            <Card.Header className='aurora-setting-section-header'>
+              <span className='aurora-setting-section-title'>{t('setting.operation.log.title')}</span>
+            </Card.Header>
           <Form.Group inline>
             <Form.Checkbox
               checked={inputs.LogConsumeEnabled === 'true'}
@@ -624,9 +657,14 @@ const SystemSetting = () => {
             {t('setting.operation.log.buttons.clean')}
           </Form.Button>
 
-          <Divider />
-          {/* 7. 内容 */}
-          <Header as='h3'>{t('setting.other.content.title')}</Header>
+          </Card.Content>
+        </Card>
+        {/* 7. 内容 */}
+        <Card fluid className='aurora-chart-card aurora-setting-section'>
+          <Card.Content>
+            <Card.Header className='aurora-setting-section-header'>
+              <span className='aurora-setting-section-title'>{t('setting.other.content.title')}</span>
+            </Card.Header>
           <Form.Group widths='equal'>
             <Form.TextArea
               label={t('setting.other.notice.content')}
@@ -667,9 +705,10 @@ const SystemSetting = () => {
             {t('setting.other.content.buttons.save_about')}
           </Form.Button>
           <Message>{t('setting.other.copyright.notice')}</Message>
-        </Form>
-      </Grid.Column>
-    </Grid>
+          </Card.Content>
+        </Card>
+      </Form>
+    </div>
   );
 };
 

@@ -181,26 +181,27 @@ const Group = () => {
   }
 
   return (
-    <div className='dashboard-container'>
-      <Card fluid className='page-card'>
-        <Card.Content>
-          <Card.Header className='header'>
-            <Icon name='object group' style={{ marginRight: '8px' }} />
-            {t('group.title')}
-          </Card.Header>
-          <Card.Description style={{ marginTop: '4px', color: 'var(--aurora-text-muted)' }}>
+    <div className='aurora-dashboard'>
+      {/* 顶部状态条：标题 + 描述 */}
+      <div className='aurora-status-bar' style={{ background: 'rgba(245, 230, 178, 0.04)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <Icon name='object group' style={{ color: 'var(--aurora-accent)' }} />
+          <strong style={{ color: 'var(--aurora-text)' }}>{t('group.title')}</strong>
+          <span style={{ color: 'var(--aurora-text-muted)', fontSize: 13 }}>
             {t('group.description')}
-          </Card.Description>
-        </Card.Content>
-      </Card>
+          </span>
+        </div>
+      </div>
 
       {/* 添加新分组 */}
-      <Card fluid className='page-card' style={{ marginBottom: '16px' }}>
+      <Card fluid className='aurora-chart-card' style={{ marginBottom: 'var(--space-4)' }}>
         <Card.Content>
-          <Header as='h4' style={{ marginBottom: '12px' }}>
-            <Icon name='plus circle' />
-            <Header.Content>{t('group.add_new')}</Header.Content>
-          </Header>
+          <div className='aurora-setting-section-header'>
+            <span className='aurora-setting-section-title'>
+              <Icon name='plus circle' style={{ marginRight: 'var(--space-2)' }} />
+              {t('group.add_new')}
+            </span>
+          </div>
           <Input
             action={
               <Button color='blue' onClick={handleAddGroup}>
@@ -228,7 +229,7 @@ const Group = () => {
         <Grid stackable columns={2}>
           {groups.map((group) => (
             <Grid.Column key={group.name}>
-              <Card fluid className='page-card'>
+              <Card fluid className='aurora-chart-card'>
                 <Card.Content>
                   <Card.Header
                     style={{

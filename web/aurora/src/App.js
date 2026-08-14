@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useContext, useEffect } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, Navigate } from 'react-router-dom';
 import { API, getLogo, getSystemName, showError, showNotice } from './helpers';
 import { UserContext } from './context/User';
 import { StatusContext } from './context/Status';
@@ -81,7 +81,7 @@ function App() {
 
   return (
     <Routes>
-      <Route path='/' element={<Suspense fallback={<Loading />}><Home /></Suspense>} />
+      <Route path='/' element={<Navigate to='/dashboard' replace />} />
       <Route path='/dashboard' element={<PrivateRoute><Suspense fallback={<Loading />}><Dashboard /></Suspense></PrivateRoute>} />
       <Route path='/channel' element={<PrivateRoute><Suspense fallback={<Loading />}><Channel /></Suspense></PrivateRoute>} />
       <Route path='/channel/edit/:id' element={<Suspense fallback={<Loading />}><EditChannel /></Suspense>} />

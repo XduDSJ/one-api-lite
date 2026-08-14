@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { getLogo, getSystemName, isAdmin, showSuccess, API } from '../helpers';
 import { UserContext } from '../context/User';
 
@@ -31,7 +30,7 @@ const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { userState, userDispatch } = React.useContext(UserContext);
+  const [userState, userDispatch] = useContext(UserContext);
   const logo = getLogo();
   const systemName = getSystemName();
 

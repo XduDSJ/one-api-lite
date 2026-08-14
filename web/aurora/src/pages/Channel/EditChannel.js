@@ -163,8 +163,14 @@ const EditChannel = () => {
     });
     const payload = {
       ...inputs,
+      type: parseInt(inputs.type) || 1,
+      weight: parseInt(inputs.weight) || 0,
+      priority: parseInt(inputs.priority) || 0,
+      multi_key_mode: parseInt(inputs.multi_key_mode) || 0,
+      models: inputs.models,
+      groups: inputs.groups,
       model_mapping: Object.keys(mapping).length > 0 ? JSON.stringify(mapping) : '',
-      keys: inputs.multi_key_mode !== 0 ? keys : undefined,
+      keys: parseInt(inputs.multi_key_mode) !== 0 ? keys : undefined,
     };
     if (isEdit) payload.id = parseInt(id);
     const res = await (isEdit ? API.put('/api/channel/', payload) : API.post('/api/channel/', payload));

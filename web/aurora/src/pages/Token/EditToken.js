@@ -30,7 +30,12 @@ const EditToken = () => {
 
   const handleSubmit = async () => {
     if (!inputs.name) { showError('请输入名称'); return; }
-    const payload = { ...inputs };
+    const payload = {
+      ...inputs,
+      remain_quota: parseInt(inputs.remain_quota) || 0,
+      expired_time: parseInt(inputs.expired_time) || -1,
+      status: parseInt(inputs.status) || 1,
+    };
     if (isEdit) payload.id = parseInt(id);
     const res = await (isEdit ? API.put('/api/token/', payload) : API.post('/api/token/', payload));
     if (res.data.success) {

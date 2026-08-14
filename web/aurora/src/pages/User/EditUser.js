@@ -30,7 +30,12 @@ const EditUser = () => {
 
   const handleSubmit = async () => {
     if (!inputs.username) { showError('请输入用户名'); return; }
-    const payload = { ...inputs };
+    const payload = {
+      ...inputs,
+      quota: parseInt(inputs.quota) || 0,
+      role: parseInt(inputs.role) || 1,
+      status: parseInt(inputs.status) || 1,
+    };
     if (isEdit) payload.id = parseInt(id);
     if (!payload.password) delete payload.password;
     const res = await (isEdit ? API.put('/api/user/', payload) : API.post('/api/user/', payload));

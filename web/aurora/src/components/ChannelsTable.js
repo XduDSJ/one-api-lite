@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { API, showError, showSuccess, showInfo, timestamp2string } from '../helpers';
 import { CHANNEL_OPTIONS, ITEMS_PER_PAGE } from '../constants';
+import ChannelTestModal from './ChannelTestModal';
 import { renderGroup, renderNumber } from '../helpers/render';
 import ChannelKeyList from './ChannelKeyList';
 
@@ -22,6 +23,7 @@ const ChannelsTable = () => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searching, setSearching] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
+  const [testChannelData, setTestChannelData] = useState(null);
   const [expandedKey, setExpandedKey] = useState(null);
 
   useEffect(() => { loadChannels(); }, []);
@@ -187,7 +189,7 @@ const ChannelsTable = () => {
                 <span style={{ width: 90, color: ch.balance ? '#D1D5DB' : '#52525B' }}>{ch.balance ? `$${renderNumber(ch.balance)}` : '—'}</span>
                 <span style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
                   <Link to={`/channel/edit/${ch.id}`} style={{ fontSize: 12, color: '#B86F05', fontWeight: 500, cursor: 'pointer' }}>编辑</Link>
-                  <span onClick={() => testChannel(ch.id, ch.name, idx)} style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 500, cursor: 'pointer' }}>测试</span>
+                  <span onClick={() => setTestChannelData(ch)} style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 500, cursor: 'pointer' }}>测试</span>
                   <span onClick={() => updateBalance(ch.id, ch.name)} style={{ fontSize: 12, color: '#2DD4BF', fontWeight: 500, cursor: 'pointer' }}>余额</span>
                   <span onClick={() => manageChannel(ch.id, 'delete', idx)} style={{ fontSize: 12, color: '#EF4444', fontWeight: 500, cursor: 'pointer' }}>删除</span>
                 </span>
@@ -211,6 +213,11 @@ const ChannelsTable = () => {
           <button className='aurora-pagi-btn' onClick={() => setActivePage(activePage + 1)} disabled={activePage >= totalPages}>›</button>
         </div>
       </div>
+
+      {/* 测试弹窗 */}
+      {testChannelData && (
+        <ChannelTestModal channel={testChannelData} onClose={() => setTestChannelData(null)} />
+      )}
     </div>
   );
 };

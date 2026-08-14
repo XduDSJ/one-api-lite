@@ -99,110 +99,122 @@ body::before {
 }
 
 .aurora-sidebar {
-  width: var(--sidebar-width);
+  width: 264px;
   flex-shrink: 0;
-  background: rgba(14, 14, 20, var(--aurora-sidebar-opacity));
-  border-right: 1px solid var(--aurora-border);
+  background: rgba(14, 14, 20, 0.85);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(12px);
   display: flex;
   flex-direction: column;
-  padding: var(--space-6) var(--space-4);
-  gap: var(--space-1);
+  padding: 24px 16px;
+  gap: 4px;
   position: fixed;
   top: 0;
   left: 0;
   bottom: 0;
   z-index: 100;
+  overflow-y: auto;
 }
 
 .aurora-sidebar-collapsed {
-  width: var(--sidebar-width-collapsed);
+  width: 72px;
 }
 
 .aurora-sidebar-brand {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: 0 var(--space-2) var(--space-4) var(--space-2);
+  gap: 12px;
+  padding: 0 8px 0 8px;
+  margin-bottom: 4px;
 }
 
 .aurora-sidebar-brand img {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  flex-shrink: 0;
 }
 
 .aurora-sidebar-brand span {
-  font-size: 1.125rem;
+  font-size: 18px;
   font-weight: 700;
-  color: var(--aurora-text);
+  color: #FFFFFF;
+  font-family: 'Noto Sans SC', sans-serif;
 }
 
 .aurora-sidebar-navlabel {
-  font-size: 0.6875rem;
+  font-size: 11px;
   font-weight: 600;
-  color: var(--aurora-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: var(--space-4) var(--space-3) var(--space-2) var(--space-3);
+  color: #A1A1AA;
+  font-family: 'Noto Sans SC', sans-serif;
+  padding: 8px 0 4px 0;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .aurora-nav-item {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: 0.6875rem var(--space-3);
-  border-radius: var(--radius-md);
-  color: var(--aurora-text-muted);
-  font-size: 1rem;
+  gap: 12px;
+  height: 52px;
+  padding: 0 12px;
+  border-radius: 10px;
+  color: #A1A1AA;
+  font-size: 14.5px;
   font-weight: 500;
+  font-family: 'Noto Sans SC', sans-serif;
   cursor: pointer;
   transition: all 0.15s ease;
   text-decoration: none;
-  border: 1px solid transparent;
+}
+
+.aurora-nav-item .icon {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 9px;
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
 .aurora-nav-item:hover {
   background: rgba(255, 255, 255, 0.04);
-  color: var(--aurora-text);
+  color: #FFFFFF;
 }
 
 .aurora-nav-item.active {
   background: rgba(255, 255, 255, 0.06);
-  color: var(--aurora-text);
-  border-color: var(--aurora-border);
+  color: #FFFFFF;
 }
 
-.aurora-nav-item .icon {
-  font-size: 1.125rem;
-  flex-shrink: 0;
+.aurora-nav-item.active .icon {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .aurora-sidebar-divider {
   height: 1px;
-  background: var(--aurora-divider);
-  margin: var(--space-4) 0;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 16px 0;
+  width: 232px;
 }
 
 .aurora-sidebar-user {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
+  gap: 10px;
+  padding: 4px 0;
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
-.aurora-sidebar-user:hover {
-  background: rgba(255, 255, 255, 0.04);
-}
-
 .aurora-sidebar-user-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-pill);
-  background: var(--aurora-primary);
+  width: 38px;
+  height: 38px;
+  border-radius: 19px;
+  background: rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -224,51 +236,109 @@ body::before {
 }
 
 .aurora-topbar {
-  height: var(--topbar-height);
+  height: 72px;
   background: rgba(14, 14, 20, 0.6);
-  border-bottom: 1px solid var(--aurora-border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--space-7);
+  padding: 0 40px;
   position: sticky;
   top: 0;
   z-index: 90;
 }
 
 .aurora-topbar-title {
-  font-size: 1.25rem;
+  font-size: 22px;
   font-weight: 700;
-  color: var(--aurora-text);
+  color: #FFFFFF;
+  font-family: 'Noto Sans SC', sans-serif;
+  line-height: 1.2;
+}
+
+.aurora-topbar-breadcrumb {
+  font-size: 12.5px;
+  font-weight: 400;
+  color: #52525B;
+  font-family: 'Noto Sans SC', sans-serif;
+  margin-top: 3px;
 }
 
 .aurora-topbar-actions {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: 12px;
+}
+
+.aurora-topbar-search {
+  width: 280px;
+  height: 37px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: var(--aurora-text);
+  font-size: 13px;
+  padding: 0 12px;
+  outline: none;
+}
+.aurora-topbar-search:focus {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.aurora-topbar-search::placeholder {
+  color: #7A7A7A;
+}
+
+.aurora-topbar-icon-btn {
+  width: 38px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.aurora-topbar-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.aurora-topbar-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 19px;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .aurora-topbar-toggle {
   display: none;
   background: none;
   border: none;
-  color: var(--aurora-text-muted);
-  font-size: 1.25rem;
+  color: #A1A1AA;
+  font-size: 20px;
   cursor: pointer;
-  padding: var(--space-2);
-  border-radius: var(--radius-md);
+  padding: 8px;
+  border-radius: 10px;
 }
 
 .aurora-topbar-toggle:hover {
   background: rgba(255, 255, 255, 0.06);
-  color: var(--aurora-text);
+  color: #FFFFFF;
 }
 
 .aurora-content {
   flex: 1;
-  padding: var(--space-7);
-  max-width: 1440px;
+  padding: 32px 108px;
+  max-width: 100%;
   width: 100%;
   margin: 0 auto;
 }

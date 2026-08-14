@@ -30,7 +30,7 @@ const ChannelsTable = () => {
     setLoading(true);
     try {
       const res = await API.get(`/api/channel/?p=${page}`);
-      if (res.data.success) {
+      if (res.data.success && Array.isArray(res.data.data)) {
         const data = res.data.data.map((ch) => ({ ...ch, response_time: ch.response_time || 0 }));
         setChannels(data);
         setActivePage(page + 1);

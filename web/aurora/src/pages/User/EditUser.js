@@ -13,9 +13,18 @@ const EditUser = () => {
   useEffect(() => {
     if (isEdit) {
       API.get(`/api/user/${id}`).then((res) => {
-        if (res.data.success) setInputs(res.data.data);
+        if (res.data.success) setInputs({
+          ...res.data.data,
+          username: res.data.data.username || '',
+          display_name: res.data.data.display_name || '',
+          password: '',
+          quota: res.data.data.quota ?? 0,
+          group: res.data.data.group || 'default',
+        });
         setLoading(false);
-      });
+      }).catch(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
   }, []);
 

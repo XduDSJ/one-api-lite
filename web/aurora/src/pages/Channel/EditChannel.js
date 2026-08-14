@@ -33,15 +33,26 @@ const EditChannel = () => {
       API.get(`/api/channel/${id}`).then((res) => {
         if (res.data.success) {
           const d = res.data.data;
-          setInputs(d);
-          if (d.keys) setKeys(d.keys);
+          setInputs({
+            ...d,
+            models: Array.isArray(d.models) ? d.models : (typeof d.models === 'string' ? d.models.split(',').filter(Boolean) : []),
+            groups: Array.isArray(d.groups) ? d.groups : (typeof d.groups === 'string' ? d.groups.split(',').filter(Boolean) : ['default']),
+            multi_key_mode: d.multi_key_mode ?? 0,
+            priority: d.priority ?? 0,
+            weight: d.weight ?? 0,
+            key: d.key || '',
+            base_url: d.base_url || '',
+            name: d.name || '',
+          });
+          if (Array.isArray(d.keys)) setKeys(d.keys);
         }
         setLoading(false);
-      });
+      }).catch(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
-    // Load model options
     API.get('/api/models').then((res) => {
-      if (res.data.success) setModelOptions(res.data.data.map((m) => ({ value: m, label: m })));
+      if (res.data.success && Array.isArray(res.data.data)) setModelOptions(res.data.data.map((m) => ({ value: m, label: m })));
     }).catch(() => {});
   }, []);
 

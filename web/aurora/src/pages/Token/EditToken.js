@@ -14,9 +14,17 @@ const EditToken = () => {
   useEffect(() => {
     if (isEdit) {
       API.get(`/api/token/${id}`).then((res) => {
-        if (res.data.success) setInputs(res.data.data);
+        if (res.data.success) setInputs({
+          ...res.data.data,
+          name: res.data.data.name || '',
+          remain_quota: res.data.data.remain_quota ?? 0,
+          expired_time: res.data.data.expired_time ?? -1,
+          unlimited_quota: res.data.data.unlimited_quota ?? false,
+        });
         setLoading(false);
-      });
+      }).catch(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
   }, []);
 

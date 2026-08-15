@@ -40,6 +40,9 @@ const EditUser = () => {
 
   const handleSubmit = async () => {
     if (!inputs.username) { showError('请输入用户名'); return; }
+    if (inputs.username.length > 12) { showError('用户名最多12个字符'); return; }
+    if (!isEdit && (!inputs.password || inputs.password.length < 8)) { showError('新建用户密码至少8位'); return; }
+    if (inputs.password && inputs.password.length > 20) { showError('密码最多20位'); return; }
     const payload = {
       ...inputs,
       quota: parseInt(inputs.quota) || 0,
@@ -67,7 +70,7 @@ const EditUser = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div><label style={labelStyle}>用户名</label><input value={inputs.username} onChange={(e) => setInputs({ ...inputs, username: e.target.value })} placeholder='输入用户名' style={inputStyle} /></div>
           <div><label style={labelStyle}>显示名称</label><input value={inputs.display_name} onChange={(e) => setInputs({ ...inputs, display_name: e.target.value })} placeholder='可选' style={inputStyle} /></div>
-          <div><label style={labelStyle}>密码{isEdit ? '（留空不修改）' : ''}</label><input type='password' value={inputs.password} onChange={(e) => setInputs({ ...inputs, password: e.target.value })} placeholder='输入密码' style={inputStyle} /></div>
+          <div><label style={labelStyle}>密码{isEdit ? '（留空不修改）' : '（8-20位）'}</label><input type='password' value={inputs.password} onChange={(e) => setInputs({ ...inputs, password: e.target.value })} placeholder={isEdit ? '留空不修改' : '8-20位密码'} style={inputStyle} /></div>
           <div><label style={labelStyle}>额度</label><NumberStepper value={inputs.quota} onChange={(v) => setInputs({ ...inputs, quota: v })} style={inputStyle} /></div>
           <div>
             <label style={labelStyle}>分组</label>

@@ -270,18 +270,44 @@ const EditChannel = () => {
                     <span style={{ width: 118, fontSize: 11.5, fontWeight: 500, color: '#71717A' }}>重置时刻</span>
                     <span style={{ width: 56, fontSize: 11.5, fontWeight: 500, color: '#71717A', textAlign: 'center' }}>操作</span>
                   </div>
-                  {keys.map((k, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', padding: '8px 4px', gap: 8, background: 'rgba(255,255,255,0.02)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                      <input value={k.key_value} onChange={(e) => updateKey(idx, 'key_value', e.target.value)} placeholder='sk-...' style={{ width: 248, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#FFFFFF', fontSize: 12, padding: '0 8px', fontFamily: 'JetBrains Mono, monospace' }} />
-                      <input value={k.remark} onChange={(e) => updateKey(idx, 'remark', e.target.value)} placeholder='—' style={{ width: 118, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#FFFFFF', fontSize: 12, padding: '0 8px' }} />
-                      <NumberStepper value={k.priority} onChange={(v) => updateKey(idx, 'priority', v)} width={68} height={36} center style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, fontSize: 12 }} />
-                      <NumberStepper value={k.daily_quota_limit} onChange={(v) => updateKey(idx, 'daily_quota_limit', v)} width={118} height={36} placeholder='0' style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, fontSize: 12 }} />
-                      <select value={k.quota_reset_rule} onChange={(e) => updateKey(idx, 'quota_reset_rule', e.target.value)} style={{ width: 118, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#FFFFFF', fontSize: 12, padding: '0 8px' }}>
-                        {resetOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                      </select>
-                      <button onClick={() => removeKey(idx)} style={{ width: 56, height: 36, background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: 6, color: '#EF4444', fontSize: 11.5, fontWeight: 500, cursor: 'pointer' }}>删除</button>
+                  {keys.map((k, idx) => {
+                    const limit = k.daily_quota_limit || 0;
+                    const used = k.daily_used_quota || 0;
+                    const pct = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
+                    const barColor = pct < 50 ? '#2DD4BF' : pct < 80 ? '#F5A623' : '#EF4444';
+                    return (
+                    <div key={idx} style={{ background: 'rgba(255,255,255,0.02)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                      {/* 编辑行 */}
+                      <div style={{ display: 'flex', alignItems: 'center', padding: '8px 4px', gap: 8 }}>
+                        <input value={k.key_value} onChange={(e) => updateKey(idx, 'key_value', e.target.value)} placeholder='sk-...' style={{ width: 248, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#FFFFFF', fontSize: 12, padding: '0 8px', fontFamily: 'JetBrains Mono, monospace' }} />
+                        <input value={k.remark} onChange={(e) => updateKey(idx, 'remark', e.target.value)} placeholder='—' style={{ width: 118, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#FFFFFF', fontSize: 12, padding: '0 8px' }} />
+                        <NumberStepper value={k.priority} onChange={(v) => updateKey(idx, 'priority', v)} width={68} height={36} center style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, fontSize: 12 }} />
+                        <NumberStepper value={k.daily_quota_limit} onChange={(v) => updateKey(idx, 'daily_quota_limit', v)} width={118} height={36} placeholder='0' style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, fontSize: 12 }} />
+                        <select value={k.quota_reset_rule} onChange={(e) => updateKey(idx, 'quota_reset_rule', e.target.value)} style={{ width: 118, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#FFFFFF', fontSize: 12, padding: '0 8px' }}>
+                          {resetOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
+                        <button onClick={() => removeKey(idx)} style={{ width: 56, height: 36, background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: 6, color: '#EF4444', fontSize: 11.5, fontWeight: 500, cursor: 'pointer' }}>删除</button>
+                      </div>
+                      {/* 配额使用条 — 仅在有配额限制时显示 */}
+                      {limit > 0 && (
+                        <div style={{ padding: '0 12px 6px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 10.5, color: '#71717A', whiteSpace: 'nowrap', fontFamily: 'JetBrains Mono, monospace' }}>
+                            已用 {(used / 500000).toFixed(1)}$
+                          </span>
+                          <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+                            <div style={{ width: `${pct}%`, height: '100%', background: barColor, borderRadius: 2, transition: 'width 0.3s ease' }} />
+                          </div>
+                          <span style={{ fontSize: 10.5, color: '#71717A', whiteSpace: 'nowrap', fontFamily: 'JetBrains Mono, monospace' }}>
+                            {(limit / 500000).toFixed(0)}$
+                          </span>
+                          <span style={{ fontSize: 10.5, fontWeight: 600, color: barColor, whiteSpace: 'nowrap', minWidth: 32, textAlign: 'right' }}>
+                            {pct.toFixed(0)}%
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
               <button onClick={addKey} style={{ width: '100%', height: 40, marginTop: 8, background: 'rgba(255,255,255,0.04)', border: '1px dashed rgba(184,111,5,0.4)', borderRadius: 8, color: '#B86F05', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+ 添加密钥</button>

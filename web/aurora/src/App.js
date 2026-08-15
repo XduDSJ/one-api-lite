@@ -81,6 +81,7 @@ function App() {
   }, []);
 
   return (
+    <>
     <Routes>
       <Route path='/' element={<Navigate to='/dashboard' replace />} />
       <Route path='/dashboard' element={<PrivateRoute><Suspense fallback={<Loading />}><Dashboard /></Suspense></PrivateRoute>} />
@@ -105,7 +106,8 @@ function App() {
       <Route path='/group' element={<PrivateRoute><Suspense fallback={<Loading />}><Group /></Suspense></PrivateRoute>} />
       <Route path='*' element={<Suspense fallback={<Loading />}><NotFound /></Suspense>} />
     </Routes>
-      <ConfirmModal />
+    <ConfirmModal />
+    </>
   );
 }
 

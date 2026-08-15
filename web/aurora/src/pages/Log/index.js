@@ -94,9 +94,15 @@ const LogPage = () => {
   // 格式化详情
   const fmtDetail = (log) => {
     if (log.type === 5) return log.content || '错误';
-    if (log.completion_tokens > 0) return `补全 ${log.completion_tokens} tokens`;
-    if (log.prompt_tokens > 0) return `输入 ${log.prompt_tokens} tokens`;
-    return log.content || '—';
+    if (log.type === 1) return log.content || '充值';
+    if (log.type === 3) return log.content || '管理操作';
+    if (log.type === 4) return log.content || '系统';
+    // 消费日志
+    if (log.content) return log.content;
+    if (log.is_stream) return `流式 · ${log.elapsed_time}ms`;
+    if (log.elapsed_time > 0) return `${log.elapsed_time}ms`;
+    if (log.prompt_tokens > 0 && log.completion_tokens > 0) return `${log.prompt_tokens}+${log.completion_tokens}`;
+    return '—';
   };
 
   if (loading && logs.length === 0) return <div style={{ padding: 40, textAlign: 'center', color: '#71717A' }}>加载中…</div>;
@@ -131,14 +137,16 @@ const LogPage = () => {
       <div className='aurora-table'>
         <div className='aurora-table-header'>
           <span style={{ width: 40 }}>ID</span>
-          <span style={{ width: 180 }}>时间</span>
-          <span style={{ width: 140 }}>用户</span>
-          <span style={{ width: 140 }}>渠道</span>
-          <span style={{ width: 200 }}>模型</span>
-          <span style={{ width: 100 }}>类型</span>
-          <span style={{ width: 120 }}>额度</span>
-          <span style={{ width: 100 }}>状态</span>
-          <span style={{ width: 280 }}>详情</span>
+          <span style={{ width: 145 }}>时间</span>
+          <span style={{ width: 100 }}>用户</span>
+          <span style={{ width: 80 }}>渠道</span>
+          <span style={{ width: 160 }}>模型</span>
+          <span style={{ width: 70 }}>类型</span>
+          <span style={{ width: 90 }}>输入</span>
+          <span style={{ width: 90 }}>输出</span>
+          <span style={{ width: 90 }}>额度</span>
+          <span style={{ width: 80 }}>状态</span>
+          <span style={{ width: 200 }}>详情</span>
         </div>
         {logs.map((log) => {
           const typeInfo = logTypeMap[log.type] || { label: '未知', color: '#71717A' };
@@ -146,19 +154,21 @@ const LogPage = () => {
           return (
             <div className='aurora-table-row' key={log.id}>
               <span style={{ width: 40, color: '#6B7280' }}>{log.id}</span>
-              <span style={{ width: 180, color: '#FFFFFF', fontWeight: 500, fontSize: 13 }}>{fmtTime(log.created_at)}</span>
-              <span style={{ width: 140, color: '#D1D5DB', fontSize: 12 }}>{log.username || '—'}</span>
-              <span style={{ width: 140, color: '#9CA3AF', fontSize: 12 }}>{log.channel_id ? `#${log.channel_id}` : '—'}</span>
-              <span style={{ width: 200, color: '#D1D5DB', fontSize: 12, fontFamily: 'JetBrains Mono, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.model_name || '—'}</span>
-              <span style={{ width: 100, color: typeInfo.color, fontSize: 13, fontWeight: 700 }}>{typeInfo.label}</span>
-              <span style={{ width: 120, color: log.type === 1 ? '#F5A623' : '#D1D5DB', fontSize: 13 }}>{fmtQuota(log.quota)}</span>
-              <span style={{ width: 100 }}>
+              <span style={{ width: 145, color: '#FFFFFF', fontWeight: 500, fontSize: 12 }}>{fmtTime(log.created_at)}</span>
+              <span style={{ width: 100, color: '#D1D5DB', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.username || '—'}</span>
+              <span style={{ width: 80, color: '#9CA3AF', fontSize: 12 }}>{log.channel_id ? `#${log.channel_id}` : '—'}</span>
+              <span style={{ width: 160, color: '#D1D5DB', fontSize: 12, fontFamily: 'JetBrains Mono, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.model_name || '—'}</span>
+              <span style={{ width: 70, color: typeInfo.color, fontSize: 13, fontWeight: 700 }}>{typeInfo.label}</span>
+              <span style={{ width: 90, color: '#9CA3AF', fontSize: 12, fontFamily: 'JetBrains Mono, monospace' }}>{log.prompt_tokens || 0}</span>
+              <span style={{ width: 90, color: '#9CA3AF', fontSize: 12, fontFamily: 'JetBrains Mono, monospace' }}>{log.completion_tokens || 0}</span>
+              <span style={{ width: 90, color: log.type === 1 ? '#F5A623' : '#D1D5DB', fontSize: 13 }}>{fmtQuota(log.quota)}</span>
+              <span style={{ width: 80 }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: isSuccess ? '#2DD4BF' : '#EF4444', flexShrink: 0 }} />
                   <span style={{ fontSize: 12, fontWeight: 500, color: isSuccess ? '#2DD4BF' : '#EF4444' }}>{isSuccess ? '成功' : '失败'}</span>
                 </span>
               </span>
-              <span style={{ width: 280, color: isSuccess ? '#2DD4BF' : '#EF4444', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fmtDetail(log)}</span>
+              <span style={{ width: 200, color: '#A1A1AA', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fmtDetail(log)}</span>
             </div>
           );
         })}

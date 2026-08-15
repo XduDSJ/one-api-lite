@@ -19,6 +19,7 @@ type channelKeyRequest struct {
 
 // channelKeyItem 前端传的 key 子项
 type channelKeyItem struct {
+	Id              int64  `json:"id"`         // 编辑时回传，0 表示新增
 	KeyValue        string `json:"key_value"`
 	Remark          string `json:"remark"`
 	Priority        int    `json:"priority"`
@@ -246,9 +247,9 @@ func UpdateChannel(c *gin.Context) {
 			})
 			return
 		}
-		existingMap := make(map[string]*model.ChannelKey, len(existingKeys))
+		existingMap := make(map[int64]*model.ChannelKey, len(existingKeys))
 		for i := range existingKeys {
-			existingMap[existingKeys[i].KeyValue] = &existingKeys[i]
+			existingMap[existingKeys[i].Id] = &existingKeys[i]
 		}
 		newKeys := make([]model.ChannelKey, 0)
 		now := helper.GetTimestamp()
@@ -256,37 +257,40 @@ func UpdateChannel(c *gin.Context) {
 			if k.KeyValue == "" {
 				continue
 			}
-		if existing, ok := existingMap[k.KeyValue]; ok {
-			// 复用：保留 Id 和运行时字段，只更新可编辑字段
-			existing.Remark = k.Remark
-			existing.Priority = k.Priority
-			existing.DailyQuotaLimit = k.DailyQuotaLimit
-			existing.QuotaResetRule = k.QuotaResetRule
-			existing.Status = model.KeyStatusEnabled // 撤销软删后重新启用
-			existing.UpdatedTime = now
-				err = model.UpdateChannelKey(existing)
-				if err != nil {
-					c.JSON(http.StatusOK, gin.H{
-						"success": false,
-						"message": err.Error(),
-					})
-					return
+			if k.Id != 0 {
+				if existing, ok := existingMap[k.Id]; ok {
+					// 复用：保留 Id 和运行时字段，只更新可编辑字段
+					existing.KeyValue = k.KeyValue
+					existing.Remark = k.Remark
+					existing.Priority = k.Priority
+					existing.DailyQuotaLimit = k.DailyQuotaLimit
+					existing.QuotaResetRule = k.QuotaResetRule
+					existing.Status = model.KeyStatusEnabled
+					existing.UpdatedTime = now
+					err = model.UpdateChannelKey(existing)
+					if err != nil {
+						c.JSON(http.StatusOK, gin.H{
+							"success": false,
+							"message": err.Error(),
+						})
+						return
+					}
+					delete(existingMap, k.Id) // 已处理
+					continue
 				}
-				delete(existingMap, k.KeyValue) // 已处理
-			} else {
-				// 新增
-				newKeys = append(newKeys, model.ChannelKey{
-					ChannelId:       channel.Id,
-					KeyValue:        k.KeyValue,
-					Remark:          k.Remark,
-					Status:          model.KeyStatusEnabled,
-					Priority:        k.Priority,
-					DailyQuotaLimit: k.DailyQuotaLimit,
-					QuotaResetRule:  k.QuotaResetRule,
-					CreatedTime:     now,
-					UpdatedTime:     now,
-				})
 			}
+			// 新增（id=0 或 id 未匹配到现有记录）
+			newKeys = append(newKeys, model.ChannelKey{
+				ChannelId:       channel.Id,
+				KeyValue:        k.KeyValue,
+				Remark:          k.Remark,
+				Status:          model.KeyStatusEnabled,
+				Priority:        k.Priority,
+				DailyQuotaLimit: k.DailyQuotaLimit,
+				QuotaResetRule:  k.QuotaResetRule,
+				CreatedTime:     now,
+				UpdatedTime:     now,
+			})
 		}
 		// 剩余 existingMap 中的 key：前端不再传，硬删除（不再保留历史统计，避免编辑时重复显示）
 		for _, existing := range existingMap {

@@ -94,7 +94,12 @@ const EditChannel = () => {
   };
 
   // === 多 Key ===
-  const addKey = () => setKeys([...keys, { key_value: '', remark: '', priority: 0, daily_quota_limit: 0, quota_reset_rule: '' }]);
+  // 新增 key 用负数临时 id，已有 key 带后端真实 id，后端按 id 做 diff
+  const [nextKeyId, setNextKeyId] = useState(-1);
+  const addKey = () => {
+    setKeys([...keys, { id: nextKeyId, key_value: '', remark: '', priority: 0, daily_quota_limit: 0, quota_reset_rule: '' }]);
+    setNextKeyId(nextKeyId - 1);
+  };
   const removeKey = (idx) => setKeys(keys.filter((_, i) => i !== idx));
   const updateKey = (idx, field, value) => setKeys(keys.map((k, i) => i === idx ? { ...k, [field]: value } : k));
 

@@ -39,7 +39,7 @@ const TokensTable = () => {
     if (action === 'delete') {
       res = await API.delete(`/api/token/${id}`);
     } else {
-      res = await API.put('/api/token/', { id, status: action === 'enable' ? 1 : 2 });
+      res = await API.put('/api/token/?status_only=true', { id, status: action === 'enable' ? 1 : 2 });
     }
     if (res.data.success) {
       showSuccess(t('token.messages.operation_success', '操作成功'));

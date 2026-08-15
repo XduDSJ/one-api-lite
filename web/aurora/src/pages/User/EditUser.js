@@ -62,7 +62,7 @@ const EditUser = () => {
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto' }}>
-      <div className='aurora-card' style={{ padding: 24 }}>
+      <div style={{ padding: 24, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16 }}>
         <div className='aurora-section-header'><span className='aurora-section-title'>{isEdit ? '编辑用户' : '创建用户'}</span></div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div><label style={labelStyle}>用户名</label><input value={inputs.username} onChange={(e) => setInputs({ ...inputs, username: e.target.value })} placeholder='输入用户名' style={inputStyle} /></div>

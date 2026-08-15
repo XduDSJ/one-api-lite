@@ -207,7 +207,7 @@ const EditChannel = () => {
 
   return (
     <div style={{ maxWidth: 920, margin: '0 auto' }}>
-      <div className='aurora-card' style={{ padding: 24 }}>
+      <div style={{ padding: 24, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16 }}>
         {/* Header */}
         <div className='aurora-section-header'>
           <span className='aurora-section-title'>{isEdit ? '编辑渠道' : '添加渠道'}</span>

@@ -3,11 +3,18 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { API, showError, showSuccess } from '../../helpers';
 import NumberStepper from '../../components/NumberStepper';
 
+const Section = ({ title, children }) => (
+  <div style={{ padding: 24, marginBottom: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16 }}>
+    <div className='aurora-section-header'><span className='aurora-section-title'>{title}</span></div>
+    {children}
+  </div>
+);
+
 const EditToken = () => {
   const { id } = useParams();
   const isEdit = id !== undefined;
   const [inputs, setInputs] = useState({
-    name: '', remain_quota: 0, expired_time: -1, unlimited_quota: false,
+    name: '', remain_quota: 0, expired_time: -1, unlimited_quota: true,
     subnet: '', model_limits_enabled: false, model_limits: '',
     allow_channels: '', group: 'default',
   });
@@ -141,12 +148,6 @@ const EditToken = () => {
 
   const inputStyle = { width: '100%', height: 44, background: '#0D0D12', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: '#FFFFFF', fontSize: 13, padding: '0 14px' };
   const labelStyle = { fontSize: 13, color: '#A1A1AA', marginBottom: 8, display: 'block' };
-  const Section = ({ title, children }) => (
-    <div className='aurora-card' style={{ padding: 24, marginBottom: 16 }}>
-      <div className='aurora-section-header'><span className='aurora-section-title'>{title}</span></div>
-      {children}
-    </div>
-  );
 
   // 标签样式（选中项 + 删除叉号）
   const tagStyle = {

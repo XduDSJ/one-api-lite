@@ -190,7 +190,7 @@ const ChannelsTable = () => {
           <span style={{ width: 80 }}>状态</span>
           <span style={{ width: 90 }}>响应时间</span>
           <span style={{ width: 90 }}>余额</span>
-          <span style={{ width: 120, textAlign: 'right' }}>操作</span>
+          <span style={{ width: 160, textAlign: 'right' }}>操作</span>
         </div>
         {pageChannels.map((ch, idx) => {
           if (ch.deleted) return null;
@@ -219,9 +219,10 @@ const ChannelsTable = () => {
                 </span>
                 <span style={{ width: 90, color: responseColor, fontWeight: 400 }}>{ch.response_time > 0 ? `${ch.response_time}ms` : '—'}</span>
                 <span style={{ width: 90, color: ch.balance ? '#D1D5DB' : '#52525B' }}>{ch.balance ? `$${renderNumber(ch.balance)}` : '—'}</span>
-                <span style={{ width: 120, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <span style={{ width: 160, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                   <Link to={`/channel/edit/${ch.id}`} style={{ fontSize: 12, color: '#F5A623', fontWeight: 500, cursor: 'pointer' }}>编辑</Link>
                   <span onClick={() => setTestChannelData(ch)} style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 500, cursor: 'pointer' }}>测试</span>
+                  <span onClick={() => manageChannel(ch.id, ch.status === 1 ? 'disable' : 'enable', idx)} style={{ fontSize: 12, color: ch.status === 1 ? '#F5A623' : '#2DD4BF', fontWeight: 500, cursor: 'pointer' }}>{ch.status === 1 ? '禁用' : '启用'}</span>
                   <span onClick={() => manageChannel(ch.id, 'delete', idx)} style={{ fontSize: 12, color: '#EF4444', fontWeight: 500, cursor: 'pointer' }}>删除</span>
                 </span>
               </div>

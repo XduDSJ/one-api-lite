@@ -67,12 +67,22 @@ const LogPage = () => {
   const deleteLogs = async () => {
     const ok = await showConfirm('清空日志', '确认清空所有日志？此操作不可恢复。');
     if (!ok) return;
-    // 后端需要 target_timestamp，传当前时间戳 = 删除当前时间之前的所有日志
     const targetTs = Math.floor(Date.now() / 1000);
     const res = await API.delete(`/api/log/?target_timestamp=${targetTs}`);
     if (res.data.success) {
       showSuccess(`已清空 ${res.data.data || 0} 条日志`);
       loadLogs(1);
+    } else showError(res.data.message);
+  };
+
+  const deleteOldLogs = async () => {
+    const ok = await showConfirm('清理30天前日志', '确认删除30天前的日志？此操作不可恢复。');
+    if (!ok) return;
+    const targetTs = Math.floor(Date.now() / 1000) - 30 * 86400;
+    const res = await API.delete(`/api/log/?target_timestamp=${targetTs}`);
+    if (res.data.success) {
+      showSuccess(`已清理 ${res.data.data || 0} 条30天前日志`);
+      loadLogs(activePage);
     } else showError(res.data.message);
   };
 
@@ -131,7 +141,8 @@ const LogPage = () => {
         </div>
         {/* 操作组 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button onClick={deleteLogs} style={{ height: 36, padding: '0 16px', background: 'rgba(239,68,68,0.12)', border: 'none', borderRadius: 8, color: '#EF4444', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>清空日志</button>
+          <button onClick={deleteOldLogs} style={{ height: 36, padding: '0 16px', background: 'rgba(245,166,35,0.12)', border: 'none', borderRadius: 8, color: '#F5A623', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>清理30天前</button>
+          <button onClick={deleteLogs} style={{ height: 36, padding: '0 16px', background: 'rgba(239,68,68,0.12)', border: 'none', borderRadius: 8, color: '#EF4444', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>清空全部</button>
           <button onClick={() => loadLogs(activePage)} style={{ height: 36, padding: '0 16px', background: 'linear-gradient(135deg, #B86F05, #945200)', border: 'none', borderRadius: 8, color: '#FFFFFF', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>刷新</button>
         </div>
       </div>

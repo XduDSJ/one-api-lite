@@ -65,13 +65,13 @@ const LogPage = () => {
   };
 
   const deleteLogs = async () => {
-    const ok = await showConfirm('清空日志', '确认清空30天前的日志？此操作不可恢复。');
+    const ok = await showConfirm('清空日志', '确认清空所有日志？此操作不可恢复。');
     if (!ok) return;
-    // 后端需要 target_timestamp，删除30天前的日志
-    const targetTs = Math.floor(Date.now() / 1000) - 30 * 86400;
+    // 后端需要 target_timestamp，传当前时间戳 = 删除当前时间之前的所有日志
+    const targetTs = Math.floor(Date.now() / 1000);
     const res = await API.delete(`/api/log/?target_timestamp=${targetTs}`);
     if (res.data.success) {
-      showSuccess(`已清空 ${res.data.data || ''} 条日志`);
+      showSuccess(`已清空 ${res.data.data || 0} 条日志`);
       loadLogs(1);
     } else showError(res.data.message);
   };

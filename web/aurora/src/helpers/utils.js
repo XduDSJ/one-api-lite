@@ -53,7 +53,11 @@ export function isMobile() {
   return window.innerWidth <= 600;
 }
 
-let showErrorOptions = { autoClose: false, closeOnClick: false, draggable: false };
+let showErrorOptions = { autoClose: toastConstants.ERROR_TIMEOUT, onClick: (e) => {
+  // 点击错误 toast 自动复制文本到剪贴板
+  const text = e.currentTarget.textContent || '';
+  if (text) navigator.clipboard.writeText(text).catch(() => {});
+} };
 let showWarningOptions = { autoClose: toastConstants.WARNING_TIMEOUT };
 let showSuccessOptions = { autoClose: toastConstants.SUCCESS_TIMEOUT };
 let showInfoOptions = { autoClose: toastConstants.INFO_TIMEOUT };
@@ -73,70 +77,34 @@ if (isMobile()) {
   // showNoticeOptions.transition = 'flip';
 }
 
-// 错误提示带复制按钮
-const ErrorToastContent = ({ message }) => {
-  const [copied, setCopied] = React.useState(false);
-  const handleCopy = (e) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(message).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-  return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, paddingRight: 20 }}>
-      <span style={{ flex: 1, fontSize: 13, color: '#FF6B6B', wordBreak: 'break-all', lineHeight: 1.5 }}>{message}</span>
-      <button
-        onClick={handleCopy}
-        style={{
-          flexShrink: 0, height: 24, padding: '0 8px', borderRadius: 4,
-          background: copied ? 'rgba(45,212,191,0.2)' : 'rgba(255,255,255,0.1)',
-          border: 'none', color: copied ? '#2DD4BF' : '#A1A1AA',
-          fontSize: 11, fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap',
-        }}
-      >
-        {copied ? '已复制' : '复制'}
-      </button>
-    </div>
-  );
-};
-
 export function showError(error) {
   if (!error) return;
   console.error(error);
-  let msg;
   if (error.message) {
     if (error.name === 'AxiosError') {
       switch (error.response.status) {
         case 401:
+          // toast.error('错误：未登录或登录已过期，请重新登录！', showErrorOptions);
           window.location.href = '/login?expired=true';
           break;
         case 429:
-          msg = '错误：请求次数过多，请稍后再试！';
-          toast.error(<ErrorToastContent message={msg} />, showErrorOptions);
+          toast.error('错误：请求次数过多，请稍后再试！', showErrorOptions);
           break;
         case 500:
-          msg = '错误：服务器内部错误，请联系管理员！';
-          toast.error(<ErrorToastContent message={msg} />, showErrorOptions);
+          toast.error('错误：服务器内部错误，请联系管理员！', showErrorOptions);
           break;
         case 405:
           toast.info('本站仅作演示之用，无服务端！');
           break;
         default:
-          msg = '错误：' + error.message;
-          toast.error(<ErrorToastContent message={msg} />, showErrorOptions);
+          toast.error('错误：' + error.message, showErrorOptions);
       }
       return;
     }
-    msg = typeof error === 'string' ? error : (error.message || JSON.stringify(error));
+    toast.error('错误：' + error.message, showErrorOptions);
   } else {
-    msg = typeof error === 'string' ? error : JSON.stringify(error);
+    toast.error('错误：' + error, showErrorOptions);
   }
-  // 如果是后端返回的 {success:false, message:xxx} 格式
-  if (error && error.response && error.response.data && error.response.data.message) {
-    msg = error.response.data.message;
-  }
-  toast.error(<ErrorToastContent message={'错误：' + msg} />, showErrorOptions);
 }
 
 export function showWarning(message) {

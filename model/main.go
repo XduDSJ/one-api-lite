@@ -163,6 +163,13 @@ func migrateDB() error {
 	if err = DB.AutoMigrate(&ChannelKey{}); err != nil {
 		return err
 	}
+
+	// 数据迁移：修正 expired_time=0 的令牌为 -1（永不过期）
+	// 历史数据中前端未正确传值导致 0，0 会被后端误判为 1970 年已过期
+	if err = DB.Model(&Token{}).Where("expired_time = 0").Update("expired_time", -1).Error; err != nil {
+		return err
+	}
+
 	return nil
 }
 

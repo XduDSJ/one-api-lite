@@ -164,6 +164,10 @@ func AddToken(c *gin.Context) {
 		Subnet:         token.Subnet,
 		ChannelIds:     token.ChannelIds,
 	}
+	// 永不过期：前端传 0 或未传时，统一存 -1
+	if cleanToken.ExpiredTime == 0 {
+		cleanToken.ExpiredTime = -1
+	}
 	err = cleanToken.Insert()
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
@@ -227,7 +231,7 @@ func UpdateToken(c *gin.Context) {
 		return
 	}
 	if token.Status == model.TokenStatusEnabled {
-		if cleanToken.Status == model.TokenStatusExpired && cleanToken.ExpiredTime <= helper.GetTimestamp() && cleanToken.ExpiredTime != -1 {
+		if cleanToken.Status == model.TokenStatusExpired && cleanToken.ExpiredTime > 0 && cleanToken.ExpiredTime <= helper.GetTimestamp() {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
 				"message": "令牌已过期，无法启用，请先修改令牌过期时间，或者设置为永不过期",

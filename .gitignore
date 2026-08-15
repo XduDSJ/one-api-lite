@@ -27,3 +27,4 @@ todo.md
 .workbuddy/
 .git.corrupted/
 web/aurora/build_new
+web/aurora/build_log

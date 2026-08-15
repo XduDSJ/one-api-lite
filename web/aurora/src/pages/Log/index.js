@@ -97,8 +97,7 @@ const LogPage = () => {
     if (log.type === 1) return log.content || '充值';
     if (log.type === 3) return log.content || '管理操作';
     if (log.type === 4) return log.content || '系统';
-    // 消费日志
-    if (log.content) return log.content;
+    // 消费日志 — 不显示倍率，只显示耗时/token信息
     if (log.is_stream) return `流式 · ${log.elapsed_time}ms`;
     if (log.elapsed_time > 0) return `${log.elapsed_time}ms`;
     if (log.prompt_tokens > 0 && log.completion_tokens > 0) return `${log.prompt_tokens}+${log.completion_tokens}`;
@@ -156,7 +155,7 @@ const LogPage = () => {
               <span style={{ width: 40, color: '#6B7280' }}>{log.id}</span>
               <span style={{ width: 145, color: '#FFFFFF', fontWeight: 500, fontSize: 12 }}>{fmtTime(log.created_at)}</span>
               <span style={{ width: 100, color: '#D1D5DB', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.username || '—'}</span>
-              <span style={{ width: 80, color: '#9CA3AF', fontSize: 12 }}>{log.channel_id ? `#${log.channel_id}` : '—'}</span>
+              <span style={{ width: 80, color: '#9CA3AF', fontSize: 12 }}>{log.channel ? `#${log.channel}` : '—'}</span>
               <span style={{ width: 160, color: '#D1D5DB', fontSize: 12, fontFamily: 'JetBrains Mono, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.model_name || '—'}</span>
               <span style={{ width: 70, color: typeInfo.color, fontSize: 13, fontWeight: 700 }}>{typeInfo.label}</span>
               <span style={{ width: 90, color: '#9CA3AF', fontSize: 12, fontFamily: 'JetBrains Mono, monospace' }}>{log.prompt_tokens || 0}</span>

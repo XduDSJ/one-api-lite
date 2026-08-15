@@ -51,7 +51,7 @@ const Dashboard = () => {
     { badge: 'R', label: '近7天请求', value: requestsTotal > 1000000 ? (requestsTotal / 1000000).toFixed(2) + 'M' : requestsTotal.toLocaleString(), sub: '请求总数', shadow: 'rgba(99,77,147,0.15)' },
     { badge: 'T', label: '近7天Token', value: fmtTokens(tokensTotal), sub: 'Token 消耗量', shadow: 'rgba(245,166,35,0.12)' },
     { badge: 'Σ', label: '累计Token', value: fmtTokens(summary.total_all_tokens ?? 0), sub: '历史总消耗', shadow: 'rgba(45,212,191,0.12)' },
-    { badge: 'K', label: '活跃令牌', value: tokenCount || 0, sub: '已创建令牌', shadow: 'rgba(99,77,147,0.15)' },
+    { badge: 'K', label: '启用令牌', value: tokenCount || 0, sub: '当前可用令牌', shadow: 'rgba(99,77,147,0.15)' },
   ];
 
   // 7天趋势 — 真实数据，空就显示7天0

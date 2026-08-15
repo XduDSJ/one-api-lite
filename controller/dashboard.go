@@ -24,6 +24,7 @@ type summaryData struct {
 	TotalChannels   int64 `json:"total_channels"`
 	EnabledChannels int64 `json:"enabled_channels"`
 	TotalTokenCount int64 `json:"total_token_count"`
+	TotalAllTokens  int64 `json:"total_all_tokens"`
 }
 
 // GetOverviewDashboard 管理员总览仪表盘接口
@@ -69,6 +70,12 @@ func GetOverviewDashboard(c *gin.Context) {
 		return
 	}
 
+	// 累计所有日志的 quota 总和（即历史总消耗 token 数）
+	totalAllTokens, err := model.GetTotalQuota()
+	if err != nil {
+		totalAllTokens = 0
+	}
+
 	// 汇总最近 7 天的请求数与 token 数
 	var totalRequests int64
 	var totalTokens int64
@@ -85,6 +92,7 @@ func GetOverviewDashboard(c *gin.Context) {
 			TotalChannels:   totalChannels,
 			EnabledChannels: enabledChannels,
 			TotalTokenCount: tokenCount,
+			TotalAllTokens:  totalAllTokens,
 		},
 		DailyTrend:          dailyTrend,
 		ModelDistribution:   modelDist,

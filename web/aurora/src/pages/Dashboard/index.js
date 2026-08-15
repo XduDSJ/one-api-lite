@@ -39,12 +39,19 @@ const Dashboard = () => {
   const tokensTotal = summary.total_tokens ?? 0;
   const tokenCount = summary.total_token_count ?? 0;
 
-  // KPI — 设计稿 3:510: 4卡片 345×213 gap:20，不换行
+  // KPI — 5卡片
+  const fmtTokens = (n) => {
+    if (n >= 1000000000) return (n / 1000000000).toFixed(2) + 'B';
+    if (n >= 1000000) return (n / 1000000).toFixed(2) + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+    return n.toLocaleString();
+  };
   const kpis = [
-    { badge: 'C', label: '渠道总数', value: channelsTotal, trend: '', trendUp: true, sub: `${channelsEnabled} 个启用`, shadow: 'rgba(99,77,147,0.15)' },
-    { badge: 'R', label: '今日请求', value: requestsTotal > 1000000 ? (requestsTotal / 1000000).toFixed(2) + 'M' : requestsTotal.toLocaleString(), trend: '', trendUp: true, sub: '累计请求数', shadow: 'rgba(99,77,147,0.15)' },
-    { badge: '$', label: '今日消耗', value: '$' + (tokensTotal / 500000).toFixed(2), trend: '', trendUp: false, sub: 'Token 消耗', shadow: 'rgba(245,166,35,0.12)' },
-    { badge: 'T', label: '活跃令牌', value: tokenCount || 0, trend: '', trendUp: true, sub: '已创建令牌', shadow: 'rgba(99,77,147,0.15)' },
+    { badge: 'C', label: '渠道总数', value: channelsTotal, sub: `${channelsEnabled} 个启用`, shadow: 'rgba(99,77,147,0.15)' },
+    { badge: 'R', label: '近7天请求', value: requestsTotal > 1000000 ? (requestsTotal / 1000000).toFixed(2) + 'M' : requestsTotal.toLocaleString(), sub: '请求总数', shadow: 'rgba(99,77,147,0.15)' },
+    { badge: 'T', label: '近7天Token', value: fmtTokens(tokensTotal), sub: 'Token 消耗量', shadow: 'rgba(245,166,35,0.12)' },
+    { badge: 'Σ', label: '累计Token', value: fmtTokens(summary.total_all_tokens ?? 0), sub: '历史总消耗', shadow: 'rgba(45,212,191,0.12)' },
+    { badge: 'K', label: '活跃令牌', value: tokenCount || 0, sub: '已创建令牌', shadow: 'rgba(99,77,147,0.15)' },
   ];
 
   // 7天趋势 — 真实数据，空就显示7天0

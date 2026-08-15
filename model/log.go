@@ -298,3 +298,10 @@ func SearchLogsByChannelAll(start, end int) (stats []*LogChannelStat, err error)
 	`, start, end).Scan(&stats).Error
 	return stats, err
 }
+
+// GetTotalQuota 返回所有日志的 quota 总和（历史累计消耗 token 数）
+func GetTotalQuota() (int64, error) {
+	var total int64
+	err := DB.Model(&Log{}).Where("type = ?", LogTypeConsume).Select("COALESCE(SUM(quota), 0)").Scan(&total).Error
+	return total, err
+}

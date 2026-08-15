@@ -70,11 +70,8 @@ func GetOverviewDashboard(c *gin.Context) {
 		return
 	}
 
-	// 累计所有日志的 quota 总和（即历史总消耗 token 数）
-	totalAllTokens, err := model.GetTotalQuota()
-	if err != nil {
-		totalAllTokens = 0
-	}
+	// 累计 Token 消耗，从 options 表读取（不受日志清理影响）
+	totalAllTokens := model.GetOptionInt64("TotalUsedQuota")
 
 	// 汇总最近 7 天的请求数与 token 数
 	var totalRequests int64

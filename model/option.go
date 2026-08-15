@@ -174,3 +174,31 @@ func updateOptionMap(key string, value string) (err error) {
 	}
 	return err
 }
+
+// IncOptionInt64 原子累加 int64 类型的 option 值
+// 用于全局累计统计（如 total_used_quota），不受日志清理/用户删除影响
+func IncOptionInt64(key string, delta int64) error {
+	option := Option{Key: key}
+	DB.FirstOrCreate(&option, Option{Key: key})
+	current, _ := strconv.ParseInt(option.Value, 10, 64)
+	newValue := current + delta
+	option.Value = strconv.FormatInt(newValue, 10)
+	DB.Save(&option)
+	// 同步到 OptionMap
+	config.OptionMapRWMutex.Lock()
+	config.OptionMap[key] = option.Value
+	config.OptionMapRWMutex.Unlock()
+	return nil
+}
+
+// GetOptionInt64 读取 int64 类型的 option 值
+func GetOptionInt64(key string) int64 {
+	config.OptionMapRWMutex.RLock()
+	value, ok := config.OptionMap[key]
+	config.OptionMapRWMutex.RUnlock()
+	if !ok {
+		return 0
+	}
+	result, _ := strconv.ParseInt(value, 10, 64)
+	return result
+}

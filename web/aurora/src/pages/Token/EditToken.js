@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { API, showError, showSuccess } from '../../helpers';
-import { renderQuota } from '../../helpers/render';
 import NumberStepper from '../../components/NumberStepper';
 
 const EditToken = () => {
@@ -11,14 +9,47 @@ const EditToken = () => {
   const [inputs, setInputs] = useState({
     name: '', remain_quota: 0, expired_time: -1, unlimited_quota: false,
     subnet: '', model_limits_enabled: false, model_limits: '',
-    allow_channels: '', group: '',
+    allow_channels: '', group: 'default',
   });
   const [loading, setLoading] = useState(isEdit);
-  const [expireMode, setExpireMode] = useState('never'); // never / custom / days
+  const [expireMode, setExpireMode] = useState('never');
   const [expireDays, setExpireDays] = useState(30);
+  const [expireDate, setExpireDate] = useState('');
   const navigate = useNavigate();
 
+  // 下拉选项数据
+  const [groupOptions, setGroupOptions] = useState(['default']);
+  const [channelOptions, setChannelOptions] = useState([]); // [{id, name}]
+  const [modelOptions, setModelOptions] = useState([]); // string[]
+  const [selectedChannels, setSelectedChannels] = useState([]); // [id, ...]
+  const [selectedModels, setSelectedModels] = useState([]); // [string, ...]
+  const [groupDropdownOpen, setGroupDropdownOpen] = useState(false);
+  const [channelDropdownOpen, setChannelDropdownOpen] = useState(false);
+  const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+
   useEffect(() => {
+    // 加载分组选项（从渠道列表提取）
+    API.get('/api/channel/?p=0').then((res) => {
+      if (res.data.success && Array.isArray(res.data.data)) {
+        const groups = [...new Set(res.data.data.map((c) => c.group).filter(Boolean))];
+        if (groups.length > 0) setGroupOptions(groups);
+      }
+    }).catch(() => {});
+
+    // 加载可用渠道
+    API.get('/api/user/accessible_channels').then((res) => {
+      if (res.data.success && Array.isArray(res.data.data)) {
+        setChannelOptions(res.data.data);
+      }
+    }).catch(() => {});
+
+    // 加载可用模型
+    API.get('/api/channel/models').then((res) => {
+      if (res.data.success && Array.isArray(res.data.data)) {
+        setModelOptions(res.data.data);
+      }
+    }).catch(() => {});
+
     if (isEdit) {
       API.get(`/api/token/${id}`).then((res) => {
         if (res.data.success) {
@@ -29,18 +60,29 @@ const EditToken = () => {
             expired_time: d.expired_time ?? -1,
             unlimited_quota: d.unlimited_quota ?? false,
             subnet: d.subnet || '',
-            model_limits_enabled: d.model_limits_enabled ?? false,
-            model_limits: Array.isArray(d.model_limits) ? d.model_limits.join('\n') : (d.model_limits || ''),
-            allow_channels: Array.isArray(d.allow_channels) ? d.allow_channels.join(',') : (d.allow_channels || ''),
-            group: d.group || '',
+            model_limits_enabled: d.models ? true : false,
+            model_limits: d.models || '',
+            allow_channels: d.channel_ids || '',
+            group: d.group || 'default',
           });
+          // 解析已选渠道
+          if (d.channel_ids) {
+            setSelectedChannels(d.channel_ids.split(',').map((s) => parseInt(s.trim())).filter(Boolean));
+          }
+          // 解析已选模型
+          if (d.models) {
+            setSelectedModels(d.models.split(',').map((s) => s.trim()).filter(Boolean));
+          }
           // 设置过期模式
-          if (d.expired_time === -1) setExpireMode('never');
-          else if (d.expired_time > 0) {
+          if (d.expired_time === -1) {
+            setExpireMode('never');
+          } else if (d.expired_time > 0) {
+            const dt = new Date(d.expired_time * 1000);
+            setExpireDate(dt.toISOString().slice(0, 10));
             const now = Math.floor(Date.now() / 1000);
             const daysLeft = Math.ceil((d.expired_time - now) / 86400);
             if (daysLeft > 0 && daysLeft < 365) { setExpireMode('days'); setExpireDays(daysLeft); }
-            else setExpireMode('custom');
+            else setExpireMode('date');
           }
         }
         setLoading(false);
@@ -59,24 +101,33 @@ const EditToken = () => {
     if (expireMode === 'never') return -1;
     if (expireMode === 'days') {
       const now = Math.floor(Date.now() / 1000);
-      return now + expireDays * 86400;
+      return now + (expireDays || 30) * 86400;
     }
-    return parseInt(inputs.expired_time) || -1;
+    if (expireMode === 'date' && expireDate) {
+      return Math.floor(new Date(expireDate).getTime() / 1000);
+    }
+    return -1;
+  };
+
+  const toggleChannel = (chId) => {
+    setSelectedChannels((prev) => prev.includes(chId) ? prev.filter((x) => x !== chId) : [...prev, chId]);
+  };
+  const toggleModel = (m) => {
+    setSelectedModels((prev) => prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]);
   };
 
   const handleSubmit = async () => {
     if (!inputs.name) { showError('请输入名称'); return; }
-    const modelLimitsStr = inputs.model_limits_enabled ? inputs.model_limits.split('\n').map((s) => s.trim()).filter(Boolean).join(',') : '';
-    const channelIdsStr = inputs.allow_channels ? inputs.allow_channels.split(',').map((s) => s.trim()).filter(Boolean).join(',') : '';
+    const modelsStr = inputs.model_limits_enabled ? selectedModels.join(',') : '';
+    const channelIdsStr = selectedChannels.length > 0 ? selectedChannels.join(',') : '';
     const payload = {
       ...inputs,
       remain_quota: parseInt(inputs.remain_quota) || 0,
       expired_time: getExpiredTime(),
       status: parseInt(inputs.status) || 1,
-      models: modelLimitsStr,
+      models: modelsStr,
       channel_ids: channelIdsStr,
     };
-    // 删除前端专用字段，不发给后端
     delete payload.model_limits;
     delete payload.allow_channels;
     delete payload.model_limits_enabled;
@@ -96,6 +147,33 @@ const EditToken = () => {
       {children}
     </div>
   );
+
+  // 标签样式（选中项 + 删除叉号）
+  const tagStyle = {
+    display: 'inline-flex', alignItems: 'center', gap: 6,
+    height: 26, padding: '0 8px 0 10px',
+    borderRadius: 6, fontSize: 12, fontWeight: 500,
+    background: 'rgba(184,111,5,0.12)', color: '#B86F05',
+    cursor: 'default', margin: '0 4px 4px 0',
+  };
+  const tagRemoveStyle = {
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    width: 14, height: 14, borderRadius: '50%',
+    background: 'rgba(184,111,5,0.2)', color: '#B86F05',
+    fontSize: 10, cursor: 'pointer', lineHeight: 1,
+  };
+
+  // 下拉菜单样式
+  const dropdownStyle = {
+    position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
+    background: '#131319', border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: 8, maxHeight: 200, overflowY: 'auto',
+    marginTop: 4, boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+  };
+  const dropdownItemStyle = {
+    padding: '8px 12px', fontSize: 13, color: '#D1D5DB',
+    cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)',
+  };
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#71717A' }}>加载中…</div>;
 
@@ -125,7 +203,7 @@ const EditToken = () => {
             {[
               { v: 'never', label: '永不过期' },
               { v: 'days', label: '指定天数' },
-              { v: 'custom', label: '自定义时间戳' },
+              { v: 'date', label: '指定日期' },
             ].map((opt) => (
               <button key={opt.v} onClick={() => setExpireMode(opt.v)} style={{
                 padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer',
@@ -141,33 +219,77 @@ const EditToken = () => {
               <NumberStepper value={expireDays} onChange={(v) => setExpireDays(v || 30)} style={inputStyle} />
             </div>
           )}
-          {expireMode === 'custom' && (
+          {expireMode === 'date' && (
             <div>
-              <label style={labelStyle}>过期时间戳（Unix 秒，-1=永不过期）</label>
-              <NumberStepper name='expired_time' value={inputs.expired_time} onChange={(v) => setInputs({ ...inputs, expired_time: v })} style={inputStyle} />
+              <label style={labelStyle}>过期日期</label>
+              <input type='date' value={expireDate} onChange={(e) => setExpireDate(e.target.value)} style={inputStyle} />
+            </div>
+          )}
+        </div>
+      </Section>
+
+      <Section title='分组'>
+        <div style={{ position: 'relative' }}>
+          <label style={labelStyle}>所属分组</label>
+          <div onClick={() => setGroupDropdownOpen(!groupDropdownOpen)} style={{ ...inputStyle, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ color: inputs.group ? '#FFFFFF' : '#71717A' }}>{inputs.group || '选择分组…'}</span>
+            <span style={{ color: '#71717A', fontSize: 10 }}>{groupDropdownOpen ? '▲' : '▼'}</span>
+          </div>
+          {groupDropdownOpen && (
+            <div style={dropdownStyle}>
+              {groupOptions.map((g) => (
+                <div key={g} onClick={() => { setInputs({ ...inputs, group: g }); setGroupDropdownOpen(false); }} style={{ ...dropdownItemStyle, background: inputs.group === g ? 'rgba(184,111,5,0.12)' : 'transparent', color: inputs.group === g ? '#B86F05' : '#D1D5DB' }}>
+                  {g}
+                </div>
+              ))}
             </div>
           )}
         </div>
       </Section>
 
       <Section title='IP 白名单'>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div>
-            <label style={labelStyle}>允许访问的 IP（CIDR 格式，逗号分隔，留空=不限制）</label>
-            <input name='subnet' value={inputs.subnet} onChange={handleChange} placeholder='例: 192.168.1.0/24,10.0.0.1' style={inputStyle} />
-          </div>
+        <div>
+          <label style={labelStyle}>允许访问的 IP（CIDR 格式，逗号分隔，留空=不限制）</label>
+          <input name='subnet' value={inputs.subnet} onChange={handleChange} placeholder='例: 192.168.1.0/24,10.0.0.1' style={inputStyle} />
         </div>
       </Section>
 
       <Section title='渠道限制'>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
-            <label style={labelStyle}>允许使用的渠道 ID（逗号分隔，留空=不限制）</label>
-            <input name='allow_channels' value={inputs.allow_channels} onChange={handleChange} placeholder='例: 1,2,3' style={inputStyle} />
-          </div>
-          <div>
-            <label style={labelStyle}>分组</label>
-            <input name='group' value={inputs.group} onChange={handleChange} placeholder='default' style={inputStyle} />
+            <label style={labelStyle}>允许使用的渠道（留空=不限制）</label>
+            {/* 已选标签 */}
+            {selectedChannels.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', marginBottom: 8 }}>
+                {selectedChannels.map((chId) => {
+                  const ch = channelOptions.find((c) => c.id === chId);
+                  return (
+                    <span key={chId} style={tagStyle}>
+                      {ch ? ch.name : `#${chId}`}
+                      <span style={tagRemoveStyle} onClick={() => toggleChannel(chId)}>✕</span>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+            {/* 下拉选择 */}
+            <div style={{ position: 'relative' }}>
+              <div onClick={() => setChannelDropdownOpen(!channelDropdownOpen)} style={{ ...inputStyle, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ color: '#71717A' }}>{channelDropdownOpen ? '选择渠道…' : `点击选择（已选 ${selectedChannels.length}）`}</span>
+                <span style={{ color: '#71717A', fontSize: 10 }}>{channelDropdownOpen ? '▲' : '▼'}</span>
+              </div>
+              {channelDropdownOpen && (
+                <div style={dropdownStyle}>
+                  {channelOptions.length === 0 && <div style={{ ...dropdownItemStyle, color: '#71717A' }}>暂无可用渠道</div>}
+                  {channelOptions.map((ch) => (
+                    <div key={ch.id} onClick={() => toggleChannel(ch.id)} style={{ ...dropdownItemStyle, background: selectedChannels.includes(ch.id) ? 'rgba(45,212,191,0.12)' : 'transparent', color: selectedChannels.includes(ch.id) ? '#2DD4BF' : '#D1D5DB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span>{ch.name}</span>
+                      {selectedChannels.includes(ch.id) && <span style={{ color: '#2DD4BF' }}>✓</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </Section>
@@ -179,8 +301,35 @@ const EditToken = () => {
           </label>
           {inputs.model_limits_enabled && (
             <div>
-              <label style={labelStyle}>允许的模型（每行一个）</label>
-              <textarea name='model_limits' value={inputs.model_limits} onChange={handleChange} placeholder={'gpt-4o\ngpt-4o-mini\nclaude-3.5-sonnet'} style={{ ...inputStyle, height: 120, paddingTop: 12, fontFamily: 'JetBrains Mono, monospace', resize: 'vertical' }} />
+              <label style={labelStyle}>允许的模型（已选 {selectedModels.length} 个）</label>
+              {/* 已选标签 */}
+              {selectedModels.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', marginBottom: 8 }}>
+                  {selectedModels.map((m) => (
+                    <span key={m} style={tagStyle}>
+                      {m}
+                      <span style={tagRemoveStyle} onClick={() => toggleModel(m)}>✕</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {/* 下拉选择 */}
+              <div style={{ position: 'relative' }}>
+                <div onClick={() => setModelDropdownOpen(!modelDropdownOpen)} style={{ ...inputStyle, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#71717A' }}>{modelDropdownOpen ? '选择模型…' : '点击添加模型'}</span>
+                  <span style={{ color: '#71717A', fontSize: 10 }}>{modelDropdownOpen ? '▲' : '▼'}</span>
+                </div>
+                {modelDropdownOpen && (
+                  <div style={dropdownStyle}>
+                    {modelOptions.filter((m) => !selectedModels.includes(m)).map((m) => (
+                      <div key={m} onClick={() => toggleModel(m)} style={dropdownItemStyle}>
+                        {m}
+                      </div>
+                    ))}
+                    {modelOptions.filter((m) => !selectedModels.includes(m)).length === 0 && <div style={{ ...dropdownItemStyle, color: '#71717A' }}>全部已选</div>}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

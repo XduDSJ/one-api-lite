@@ -25,6 +25,8 @@ const EditChannel = () => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(isEdit);
   const [fetchingModels, setFetchingModels] = useState(false);
+  const [groupOptions, setGroupOptions] = useState(['default']);
+  const [groupDropdownOpen, setGroupDropdownOpen] = useState(false);
   const [inputs, setInputs] = useState({
     type: 1, name: '', key: '', base_url: '',
     models: [], groups: ['default'],
@@ -75,6 +77,13 @@ const EditChannel = () => {
     }
     API.get('/api/models').then((res) => {
       if (res.data.success && Array.isArray(res.data.data)) setModelOptions(res.data.data);
+    }).catch(() => {});
+    // 加载分组选项
+    API.get('/api/channel/?p=0').then((res) => {
+      if (res.data.success && Array.isArray(res.data.data)) {
+        const groups = [...new Set(res.data.data.map((c) => c.group).filter(Boolean))];
+        if (groups.length > 0) setGroupOptions(groups);
+      }
     }).catch(() => {});
   }, []);
 
@@ -424,9 +433,28 @@ const EditChannel = () => {
               <label style={labelStyle}>权重</label>
               <NumberStepper name='weight' value={inputs.weight} onChange={(v) => setInputs({ ...inputs, weight: v })} style={inputStyle} />
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, position: 'relative' }}>
               <label style={labelStyle}>分组</label>
-              <input name='groups' value={inputs.groups?.join(',') || ''} onChange={(e) => setInputs({ ...inputs, groups: e.target.value.split(',').filter(Boolean) })} placeholder='default' style={inputStyle} />
+              <div onClick={() => setGroupDropdownOpen(!groupDropdownOpen)} style={{ ...inputStyle, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ color: inputs.groups?.length ? '#FFFFFF' : '#71717A' }}>{inputs.groups?.join(', ') || '选择分组…'}</span>
+                <span style={{ color: '#71717A', fontSize: 10 }}>{groupDropdownOpen ? '▲' : '▼'}</span>
+              </div>
+              {groupDropdownOpen && (
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10, background: '#131319', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, maxHeight: 200, overflowY: 'auto', marginTop: 4, boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                  {groupOptions.map((g) => {
+                    const selected = inputs.groups?.includes(g);
+                    return (
+                      <div key={g} onClick={() => {
+                        const current = inputs.groups || [];
+                        setInputs({ ...inputs, groups: selected ? current.filter((x) => x !== g) : [...current, g] });
+                      }} style={{ padding: '8px 12px', fontSize: 13, cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: selected ? 'rgba(184,111,5,0.12)' : 'transparent', color: selected ? '#B86F05' : '#D1D5DB' }}>
+                        <span>{g}</span>
+                        {selected && <span style={{ color: '#B86F05' }}>✓</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -82,10 +82,23 @@ func GetChannel(c *gin.Context) {
 		})
 		return
 	}
+	// 多 key 模式时附带 channel_keys 供前端编辑展示
+	var keys []model.ChannelKey
+	if channel.MultiKeyMode != 0 {
+		keys, err = model.GetChannelKeysByChannelId(id)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"success": false,
+				"message": "获取渠道密钥失败: " + err.Error(),
+			})
+			return
+		}
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
 		"data":    channel,
+		"keys":    keys,
 	})
 	return
 }

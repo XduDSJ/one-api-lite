@@ -68,7 +68,8 @@ const EditChannel = () => {
             model_mapping: d.model_mapping || '',
           });
           setModelAliases(aliases);
-          if (Array.isArray(d.keys)) setKeys(d.keys);
+          // keys 在 res.data.keys（后端 GetChannel 附带），不在 d 里
+          if (Array.isArray(res.data.keys)) setKeys(res.data.keys);
         }
         setLoading(false);
       }).catch(() => setLoading(false));

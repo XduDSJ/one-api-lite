@@ -85,6 +85,11 @@ func DeleteChannelKeysByChannelId(channelId int) error {
 	return DB.Where("channel_id = ?", channelId).Delete(&ChannelKey{}).Error
 }
 
+// DeleteChannelKeyById 硬删除单个 key
+func DeleteChannelKeyById(id int64) error {
+	return DB.Where("id = ?", id).Delete(&ChannelKey{}).Error
+}
+
 // UpdateChannelKey 更新单个 key
 func UpdateChannelKey(key *ChannelKey) error {
 	armQuotaReset(key, time.Now().Unix())

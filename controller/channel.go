@@ -238,7 +238,7 @@ func UpdateChannel(c *gin.Context) {
 	// 多 key 模式：按 key_value 做 diff 增量更新，保留已存在 key 的 Id 和运行时字段
 	// （DailyUsedQuota/CooledUntil/TotalUsedQuota/TotalRequests 等），避免先删后插重置运行时状态
 	if channel.MultiKeyMode != model.MultiKeyModeOff {
-		existingKeys, err := model.GetChannelKeysByChannelId(channel.Id)
+		existingKeys, err := model.GetEnabledChannelKeys(channel.Id)
 		if err != nil {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
@@ -288,11 +288,9 @@ func UpdateChannel(c *gin.Context) {
 				})
 			}
 		}
-		// 剩余 existingMap 中的 key：前端不再传，软删除（Status=Disabled）保留历史统计
+		// 剩余 existingMap 中的 key：前端不再传，硬删除（不再保留历史统计，避免编辑时重复显示）
 		for _, existing := range existingMap {
-			existing.Status = model.KeyStatusDisabled
-			existing.UpdatedTime = now
-			err = model.UpdateChannelKey(existing)
+			err = model.DeleteChannelKeyById(existing.Id)
 			if err != nil {
 				c.JSON(http.StatusOK, gin.H{
 					"success": false,

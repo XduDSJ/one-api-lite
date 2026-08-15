@@ -73,10 +73,11 @@ const TokensTable = () => {
       <div className='aurora-table'>
         <div className='aurora-table-header'>
           <span style={{ width: 40 }}>ID</span>
-          <span style={{ width: 150 }}>名称</span>
+          <span style={{ width: 120 }}>名称</span>
+          <span style={{ width: 220 }}>Key</span>
           <span style={{ width: 80 }}>状态</span>
-          <span style={{ width: 120 }}>已用额度</span>
-          <span style={{ width: 120 }}>剩余额度</span>
+          <span style={{ width: 100 }}>已用额度</span>
+          <span style={{ width: 100 }}>剩余额度</span>
           <span style={{ width: 150 }}>创建时间</span>
           <span style={{ width: 150 }}>过期时间</span>
           <span style={{ flex: 1, textAlign: 'right' }}>操作</span>
@@ -87,19 +88,22 @@ const TokensTable = () => {
           return (
             <div className='aurora-table-row' key={tk.id}>
               <span style={{ width: 40, color: '#6B7280' }}>{tk.id}</span>
-              <span style={{ width: 150, color: '#FFFFFF', fontWeight: 500 }}>{tk.name || '—'}</span>
+              <span style={{ width: 120, color: '#FFFFFF', fontWeight: 500 }}>{tk.name || '—'}</span>
+              <span style={{ width: 220, color: '#A1A1AA', fontSize: 12, fontFamily: 'JetBrains Mono, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {tk.key ? (tk.key.slice(0, 8) + '••••' + tk.key.slice(-4)) : '—'}
+              </span>
               <span style={{ width: 80 }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <span className={`aurora-status-dot aurora-status-dot-${statusInfo.dot}`} />
                   <span style={{ fontSize: 12, fontWeight: 500, color: statusInfo.color }}>{statusInfo.label}</span>
                 </span>
               </span>
-              <span style={{ width: 120, color: '#D1D5DB' }}>{renderQuota(tk.used_quota, t)}</span>
-              <span style={{ width: 120, color: '#D1D5DB' }}>{tk.unlimited_quota ? '无限' : renderQuota(tk.remain_quota, t)}</span>
+              <span style={{ width: 100, color: '#D1D5DB' }}>{renderQuota(tk.used_quota, t)}</span>
+              <span style={{ width: 100, color: '#D1D5DB' }}>{tk.unlimited_quota ? '无限' : renderQuota(tk.remain_quota, t)}</span>
               <span style={{ width: 150, color: '#A1A1AA', fontSize: 12 }}>{new Date(tk.created_time * 1000).toLocaleString('zh-CN')}</span>
               <span style={{ width: 150, color: '#A1A1AA', fontSize: 12 }}>{tk.expired_time === -1 ? '永不过期' : new Date(tk.expired_time * 1000).toLocaleString('zh-CN')}</span>
-              <span style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-                <span onClick={() => copy(tk.key)} style={{ fontSize: 12, color: '#2DD4BF', fontWeight: 500, cursor: 'pointer' }}>复制</span>
+              <span style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <span onClick={() => { copy(tk.key).then((ok) => { if (ok) showSuccess('已复制到剪贴板'); else showError('复制失败'); }); }} style={{ fontSize: 12, color: '#2DD4BF', fontWeight: 500, cursor: 'pointer' }}>复制</span>
                 <Link to={`/token/edit/${tk.id}`} style={{ fontSize: 12, color: '#B86F05', fontWeight: 500, cursor: 'pointer' }}>编辑</Link>
                 <span onClick={() => manageToken(tk.id, tk.status === 1 ? 'disable' : 'enable', idx)} style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 500, cursor: 'pointer' }}>{tk.status === 1 ? '禁用' : '启用'}</span>
                 <span onClick={() => manageToken(tk.id, 'delete', idx)} style={{ fontSize: 12, color: '#EF4444', fontWeight: 500, cursor: 'pointer' }}>删除</span>

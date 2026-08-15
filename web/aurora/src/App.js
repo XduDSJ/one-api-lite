@@ -5,6 +5,7 @@ import { UserContext } from './context/User';
 import { StatusContext } from './context/Status';
 import LoginForm from './components/LoginForm';
 import { PrivateRoute } from './components/PrivateRoute';
+import { ConfirmModal } from './components/ConfirmModal';
 
 const Home = lazy(() => import('./pages/Home'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -104,6 +105,7 @@ function App() {
       <Route path='/group' element={<PrivateRoute><Suspense fallback={<Loading />}><Group /></Suspense></PrivateRoute>} />
       <Route path='*' element={<Suspense fallback={<Loading />}><NotFound /></Suspense>} />
     </Routes>
+      <ConfirmModal />
   );
 }
 

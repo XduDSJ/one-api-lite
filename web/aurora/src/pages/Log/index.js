@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { API, showError, showSuccess } from '../../helpers';
 import { renderQuota } from '../../helpers/render';
+import { showConfirm } from '../../components/ConfirmModal';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -64,10 +65,13 @@ const LogPage = () => {
   };
 
   const deleteLogs = async () => {
-    if (!window.confirm('确认清空所有日志？此操作不可恢复。')) return;
-    const res = await API.delete('/api/log/');
+    const ok = await showConfirm('清空日志', '确认清空30天前的日志？此操作不可恢复。');
+    if (!ok) return;
+    // 后端需要 target_timestamp，删除30天前的日志
+    const targetTs = Math.floor(Date.now() / 1000) - 30 * 86400;
+    const res = await API.delete(`/api/log/?target_timestamp=${targetTs}`);
     if (res.data.success) {
-      showSuccess('已清空日志');
+      showSuccess(`已清空 ${res.data.data || ''} 条日志`);
       loadLogs(1);
     } else showError(res.data.message);
   };

@@ -36,7 +36,7 @@ const LoginForm = () => {
         showSuccess(t('messages.success.login', '登录成功'));
         showWarning(t('messages.error.root_password', '请立刻修改默认密码！'));
       } else {
-        navigate('/token');
+        navigate('/dashboard');
         showSuccess(t('messages.success.login', '登录成功'));
       }
     } else {

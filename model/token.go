@@ -80,7 +80,7 @@ func ValidateUserToken(key string) (token *Token, err error) {
 	if token.Status != TokenStatusEnabled {
 		return nil, errors.New("该令牌状态不可用")
 	}
-	if token.ExpiredTime > 0 && token.ExpiredTime < helper.GetTimestamp() {
+	if token.ExpiredTime != -1 && token.ExpiredTime < helper.GetTimestamp() {
 		if !common.RedisEnabled {
 			token.Status = TokenStatusExpired
 			err := token.SelectUpdate()

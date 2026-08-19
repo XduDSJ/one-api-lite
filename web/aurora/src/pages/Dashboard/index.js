@@ -64,9 +64,14 @@ const Dashboard = () => {
     trendData = days.map((d) => ({ label: d, requests: 0 }));
   }
 
-  // 模型消耗分布 — 真实数据，空就空
-  let modelData = (overview?.model_distribution || []).slice(0, 5).map((m) => ({
-    name: (m.ModelName || m.model_name || '?').split('-').slice(0, 2).join('-'),
+  // 模型消耗分布 — 显示 token 消耗量（Quota），真实数据，空就空
+  let modelTokenData = (overview?.model_distribution || []).slice(0, 5).map((m) => ({
+    name: m.ModelName || m.model_name || '?',
+    count: m.Quota ?? m.quota ?? 0,
+  }));
+  // 模型调用次数分布 — 显示请求次数（RequestCount）
+  let modelCountData = (overview?.model_distribution || []).slice(0, 5).map((m) => ({
+    name: m.ModelName || m.model_name || '?',
     count: m.RequestCount || m.request_count || 0,
   }));
 
@@ -153,7 +158,7 @@ const Dashboard = () => {
         {kpis.map((kpi, i) => <KpiCard key={i} kpi={kpi} />)}
       </div>
 
-      {/* Charts Row — 3图表固定不换行 */}
+      {/* Charts Row — 4图表固定不换行 */}
       <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
         {/* 折线图 */}
         <ChartCard title='7天请求趋势'>
@@ -167,29 +172,48 @@ const Dashboard = () => {
               </defs>
               <CartesianGrid strokeDasharray='3 3' stroke='rgba(255,255,255,0.04)' vertical={false} />
               <XAxis dataKey='label' axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#52525B' }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#52525B' }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#52525B' }} allowDecimals={false} />
               <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }} />
               <Line type='monotone' dataKey='requests' stroke={gold} strokeWidth={2} dot={{ fill: gold, r: 3 }} activeDot={{ r: 5, fill: gold, stroke: '#FFFFFF', strokeWidth: 2 }} fill='url(#goldGrad)' />
             </LineChart>
           </ResponsiveContainer>
         </ChartCard>
 
-        {/* 柱状图 */}
-        <ChartCard title='模型消耗分布'>
-          {modelData.length > 0 ? (
+        {/* 柱状图 — 模型 Token 消耗分布 */}
+        <ChartCard title='模型Token消耗分布'>
+          {modelTokenData.length > 0 ? (
           <ResponsiveContainer width='100%' height='100%'>
-            <BarChart data={modelData} margin={{ top: 5, right: 10, left: -20, bottom: 20 }}>
+            <BarChart data={modelTokenData} margin={{ top: 5, right: 10, left: -20, bottom: 20 }}>
               <CartesianGrid strokeDasharray='3 3' stroke='rgba(255,255,255,0.04)' vertical={false} />
               <XAxis dataKey='name' axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#52525B' }} angle={-15} textAnchor='end' height={50} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#52525B' }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#52525B' }} allowDecimals={false} />
               <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
               <Bar dataKey='count' radius={[4, 4, 0, 0]} maxBarSize={56}>
-                {modelData.map((_, i) => <Cell key={i} fill={i === 0 ? gold : i === 1 ? '#D48811' : i === 2 ? cyan : i === 3 ? '#1FB8A8' : '#7A8290'} />)}
+                {modelTokenData.map((_, i) => <Cell key={i} fill={i === 0 ? gold : i === 1 ? '#D48811' : i === 2 ? cyan : i === 3 ? '#1FB8A8' : '#7A8290'} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#71717A', fontSize: 13 }}>暂无消费记录</div>
+          )}
+        </ChartCard>
+
+        {/* 柱状图 — 模型调用次数分布 */}
+        <ChartCard title='模型调用次数分布'>
+          {modelCountData.length > 0 ? (
+          <ResponsiveContainer width='100%' height='100%'>
+            <BarChart data={modelCountData} margin={{ top: 5, right: 10, left: -20, bottom: 20 }}>
+              <CartesianGrid strokeDasharray='3 3' stroke='rgba(255,255,255,0.04)' vertical={false} />
+              <XAxis dataKey='name' axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#52525B' }} angle={-15} textAnchor='end' height={50} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#52525B' }} allowDecimals={false} />
+              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+              <Bar dataKey='count' radius={[4, 4, 0, 0]} maxBarSize={56}>
+                {modelCountData.map((_, i) => <Cell key={i} fill={i === 0 ? cyan : i === 1 ? '#1FB8A8' : i === 2 ? gold : i === 3 ? '#D48811' : '#7A8290'} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#71717A', fontSize: 13 }}>暂无调用记录</div>
           )}
         </ChartCard>
 

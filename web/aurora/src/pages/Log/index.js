@@ -6,13 +6,14 @@ import { showConfirm } from '../../components/ConfirmModal';
 
 const ITEMS_PER_PAGE = 20;
 
-// 日志类型映射
+// 日志类型映射 — 对齐后端 model/log.go 的 LogType 常量
+// 0=Unknown 1=Topup(充值) 2=Consume(消费) 3=Manage(管理) 4=System(系统) 5=Test(测试)
 const logTypeMap = {
   1: { label: '充值', color: '#F5A623' },
   2: { label: '消费', color: '#2DD4BF' },
   3: { label: '管理', color: '#9CA3AF' },
   4: { label: '系统', color: '#A78BFA' },
-  5: { label: '错误', color: '#EF4444' },
+  5: { label: '测试', color: '#60A5FA' },
 };
 
 const LogPage = () => {
@@ -107,7 +108,7 @@ const LogPage = () => {
 
   // 格式化详情
   const fmtDetail = (log) => {
-    if (log.type === 5) return log.content || '错误';
+    if (log.type === 5) return log.content || '测试';
     if (log.type === 1) return log.content || '充值';
     if (log.type === 3) return log.content || '管理操作';
     if (log.type === 4) return log.content || '系统';
@@ -164,7 +165,9 @@ const LogPage = () => {
         </div>
         {logs.map((log) => {
           const typeInfo = logTypeMap[log.type] || { label: '未知', color: '#71717A' };
-          const isSuccess = log.type !== 5;
+          // 测试日志：看 content 包含"测试失败"才显示失败
+          // 其他日志：默认成功
+          const isSuccess = log.type === 5 ? !(log.content || '').includes('测试失败') : true;
           return (
             <div className='aurora-table-row' key={log.id}>
               <span style={{ width: 40, color: '#6B7280' }}>{log.id}</span>

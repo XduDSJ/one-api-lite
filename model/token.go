@@ -287,9 +287,9 @@ func PostConsumeTokenQuota(tokenId int, quota int64) (err error) {
 	return nil
 }
 
-// GetTokenCount 统计令牌总数（仅启用状态）
+// GetTokenCount 统计令牌总数（仅启用状态，且用户未删除）
 func GetTokenCount() (int64, error) {
 	var count int64
-	err := DB.Model(&Token{}).Where("status = ?", TokenStatusEnabled).Count(&count).Error
+	err := DB.Model(&Token{}).Joins("JOIN users ON users.id = tokens.user_id").Where("tokens.status = ? AND users.status != ?", TokenStatusEnabled, UserStatusDeleted).Count(&count).Error
 	return count, err
 }

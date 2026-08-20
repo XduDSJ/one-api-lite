@@ -197,7 +197,7 @@ const LogPage = () => {
         <span className='aurora-pagi-info'>共 {total} 条 · 第 {activePage} / {totalPages} 页</span>
         <div className='aurora-pagi-btns'>
           <button className='aurora-pagi-btn' onClick={() => { setActivePage(activePage - 1); loadLogs(activePage - 1); }} disabled={activePage <= 1}>‹</button>
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => i + 1).map((p) => (
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
             <button key={p} className={`aurora-pagi-btn ${activePage === p ? 'active' : ''}`} onClick={() => { setActivePage(p); loadLogs(p); }}>{p}</button>
           ))}
           <button className='aurora-pagi-btn' onClick={() => { setActivePage(activePage + 1); loadLogs(activePage + 1); }} disabled={activePage >= totalPages}>›</button>

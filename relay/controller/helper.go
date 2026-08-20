@@ -134,6 +134,8 @@ func postConsumeQuota(ctx context.Context, usage *relaymodel.Usage, meta *meta.M
 	})
 	model.UpdateUserUsedQuotaAndRequestCount(meta.UserId, quota)
 	model.UpdateChannelUsedQuota(meta.ChannelId, quota)
+	// 全局累计 Token 消耗（token 数），存 options 表，不受日志清理影响
+	model.IncOptionInt64("TotalUsedTokens", int64(promptTokens+completionTokens))
 }
 
 // getUsageQuota 按「prompt + completion×completionRatio」再乘 ratio 算计费 quota，

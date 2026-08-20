@@ -46,8 +46,6 @@ func PostConsumeQuota(ctx context.Context, tokenId int, quotaDelta int64, totalQ
 		})
 		model.UpdateUserUsedQuotaAndRequestCount(userId, totalQuota)
 		model.UpdateChannelUsedQuota(channelId, totalQuota)
-		// 全局累计 Token 消耗，存 options 表，不受日志清理影响
-		model.IncOptionInt64("TotalUsedQuota", totalQuota)
 	}
 	if totalQuota <= 0 {
 		logger.Error(ctx, fmt.Sprintf("totalQuota consumed is %d, something is wrong", totalQuota))

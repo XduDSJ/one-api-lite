@@ -176,6 +176,8 @@ func (user *User) Delete() error {
 		return errors.New("id 为空！")
 	}
 	blacklist.BanUser(user.Id)
+	// 级联禁用该用户的所有令牌，避免孤儿令牌被全局统计
+	DB.Model(&Token{}).Where("user_id = ?", user.Id).Update("status", TokenStatusDisabled)
 	user.Username = fmt.Sprintf("deleted_%s", random.GetUUID())
 	user.Status = UserStatusDeleted
 	err := DB.Model(user).Updates(user).Error

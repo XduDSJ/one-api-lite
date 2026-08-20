@@ -4,7 +4,7 @@ WORKDIR /web
 COPY ./VERSION .
 COPY ./web/aurora /web/aurora
 
-RUN cd /web/aurora && npm install --legacy-peer-deps
+RUN --mount=type=cache,target=/root/.npm cd /web/aurora && npm install --legacy-peer-deps
 
 RUN cd /web/aurora && \
     DISABLE_ESLINT_PLUGIN='true' REACT_APP_VERSION=$(cat /web/VERSION) npm run build && \
@@ -26,7 +26,7 @@ ENV GO111MODULE=on \
 WORKDIR /build
 
 ADD go.mod go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
 
 COPY . .
 COPY --from=builder /web/build ./web/build

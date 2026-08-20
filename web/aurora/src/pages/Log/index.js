@@ -197,9 +197,29 @@ const LogPage = () => {
         <span className='aurora-pagi-info'>共 {total} 条 · 第 {activePage} / {totalPages} 页</span>
         <div className='aurora-pagi-btns'>
           <button className='aurora-pagi-btn' onClick={() => { setActivePage(activePage - 1); loadLogs(activePage - 1); }} disabled={activePage <= 1}>‹</button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <button key={p} className={`aurora-pagi-btn ${activePage === p ? 'active' : ''}`} onClick={() => { setActivePage(p); loadLogs(p); }}>{p}</button>
-          ))}
+          {(() => {
+            // 省略号分页：首页 + 当前页前后2页 + 尾页，中间用 … 省略
+            const pages = [];
+            const add = (p) => pages.push({ type: 'page', value: p });
+            const addEllipsis = () => pages.push({ type: 'ellipsis' });
+            if (totalPages <= 7) {
+              for (let i = 1; i <= totalPages; i++) add(i);
+            } else {
+              add(1);
+              if (activePage > 4) addEllipsis();
+              const start = Math.max(2, activePage - 1);
+              const end = Math.min(totalPages - 1, activePage + 1);
+              for (let i = start; i <= end; i++) add(i);
+              if (activePage < totalPages - 3) addEllipsis();
+              add(totalPages);
+            }
+            return pages.map((item, idx) => {
+              if (item.type === 'ellipsis') {
+                return <span key={`e${idx}`} className='aurora-pagi-btn' style={{ border: 'none', background: 'transparent', color: '#71717A', cursor: 'default' }}>…</span>;
+              }
+              return <button key={item.value} className={`aurora-pagi-btn ${activePage === item.value ? 'active' : ''}`} onClick={() => { setActivePage(item.value); loadLogs(item.value); }}>{item.value}</button>;
+            });
+          })()}
           <button className='aurora-pagi-btn' onClick={() => { setActivePage(activePage + 1); loadLogs(activePage + 1); }} disabled={activePage >= totalPages}>›</button>
         </div>
       </div>

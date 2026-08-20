@@ -193,24 +193,27 @@ func Relay(c *gin.Context) {
 	if val, ok := c.Get(ctxkey.ChannelIds); ok {
 		tokenChannelIds, _ = val.([]int)
 	}
-	skipped := 0
-	for i := retryTimes; i > 0; i-- {
-		channel, err := dbmodel.CacheGetRandomSatisfiedChannel(group, originalModel, i != retryTimes, tokenChannelIds)
+	// 渠道级重试：最多 retryTimes 次实际重试（跳过 lastFailed 不消耗次数）
+	retryCount := 0
+	consecutiveSkips := 0
+	for retryCount < retryTimes {
+		// 第一次重试不忽略优先级（可能选到同优先级的其他渠道），
+		// 后续重试忽略最高优先级，从低优先级渠道里选
+		channel, err := dbmodel.CacheGetRandomSatisfiedChannel(group, originalModel, retryCount > 0, tokenChannelIds)
 		if err != nil {
 			logger.Errorf(ctx, "CacheGetRandomSatisfiedChannel failed: %+v", err)
 			break
 		}
-		logger.Infof(ctx, "using channel #%d to retry (remain times %d)", channel.Id, i)
+		logger.Infof(ctx, "using channel #%d to retry (remain times %d)", channel.Id, retryTimes-retryCount)
 		if channel.Id == lastFailedChannelId {
 			// 跳过刚失败的渠道，不消耗重试次数
-			// 但限制最多跳过 retryTimes 次，避免死循环
-			skipped++
-			if skipped > retryTimes {
+			consecutiveSkips++
+			if consecutiveSkips > retryTimes {
 				break
 			}
-			i++
 			continue
 		}
+		consecutiveSkips = 0
 		middleware.SetupContextForSelectedChannel(c, channel, originalModel)
 		// 换渠道后清空 FailedKeyIds，并对多 key 渠道重新 PickKey 注入
 		c.Set(ctxkey.FailedKeyIds, []int{})
@@ -228,6 +231,7 @@ func Relay(c *gin.Context) {
 		lastFailedChannelId = channelId
 		channelName := c.GetString(ctxkey.ChannelName)
 		go processChannelRelayError(ctx, userId, channelId, channelName, *bizErr)
+		retryCount++
 	}
 	if bizErr != nil {
 		if bizErr.StatusCode == http.StatusTooManyRequests {

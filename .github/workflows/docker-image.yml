@@ -16,7 +16,7 @@ jobs:
       contents: read
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Save version info
         run: |

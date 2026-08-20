@@ -247,6 +247,33 @@ func UpdateChannel(c *gin.Context) {
 			})
 			return
 		}
+		// 从单key模式切换到多key模式时，channel_keys 表为空但 channels.key 有值。
+		// 自动把 channels.key 迁移为第一个 channel_key，避免 key 丢失。
+		if len(existingKeys) == 0 && channel.Key != "" {
+			migratedKey := model.ChannelKey{
+				ChannelId:   channel.Id,
+				KeyValue:    channel.Key,
+				Status:      model.KeyStatusEnabled,
+				CreatedTime: helper.GetTimestamp(),
+				UpdatedTime: helper.GetTimestamp(),
+			}
+			err = model.BatchInsertChannelKeys([]model.ChannelKey{migratedKey})
+			if err != nil {
+				c.JSON(http.StatusOK, gin.H{
+					"success": false,
+					"message": "迁移单key到多key失败: " + err.Error(),
+				})
+				return
+			}
+			existingKeys, err = model.GetEnabledChannelKeys(channel.Id)
+			if err != nil {
+				c.JSON(http.StatusOK, gin.H{
+					"success": false,
+					"message": err.Error(),
+				})
+				return
+			}
+		}
 		existingMap := make(map[int64]*model.ChannelKey, len(existingKeys))
 		for i := range existingKeys {
 			existingMap[existingKeys[i].Id] = &existingKeys[i]

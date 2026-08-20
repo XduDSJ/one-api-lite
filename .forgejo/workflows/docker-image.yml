@@ -27,23 +27,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: forgejo.godis.win/${{ github.repository }}
-          tags: |
-            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/main' }}
-            type=raw,value=preview,enable=${{ github.ref == 'refs/heads/frontend-ui-design' }}
-            type=sha,prefix=sha-
-
       - name: Build and push Docker images
         uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: forgejo.godis.win/forgejo/one-api-lite:preview
           cache-from: type=gha
           cache-to: type=gha,mode=max

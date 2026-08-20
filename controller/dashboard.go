@@ -30,9 +30,13 @@ type summaryData struct {
 // GetOverviewDashboard 管理员总览仪表盘接口
 // 返回最近 7 天的消费趋势、模型分布、渠道分布及全局汇总数据
 func GetOverviewDashboard(c *gin.Context) {
+	// 用本地时区计算日期范围，避免 Truncate 截断到 UTC 午夜导致非 UTC 时区缺今天数据
 	now := time.Now()
-	startOfDay := now.Truncate(24 * time.Hour).AddDate(0, 0, -6).Unix()
-	endOfDay := now.Truncate(24 * time.Hour).Add(24*time.Hour - time.Second).Unix()
+	loc := now.Location()
+	y, m, d := now.In(loc).Date()
+	startOfToday := time.Date(y, m, d, 0, 0, 0, 0, loc)
+	startOfDay := startOfToday.AddDate(0, 0, -6).Unix()
+	endOfDay := startOfToday.Add(24*time.Hour - time.Second).Unix()
 
 	dailyTrend, err := model.SearchLogsByDayAll(int(startOfDay), int(endOfDay))
 	if err != nil {

@@ -197,9 +197,9 @@ func Relay(c *gin.Context) {
 	retryCount := 0
 	consecutiveSkips := 0
 	for retryCount < retryTimes {
-		// 第一次重试不忽略优先级（可能选到同优先级的其他渠道），
-		// 后续重试忽略最高优先级，从低优先级渠道里选
-		channel, err := dbmodel.CacheGetRandomSatisfiedChannel(group, originalModel, retryCount > 0, tokenChannelIds)
+		// 重试时忽略最高优先级（刚失败的渠道通常是最高优先级），
+		// 直接从低优先级渠道里选，避免反复选到刚失败的渠道
+		channel, err := dbmodel.CacheGetRandomSatisfiedChannel(group, originalModel, true, tokenChannelIds)
 		if err != nil {
 			logger.Errorf(ctx, "CacheGetRandomSatisfiedChannel failed: %+v", err)
 			break

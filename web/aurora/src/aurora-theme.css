@@ -25,8 +25,8 @@
   --text-faint: #52525B;
 
   /* 强调色 — 低饱和暖金，深色背景下不刺眼 */
-  --accent: #8A5C1E;
-  --accent-hover: #A06E26;
+  --accent: #B86F05;
+  --accent-hover: #D48811;
   --cyan: #2DD4BF;
   --red: #EF4444;
   --purple: #9F7AEA;
@@ -301,7 +301,7 @@ input[type='number'] {
   border-radius: 6px; font-size: 11px; font-weight: 600;
 }
 .aurora-badge-cyan { background: rgba(45,212,191,0.15); color: var(--cyan); }
-.aurora-badge-gold { background: rgba(138,92,30,0.15); color: var(--accent); }
+.aurora-badge-gold { background: rgba(184,111,5,0.15); color: var(--accent); }
 .aurora-badge-red { background: rgba(239,68,68,0.1); color: var(--red); }
 .aurora-badge-gray { background: rgba(255,255,255,0.08); color: var(--text-muted); }
 .aurora-badge-purple { background: rgba(159,122,234,0.15); color: var(--purple); }

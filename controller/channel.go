@@ -320,14 +320,24 @@ func UpdateChannel(c *gin.Context) {
 			})
 		}
 		// 剩余 existingMap 中的 key：前端不再传，硬删除（不再保留历史统计，避免编辑时重复显示）
-		for _, existing := range existingMap {
-			err = model.DeleteChannelKeyById(existing.Id)
-			if err != nil {
-				c.JSON(http.StatusOK, gin.H{
-					"success": false,
-					"message": err.Error(),
-				})
-				return
+		// 但如果前端传来的 keys 全空（没加载到已有 key），不删除已有 key，避免误删
+		frontendHasKey := false
+		for _, k := range req.Keys {
+			if k.KeyValue != "" {
+				frontendHasKey = true
+				break
+			}
+		}
+		if frontendHasKey {
+			for _, existing := range existingMap {
+				err = model.DeleteChannelKeyById(existing.Id)
+				if err != nil {
+					c.JSON(http.StatusOK, gin.H{
+						"success": false,
+						"message": err.Error(),
+					})
+					return
+				}
 			}
 		}
 		// 批量插入新增 key

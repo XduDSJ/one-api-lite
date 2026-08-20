@@ -15,7 +15,7 @@ jobs:
       NO_PROXY: 172.18.0.0/16,localhost,127.0.0.1,.local,forgejo.godis.win
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v7
+        uses: actions/checkout@v6
 
       - name: Save version info
         run: |

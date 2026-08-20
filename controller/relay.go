@@ -193,6 +193,7 @@ func Relay(c *gin.Context) {
 	if val, ok := c.Get(ctxkey.ChannelIds); ok {
 		tokenChannelIds, _ = val.([]int)
 	}
+	skipped := 0
 	for i := retryTimes; i > 0; i-- {
 		channel, err := dbmodel.CacheGetRandomSatisfiedChannel(group, originalModel, i != retryTimes, tokenChannelIds)
 		if err != nil {
@@ -201,6 +202,13 @@ func Relay(c *gin.Context) {
 		}
 		logger.Infof(ctx, "using channel #%d to retry (remain times %d)", channel.Id, i)
 		if channel.Id == lastFailedChannelId {
+			// 跳过刚失败的渠道，不消耗重试次数
+			// 但限制最多跳过 retryTimes 次，避免死循环
+			skipped++
+			if skipped > retryTimes {
+				break
+			}
+			i++
 			continue
 		}
 		middleware.SetupContextForSelectedChannel(c, channel, originalModel)

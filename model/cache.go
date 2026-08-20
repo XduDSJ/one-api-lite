@@ -282,6 +282,12 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 		}
 	}
 	if len(usable) == 0 {
+		// 所有候选渠道的 key 预过滤都失败（熔断/冷却/配额耗尽）。
+		// 不直接拒绝，降级返回最高优先级候选渠道，让 relay 阶段尝试——
+		// relay 失败后重试逻辑会切换到其他渠道，避免「有渠道但被预过滤拦截」的假性 503。
+		if len(candidates) > 0 {
+			return candidates[0], nil
+		}
 		return nil, errors.New("no channel with usable key")
 	}
 	return usable[rand.Intn(len(usable))], nil

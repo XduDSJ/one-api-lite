@@ -74,8 +74,9 @@ func ListAllModels(c *gin.Context) {
 		})
 	}
 	c.JSON(200, gin.H{
-		"object": "list",
-		"data":   openAIModels,
+		"success": true,
+		"object":  "list",
+		"data":    openAIModels,
 	})
 }
 

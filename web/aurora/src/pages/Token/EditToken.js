@@ -53,7 +53,7 @@ const EditToken = () => {
     // 加载可用模型
     API.get('/api/channel/models').then((res) => {
       if (res.data.success && Array.isArray(res.data.data)) {
-        setModelOptions(res.data.data);
+        setModelOptions(res.data.data.map((m) => (typeof m === 'string' ? m : m.id)));
       }
     }).catch(() => {});
 

@@ -77,7 +77,7 @@ var AutomaticDisableKeyEnabled = true // key 级自动禁用总开关
 var QuotaRemindThreshold int64 = 1000
 var PreConsumedQuota int64 = 500
 var ApproximateTokenEnabled = false
-var RetryTimes = 0
+var RetryTimes = 3
 
 var RootUserEmail = ""
 

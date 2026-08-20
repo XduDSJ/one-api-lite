@@ -2,10 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { API, showError, showSuccess } from '../helpers';
 
+// 移到组件外部，避免每次重渲染创建新引用导致 input 失焦
+const inputStyle = { width: '100%', height: 44, background: '#0D0D12', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: '#FFFFFF', fontSize: 13, padding: '0 14px' };
+const labelStyle = { fontSize: 13, color: '#A1A1AA', marginBottom: 8, display: 'block' };
+
+const Section = ({ title, children }) => (
+  <div className='aurora-card' style={{ padding: 24, marginBottom: 16 }}>
+    <div className='aurora-section-header'><span className='aurora-section-title'>{title}</span></div>
+    {children}
+  </div>
+);
+
 const SystemSetting = () => {
   const { t } = useTranslation();
   const [inputs, setInputs] = useState({});
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState({}); // 按节 key 记录 saving 状态
 
   useEffect(() => {
     API.get('/api/option/').then((res) => {
@@ -23,21 +35,22 @@ const SystemSetting = () => {
     setInputs((prev) => ({ ...prev, [name]: value }));
   };
 
-  const submitOption = async (key) => {
-    const res = await API.put('/api/option/', { key, value: inputs[key] });
-    if (res.data.success) showSuccess('保存成功');
-    else showError(res.data.message);
+  // 批量提交一节内的多个 key，统一成功/失败提示
+  const submitOptions = async (sectionKey, keys) => {
+    setSaving((prev) => ({ ...prev, [sectionKey]: true }));
+    try {
+      const results = await Promise.all(
+        keys.map((key) => API.put('/api/option/', { key, value: inputs[key] ?? '' }))
+      );
+      const failed = results.find((r) => !r.data.success);
+      if (failed) showError(failed.data.message);
+      else showSuccess('保存成功');
+    } catch (err) {
+      showError(err.message || '保存失败');
+    } finally {
+      setSaving((prev) => ({ ...prev, [sectionKey]: false }));
+    }
   };
-
-  const inputStyle = { width: '100%', height: 44, background: '#0D0D12', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: '#FFFFFF', fontSize: 13, padding: '0 14px' };
-  const labelStyle = { fontSize: 13, color: '#A1A1AA', marginBottom: 8, display: 'block' };
-
-  const Section = ({ title, children }) => (
-    <div className='aurora-card' style={{ padding: 24, marginBottom: 16 }}>
-      <div className='aurora-section-header'><span className='aurora-section-title'>{title}</span></div>
-      {children}
-    </div>
-  );
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#71717A' }}>加载中…</div>;
 
@@ -49,22 +62,20 @@ const SystemSetting = () => {
             <label style={labelStyle}>系统名称</label>
             <input name='SystemName' value={inputs.SystemName || ''} onChange={handleInputChange} placeholder='One API' style={inputStyle} />
           </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => submitOption('SystemName')}>保存</button>
           <div>
             <label style={labelStyle}>Logo 地址</label>
             <input name='Logo' value={inputs.Logo || ''} onChange={handleInputChange} placeholder='https://...' style={inputStyle} />
           </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => submitOption('Logo')}>保存</button>
+          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' style={{ alignSelf: 'flex-start' }} disabled={saving.basic} onClick={() => submitOptions('basic', ['SystemName', 'Logo'])}>{saving.basic ? '保存中…' : '保存本节'}</button>
         </div>
       </Section>
 
-      <Section title='运营设置'>
+      <Section title='运营与计费设置'>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
             <label style={labelStyle}>额度提醒倍率</label>
             <input name='QuotaPerUnit' value={inputs.QuotaPerUnit || ''} onChange={handleInputChange} placeholder='500000' style={inputStyle} />
           </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => submitOption('QuotaPerUnit')}>保存</button>
           <div>
             <label style={labelStyle}>显示金额</label>
             <select name='DisplayInCurrency' value={inputs.DisplayInCurrency || 'false'} onChange={handleInputChange} style={inputStyle}>
@@ -72,7 +83,7 @@ const SystemSetting = () => {
               <option value='true'>是</option>
             </select>
           </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => submitOption('DisplayInCurrency')}>保存</button>
+          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' style={{ alignSelf: 'flex-start' }} disabled={saving.ops} onClick={() => submitOptions('ops', ['QuotaPerUnit', 'DisplayInCurrency'])}>{saving.ops ? '保存中…' : '保存本节'}</button>
         </div>
       </Section>
 
@@ -82,12 +93,11 @@ const SystemSetting = () => {
             <label style={labelStyle}>公告内容</label>
             <textarea name='Notice' value={inputs.Notice || ''} onChange={handleInputChange} placeholder='输入公告内容…' style={{ ...inputStyle, height: 100, paddingTop: 12, fontFamily: 'JetBrains Mono, monospace' }} />
           </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => submitOption('Notice')}>保存</button>
           <div>
             <label style={labelStyle}>关于页面内容</label>
             <textarea name='About' value={inputs.About || ''} onChange={handleInputChange} placeholder='输入关于页面内容（支持 Markdown）…' style={{ ...inputStyle, height: 150, paddingTop: 12, fontFamily: 'JetBrains Mono, monospace' }} />
           </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => submitOption('About')}>保存</button>
+          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' style={{ alignSelf: 'flex-start' }} disabled={saving.content} onClick={() => submitOptions('content', ['Notice', 'About'])}>{saving.content ? '保存中…' : '保存本节'}</button>
         </div>
       </Section>
 
@@ -100,7 +110,6 @@ const SystemSetting = () => {
               <option value='false'>禁止</option>
             </select>
           </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => submitOption('RegisterEnabled')}>保存</button>
           <div>
             <label style={labelStyle}>邮箱验证</label>
             <select name='EmailVerificationEnabled' value={inputs.EmailVerificationEnabled || 'false'} onChange={handleInputChange} style={inputStyle}>
@@ -108,7 +117,7 @@ const SystemSetting = () => {
               <option value='true'>开启</option>
             </select>
           </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => submitOption('EmailVerificationEnabled')}>保存</button>
+          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' style={{ alignSelf: 'flex-start' }} disabled={saving.auth} onClick={() => submitOptions('auth', ['RegisterEnabled', 'EmailVerificationEnabled'])}>{saving.auth ? '保存中…' : '保存本节'}</button>
         </div>
       </Section>
 
@@ -130,25 +139,7 @@ const SystemSetting = () => {
             <label style={labelStyle}>SMTP 密码/Token</label>
             <input type='password' name='SMTPToken' value={inputs.SMTPToken || ''} onChange={handleInputChange} placeholder='••••••••' style={inputStyle} />
           </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => { submitOption('SMTPServer'); submitOption('SMTPPort'); submitOption('SMTPAccount'); submitOption('SMTPToken'); }}>保存全部</button>
-        </div>
-      </Section>
-
-      <Section title='额度与计费'>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div>
-            <label style={labelStyle}>额度提醒倍率</label>
-            <input name='QuotaPerUnit' value={inputs.QuotaPerUnit || ''} onChange={handleInputChange} placeholder='500000' style={inputStyle} />
-          </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => submitOption('QuotaPerUnit')}>保存</button>
-          <div>
-            <label style={labelStyle}>显示金额</label>
-            <select name='DisplayInCurrency' value={inputs.DisplayInCurrency || 'false'} onChange={handleInputChange} style={inputStyle}>
-              <option value='false'>否</option>
-              <option value='true'>是</option>
-            </select>
-          </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => submitOption('DisplayInCurrency')}>保存</button>
+          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' style={{ alignSelf: 'flex-start' }} disabled={saving.smtp} onClick={() => submitOptions('smtp', ['SMTPServer', 'SMTPPort', 'SMTPAccount', 'SMTPToken'])}>{saving.smtp ? '保存中…' : '保存本节'}</button>
         </div>
       </Section>
 
@@ -158,7 +149,7 @@ const SystemSetting = () => {
             <label style={labelStyle}>首页内容（支持 Markdown 或 URL）</label>
             <textarea name='HomePageContent' value={inputs.HomePageContent || ''} onChange={handleInputChange} placeholder='输入首页内容…' style={{ ...inputStyle, height: 150, paddingTop: 12, fontFamily: 'JetBrains Mono, monospace' }} />
           </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' onClick={() => submitOption('HomePageContent')}>保存</button>
+          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' style={{ alignSelf: 'flex-start' }} disabled={saving.home} onClick={() => submitOptions('home', ['HomePageContent'])}>{saving.home ? '保存中…' : '保存本节'}</button>
         </div>
       </Section>
     </div>

@@ -109,11 +109,35 @@ func FetchChannelModels(c *gin.Context) {
 		url = baseURL + "/v1/models"
 	}
 
-	models, err := fetchModelsFromUpstream(url, channel.Key)
-	if err != nil {
+	// 多 key 模式：遍历启用 key 逐个尝试，第一个成功即返回。
+	// 避免 channel.Key（单 key 历史字段）恰好是超预算/失效 key 导致获取模型失败。
+	var models []string
+	var lastErr error
+	if channel.MultiKeyMode != model.MultiKeyModeOff {
+		keys, kerr := model.GetEnabledChannelKeys(channelId)
+		if kerr != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"success": false,
+				"message": "获取渠道 key 失败: " + kerr.Error(),
+			})
+			return
+		}
+		for _, k := range keys {
+			models, err = fetchModelsFromUpstream(url, k.KeyValue)
+			if err == nil {
+				break
+			}
+			lastErr = err
+		}
+	} else {
+		models, err = fetchModelsFromUpstream(url, channel.Key)
+		lastErr = err
+	}
+
+	if lastErr != nil && models == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": "获取模型失败: " + err.Error(),
+			"message": "获取模型失败: " + lastErr.Error(),
 		})
 		return
 	}

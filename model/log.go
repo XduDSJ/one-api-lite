@@ -39,6 +39,7 @@ const (
 	LogTypeManage
 	LogTypeSystem
 	LogTypeTest
+	LogTypeError // 6=错误，relay 失败时记录
 )
 
 func recordLogHelper(ctx context.Context, log *Log) {

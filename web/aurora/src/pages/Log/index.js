@@ -7,13 +7,14 @@ import { showConfirm } from '../../components/ConfirmModal';
 const ITEMS_PER_PAGE = 20;
 
 // 日志类型映射 — 对齐后端 model/log.go 的 LogType 常量
-// 0=Unknown 1=Topup(充值) 2=Consume(消费) 3=Manage(管理) 4=System(系统) 5=Test(测试)
+// 0=Unknown 1=Topup(充值) 2=Consume(消费) 3=Manage(管理) 4=System(系统) 5=Test(测试) 6=Error(错误)
 const logTypeMap = {
   1: { label: '充值', color: '#F5A623' },
   2: { label: '消费', color: '#2DD4BF' },
   3: { label: '管理', color: '#9CA3AF' },
   4: { label: '系统', color: '#A78BFA' },
   5: { label: '测试', color: '#60A5FA' },
+  6: { label: '错误', color: '#EF4444' },
 };
 
 const LogPage = () => {
@@ -108,16 +109,23 @@ const LogPage = () => {
 
   // 格式化详情
   const fmtDetail = (log) => {
+    if (log.type === 6) return log.content || '错误';
     if (log.type === 5) return log.content || '测试';
     if (log.type === 1) return log.content || '充值';
     if (log.type === 3) return log.content || '管理操作';
     if (log.type === 4) return log.content || '系统';
-    // 消费日志 — 不显示倍率，只显示耗时/token信息
-    if (log.is_stream) return `流式 · ${log.elapsed_time}ms`;
-    if (log.elapsed_time > 0) return `${log.elapsed_time}ms`;
+    // 消费日志 — 流式/耗时 + request_id 后8位
+    const parts = [];
+    if (log.is_stream) parts.push('流式');
+    if (log.elapsed_time > 0) parts.push(`${log.elapsed_time}ms`);
+    if (log.request_id && log.request_id.length >= 8) parts.push(`req:${log.request_id.slice(-8)}`);
+    if (parts.length > 0) return parts.join(' · ');
     if (log.prompt_tokens > 0 && log.completion_tokens > 0) return `${log.prompt_tokens}+${log.completion_tokens}`;
     return '—';
   };
+
+  // hover 浮层状态
+  const [hoverLog, setHoverLog] = useState(null);
 
   if (loading && logs.length === 0) return <div style={{ padding: 40, textAlign: 'center', color: '#71717A' }}>加载中…</div>;
 
@@ -152,45 +160,83 @@ const LogPage = () => {
       <div className='aurora-table'>
         <div className='aurora-table-header'>
           <span style={{ width: 40 }}>ID</span>
-          <span style={{ width: 145 }}>时间</span>
-          <span style={{ width: 100 }}>用户</span>
-          <span style={{ width: 80 }}>渠道</span>
-          <span style={{ width: 160 }}>模型</span>
-          <span style={{ width: 70 }}>类型</span>
-          <span style={{ width: 90 }}>输入</span>
-          <span style={{ width: 90 }}>输出</span>
-          <span style={{ width: 90 }}>额度</span>
-          <span style={{ width: 80 }}>状态</span>
-          <span style={{ width: 200 }}>详情</span>
+          <span style={{ width: 140 }}>时间</span>
+          <span style={{ width: 90 }}>用户</span>
+          <span style={{ width: 55 }}>渠道</span>
+          <span style={{ width: 50 }}>Key</span>
+          <span style={{ width: 150 }}>模型</span>
+          <span style={{ width: 90 }}>令牌</span>
+          <span style={{ width: 60 }}>类型</span>
+          <span style={{ width: 70 }}>输入</span>
+          <span style={{ width: 70 }}>输出</span>
+          <span style={{ width: 80 }}>额度</span>
+          <span style={{ width: 65 }}>状态</span>
+          <span style={{ width: 220 }}>详情</span>
         </div>
         {logs.map((log) => {
           const typeInfo = logTypeMap[log.type] || { label: '未知', color: '#71717A' };
-          // 测试日志：看 content 包含"测试失败"才显示失败
-          // 其他日志：默认成功
-          const isSuccess = log.type === 5 ? !(log.content || '').includes('测试失败') : true;
+          // 测试日志/错误日志：看 content 包含"失败"或"错误"才显示失败
+          const isSuccess = (log.type === 5 || log.type === 6) ? !(log.content || '').includes('失败') && !(log.content || '').includes('错误') : true;
+          if (log.type === 6) { const isSuccess6 = false; }
+          const isErr = log.type === 6;
+          const detail = fmtDetail(log);
           return (
             <div className='aurora-table-row' key={log.id}>
               <span style={{ width: 40, color: '#6B7280' }}>{log.id}</span>
-              <span style={{ width: 145, color: '#FFFFFF', fontWeight: 500, fontSize: 12 }}>{fmtTime(log.created_at)}</span>
-              <span style={{ width: 100, color: '#D1D5DB', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.username || '—'}</span>
-              <span style={{ width: 80, color: '#9CA3AF', fontSize: 12 }}>{log.channel ? `#${log.channel}` : '—'}</span>
-              <span style={{ width: 160, color: '#D1D5DB', fontSize: 12, fontFamily: 'JetBrains Mono, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.model_name || '—'}</span>
-              <span style={{ width: 70, color: typeInfo.color, fontSize: 13, fontWeight: 700 }}>{typeInfo.label}</span>
-              <span style={{ width: 90, color: '#9CA3AF', fontSize: 12, fontFamily: 'JetBrains Mono, monospace' }}>{log.prompt_tokens || 0}</span>
-              <span style={{ width: 90, color: '#9CA3AF', fontSize: 12, fontFamily: 'JetBrains Mono, monospace' }}>{log.completion_tokens || 0}</span>
-              <span style={{ width: 90, color: log.type === 1 ? '#F5A623' : '#D1D5DB', fontSize: 13 }}>{fmtQuota(log.quota)}</span>
-              <span style={{ width: 80 }}>
+              <span style={{ width: 140, color: '#FFFFFF', fontWeight: 500, fontSize: 12 }}>{fmtTime(log.created_at)}</span>
+              <span style={{ width: 90, color: '#D1D5DB', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.username || '—'}</span>
+              <span style={{ width: 55, color: '#9CA3AF', fontSize: 12 }}>{log.channel ? `#${log.channel}` : '—'}</span>
+              <span style={{ width: 50, color: '#9CA3AF', fontSize: 12, fontFamily: 'JetBrains Mono, monospace' }}>{log.channel_key_id ? `#${log.channel_key_id}` : '—'}</span>
+              <span style={{ width: 150, color: '#D1D5DB', fontSize: 12, fontFamily: 'JetBrains Mono, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.model_name || '—'}</span>
+              <span style={{ width: 90, color: '#9CA3AF', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.token_name || '—'}</span>
+              <span style={{ width: 60, color: typeInfo.color, fontSize: 12, fontWeight: 700 }}>{typeInfo.label}</span>
+              <span style={{ width: 70, color: '#9CA3AF', fontSize: 12, fontFamily: 'JetBrains Mono, monospace' }}>{log.prompt_tokens || 0}</span>
+              <span style={{ width: 70, color: '#9CA3AF', fontSize: 12, fontFamily: 'JetBrains Mono, monospace' }}>{log.completion_tokens || 0}</span>
+              <span style={{ width: 80, color: log.type === 1 ? '#F5A623' : '#D1D5DB', fontSize: 13 }}>{fmtQuota(log.quota)}</span>
+              <span style={{ width: 65 }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: isSuccess ? '#2DD4BF' : '#EF4444', flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, fontWeight: 500, color: isSuccess ? '#2DD4BF' : '#EF4444' }}>{isSuccess ? '成功' : '失败'}</span>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: isErr ? '#EF4444' : (isSuccess ? '#2DD4BF' : '#EF4444'), flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, fontWeight: 500, color: isErr ? '#EF4444' : (isSuccess ? '#2DD4BF' : '#EF4444') }}>{isErr ? '失败' : (isSuccess ? '成功' : '失败')}</span>
                 </span>
               </span>
-              <span style={{ width: 200, color: '#A1A1AA', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fmtDetail(log)}</span>
+              <span
+                style={{ width: 220, color: isErr ? '#EF4444' : '#A1A1AA', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: detail && detail.length > 30 ? 'help' : 'default', position: 'relative' }}
+                onMouseEnter={() => setHoverLog({ id: log.id, content: detail, x: 220, y: 0 })}
+                onMouseLeave={() => setHoverLog(null)}
+              >
+                {detail}
+              </span>
             </div>
           );
         })}
         {logs.length === 0 && <div style={{ padding: 40, textAlign: 'center', color: '#71717A' }}>暂无日志</div>}
       </div>
+
+      {/* hover 浮层 */}
+      {hoverLog && hoverLog.content && hoverLog.content.length > 30 && (
+        <div style={{
+          position: 'fixed',
+          bottom: 20,
+          right: 20,
+          maxWidth: 500,
+          maxHeight: 200,
+          overflowY: 'auto',
+          background: '#18181B',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: 10,
+          padding: '12px 16px',
+          fontSize: 12,
+          color: '#D1D5DB',
+          fontFamily: 'JetBrains Mono, monospace',
+          lineHeight: 1.6,
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-all',
+          zIndex: 9999,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+        }}>
+          {hoverLog.content}
+        </div>
+      )}
 
       {/* 分页 */}
       <div className='aurora-pagination'>

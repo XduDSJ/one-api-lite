@@ -266,6 +266,22 @@ func Relay(c *gin.Context) {
 			bizErr.Error.Message = "当前分组上游负载已饱和，请稍后再试"
 		}
 
+		// 写错误日志到数据库，日志页面可见
+		errContent := fmt.Sprintf("%d: %s", bizErr.StatusCode, bizErr.Error.Message)
+		if len(errContent) > 200 {
+			errContent = errContent[:200]
+		}
+		dbmodel.RecordConsumeLog(ctx, &dbmodel.Log{
+			UserId:           userId,
+			ChannelId:        lastFailedChannelId,
+			ChannelKeyId:     c.GetInt(ctxkey.ChannelKeyId),
+			ModelName:        originalModel,
+			TokenName:        c.GetString(ctxkey.TokenName),
+			Type:             dbmodel.LogTypeError,
+			Content:          errContent,
+			RequestId:        requestId,
+		})
+
 		// BUG: bizErr is in race condition
 		bizErr.Error.Message = helper.MessageWithRequestId(bizErr.Error.Message, requestId)
 		c.JSON(bizErr.StatusCode, gin.H{

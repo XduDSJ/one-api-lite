@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { API, showError, showSuccess } from '../../helpers';
 import NumberStepper from '../../components/NumberStepper';
@@ -33,6 +33,19 @@ const EditToken = () => {
   const [groupDropdownOpen, setGroupDropdownOpen] = useState(false);
   const [channelDropdownOpen, setChannelDropdownOpen] = useState(false);
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+  const modelDropdownRef = useRef(null);
+
+  // 点击外部关闭模型下拉框
+  useEffect(() => {
+    if (!modelDropdownOpen) return;
+    const handleClick = (e) => {
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target)) {
+        setModelDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [modelDropdownOpen]);
 
   useEffect(() => {
     // 加载分组选项（从渠道列表提取）
@@ -315,7 +328,7 @@ const EditToken = () => {
                 </div>
               )}
               {/* 下拉选择 */}
-              <div style={{ position: 'relative' }}>
+              <div style={{ position: 'relative' }} ref={modelDropdownRef}>
                 <div onClick={() => setModelDropdownOpen(!modelDropdownOpen)} style={{ ...inputStyle, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ color: '#71717A' }}>{modelDropdownOpen ? '选择模型…' : '点击添加模型'}</span>
                   <span style={{ color: '#71717A', fontSize: 10 }}>{modelDropdownOpen ? '▲' : '▼'}</span>

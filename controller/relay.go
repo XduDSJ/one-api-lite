@@ -37,28 +37,16 @@ func pickKeyAndInject(c *gin.Context) (*dbmodel.ChannelKey, error) {
 	modelName := c.GetString(ctxkey.RequestModel)
 	systemPrompt := c.GetString(ctxkey.SystemPrompt)
 
-	// 查询启用 key 总数，作为循环上限（避免 PickKey 反复选中已失败 key）
-	keys, err := dbmodel.GetEnabledChannelKeys(channelId)
+	// PickKey 内部 filterUsableKeys 会排除 failedIds 里的 key，
+	// 避免优先级模式反复选中已失败 key 导致"所有 key 已失败"误报。
+	failedIds := getFailedKeyIds(c)
+	key, err := dbmodel.PickKey(channelId, multiKeyMode, modelName, systemPrompt, failedIds)
 	if err != nil {
 		return nil, err
 	}
-	if len(keys) == 0 {
-		return nil, fmt.Errorf("渠道 %d 无可用 key", channelId)
-	}
-
-	failedIds := getFailedKeyIds(c)
-	for i := 0; i < len(keys); i++ {
-		key, err := dbmodel.PickKey(channelId, multiKeyMode, modelName, systemPrompt)
-		if err != nil {
-			return nil, err
-		}
-		if !containsInt(failedIds, int(key.Id)) {
-			c.Set(ctxkey.ChannelKeyId, int(key.Id))
-			c.Request.Header.Set("Authorization", "Bearer "+key.KeyValue)
-			return key, nil
-		}
-	}
-	return nil, fmt.Errorf("渠道 %d 所有 key 已失败或不可用", channelId)
+	c.Set(ctxkey.ChannelKeyId, int(key.Id))
+	c.Request.Header.Set("Authorization", "Bearer "+key.KeyValue)
+	return key, nil
 }
 
 // getFailedKeyIds 从 ctx 读取 key 级重试已失败 key id 列表

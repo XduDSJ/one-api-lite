@@ -99,10 +99,14 @@ func UpdateChannelKey(key *ChannelKey) error {
 // filterUsableKeys 按公共条件过滤出可用 key：
 // 1) 状态非启用跳过；2) 仍在冷却期跳过；3) 配额已耗尽跳过；
 // 4) 配额预判（剩余不足以支撑 1.5 倍平均 token）跳过；5) 熔断打开跳过。
-func filterUsableKeys(channelId int, keys []ChannelKey, model string) []ChannelKey {
+func filterUsableKeys(channelId int, keys []ChannelKey, model string, excludeIds []int) []ChannelKey {
 	now := time.Now().Unix()
 	usable := make([]ChannelKey, 0, len(keys))
 	for _, k := range keys {
+		// 0. 已失败 key 跳过（key 级重试排除列表）
+		if containsIntKey(excludeIds, int(k.Id)) {
+			continue
+		}
 		// 1. 状态非启用跳过
 		if k.Status != KeyStatusEnabled {
 			continue
@@ -129,6 +133,16 @@ func filterUsableKeys(channelId int, keys []ChannelKey, model string) []ChannelK
 		usable = append(usable, k)
 	}
 	return usable
+}
+
+// containsIntKey 判断 id 是否在列表中（filterUsableKeys 用，避免依赖 controller 包）
+func containsIntKey(ids []int, id int) bool {
+	for _, v := range ids {
+		if v == id {
+			return true
+		}
+	}
+	return false
 }
 
 // QuotaState 返回 key 的「显示状态」字符串，供 UI 徽章使用。
@@ -227,8 +241,9 @@ func pickByLUR(keys []ChannelKey) *ChannelKey {
 }
 
 // PickKey 多 key 调度入口：按 multiKeyMode 选择策略返回一个可用 key。
+// excludeIds 为 key 级重试已失败 key id 列表，filterUsableKeys 会排除这些 key。
 // 无启用 key 或过滤后无可用 key 时返回 error。default 分支回退 pickByPriority。
-func PickKey(channelId int, multiKeyMode int, model string, systemPrompt string) (*ChannelKey, error) {
+func PickKey(channelId int, multiKeyMode int, model string, systemPrompt string, excludeIds []int) (*ChannelKey, error) {
 	keys, err := GetEnabledChannelKeys(channelId)
 	if err != nil {
 		return nil, err
@@ -236,7 +251,7 @@ func PickKey(channelId int, multiKeyMode int, model string, systemPrompt string)
 	if len(keys) == 0 {
 		return nil, fmt.Errorf("渠道 %d 无可用 key", channelId)
 	}
-	usable := filterUsableKeys(channelId, keys, model)
+	usable := filterUsableKeys(channelId, keys, model, excludeIds)
 	if len(usable) == 0 {
 		return nil, fmt.Errorf("渠道 %d 所有 key 不可用（冷却/配额耗尽/熔断）", channelId)
 	}
@@ -492,7 +507,7 @@ func HasUsableKey(channelId int, multiKeyMode int, modelName string) bool {
 	keys, err := GetEnabledChannelKeys(channelId)
 	usable := false
 	if err == nil && len(keys) > 0 {
-		usable = len(filterUsableKeys(channelId, keys, modelName)) > 0
+		usable = len(filterUsableKeys(channelId, keys, modelName, nil)) > 0
 	}
 	// 回填缓存
 	channelKeyUsableCacheMu.Lock()

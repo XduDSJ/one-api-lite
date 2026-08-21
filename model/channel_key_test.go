@@ -273,7 +273,7 @@ func TestPickKeyPriority(t *testing.T) {
 
 	// 校验：优先级模式应总返回 priority=10（最高优先级组只有一个 key）
 	for i := 0; i < 20; i++ {
-		picked, err := PickKey(10, MultiKeyModePriority, "gpt-4o", "")
+		picked, err := PickKey(10, MultiKeyModePriority, "gpt-4o", "", nil)
 		if err != nil {
 			t.Fatalf("PickKey iter %d failed: %v", i, err)
 		}
@@ -295,7 +295,7 @@ func TestPickKeyFiltersDisabled(t *testing.T) {
 	defer DeleteChannelKeysByChannelId(11)
 
 	// 校验：应跳过禁用 key，返回 sk-ok
-	picked, err := PickKey(11, MultiKeyModePriority, "gpt-4o", "")
+	picked, err := PickKey(11, MultiKeyModePriority, "gpt-4o", "", nil)
 	if err != nil {
 		t.Fatalf("PickKey failed: %v", err)
 	}
@@ -318,7 +318,7 @@ func TestPickKeyNoUsable(t *testing.T) {
 	defer DeleteChannelKeysByChannelId(12)
 
 	// 校验：无可用 key 应返回 error
-	picked, err := PickKey(12, MultiKeyModePriority, "gpt-4o", "")
+	picked, err := PickKey(12, MultiKeyModePriority, "gpt-4o", "", nil)
 	if err == nil {
 		t.Errorf("expected error when no usable key, got picked=%+v", picked)
 	}

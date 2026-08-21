@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { API, showError, showSuccess } from '../../helpers';
 import { renderQuota } from '../../helpers/render';
@@ -11,7 +11,17 @@ const EditUser = () => {
   const [loading, setLoading] = useState(isEdit);
   const [groupOptions, setGroupOptions] = useState(['default']);
   const [groupDropdownOpen, setGroupDropdownOpen] = useState(false);
+  const groupDropdownRef = useRef(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!groupDropdownOpen) return;
+    const handleClick = (e) => {
+      if (groupDropdownRef.current && !groupDropdownRef.current.contains(e.target)) setGroupDropdownOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [groupDropdownOpen]);
 
   useEffect(() => {
     if (isEdit) {
@@ -74,7 +84,7 @@ const EditUser = () => {
           <div><label style={labelStyle}>额度</label><NumberStepper value={inputs.quota} onChange={(v) => setInputs({ ...inputs, quota: v })} style={inputStyle} /></div>
           <div>
             <label style={labelStyle}>分组</label>
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative' }} ref={groupDropdownRef}>
               <div onClick={() => setGroupDropdownOpen(!groupDropdownOpen)} style={{ ...inputStyle, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ color: inputs.group ? '#FFFFFF' : '#71717A' }}>{inputs.group || '选择分组…'}</span>
                 <span style={{ color: '#71717A', fontSize: 10 }}>{groupDropdownOpen ? '▲' : '▼'}</span>

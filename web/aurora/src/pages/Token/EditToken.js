@@ -34,18 +34,20 @@ const EditToken = () => {
   const [channelDropdownOpen, setChannelDropdownOpen] = useState(false);
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const modelDropdownRef = useRef(null);
+  const groupDropdownRef = useRef(null);
+  const channelDropdownRef = useRef(null);
 
-  // 点击外部关闭模型下拉框
+  // 点击外部关闭所有下拉框
   useEffect(() => {
-    if (!modelDropdownOpen) return;
+    if (!modelDropdownOpen && !groupDropdownOpen && !channelDropdownOpen) return;
     const handleClick = (e) => {
-      if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target)) {
-        setModelDropdownOpen(false);
-      }
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target)) setModelDropdownOpen(false);
+      if (groupDropdownRef.current && !groupDropdownRef.current.contains(e.target)) setGroupDropdownOpen(false);
+      if (channelDropdownRef.current && !channelDropdownRef.current.contains(e.target)) setChannelDropdownOpen(false);
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [modelDropdownOpen]);
+  }, [modelDropdownOpen, groupDropdownOpen, channelDropdownOpen]);
 
   useEffect(() => {
     // 加载分组选项（从渠道列表提取）
@@ -243,7 +245,7 @@ const EditToken = () => {
       </Section>
 
       <Section title='分组'>
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative' }} ref={groupDropdownRef}>
           <label style={labelStyle}>所属分组</label>
           <div onClick={() => setGroupDropdownOpen(!groupDropdownOpen)} style={{ ...inputStyle, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ color: inputs.group ? '#FFFFFF' : '#71717A' }}>{inputs.group || '选择分组…'}</span>
@@ -287,7 +289,7 @@ const EditToken = () => {
               </div>
             )}
             {/* 下拉选择 */}
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative' }} ref={channelDropdownRef}>
               <div onClick={() => setChannelDropdownOpen(!channelDropdownOpen)} style={{ ...inputStyle, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ color: '#71717A' }}>{channelDropdownOpen ? '选择渠道…' : `点击选择（已选 ${selectedChannels.length}）`}</span>
                 <span style={{ color: '#71717A', fontSize: 10 }}>{channelDropdownOpen ? '▲' : '▼'}</span>

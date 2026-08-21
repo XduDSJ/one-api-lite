@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { API, showError, showSuccess, showInfo, copy } from '../../helpers';
@@ -27,6 +27,16 @@ const EditChannel = () => {
   const [fetchingModels, setFetchingModels] = useState(false);
   const [groupOptions, setGroupOptions] = useState(['default']);
   const [groupDropdownOpen, setGroupDropdownOpen] = useState(false);
+  const groupDropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (!groupDropdownOpen) return;
+    const handleClick = (e) => {
+      if (groupDropdownRef.current && !groupDropdownRef.current.contains(e.target)) setGroupDropdownOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [groupDropdownOpen]);
   const [inputs, setInputs] = useState({
     type: 1, name: '', key: '', base_url: '',
     models: [], groups: ['default'],
@@ -465,7 +475,7 @@ const EditChannel = () => {
               <label style={labelStyle}>权重</label>
               <NumberStepper name='weight' value={inputs.weight} onChange={(v) => setInputs({ ...inputs, weight: v })} style={inputStyle} />
             </div>
-            <div style={{ flex: 1, position: 'relative' }}>
+            <div style={{ flex: 1, position: 'relative' }} ref={groupDropdownRef}>
               <label style={labelStyle}>分组</label>
               <div onClick={() => setGroupDropdownOpen(!groupDropdownOpen)} style={{ ...inputStyle, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ color: inputs.groups?.length ? '#FFFFFF' : '#71717A' }}>{inputs.groups?.join(', ') || '选择分组…'}</span>

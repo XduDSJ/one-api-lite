@@ -162,10 +162,12 @@ const SystemSetting = () => {
 
       <Section title='内容设置'>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* 公告内容 — aurora 主题没有公告展示页，暂注释
           <div>
             <label style={labelStyle}>公告内容</label>
             <textarea name='Notice' value={inputs.Notice || ''} onChange={handleInputChange} placeholder='输入公告内容…' style={{ ...inputStyle, height: 100, paddingTop: 12, fontFamily: 'JetBrains Mono, monospace' }} />
           </div>
+          */}
           <div>
             <label style={labelStyle}>关于页面内容</label>
             <textarea name='About' value={inputs.About || ''} onChange={handleInputChange} placeholder='输入关于页面内容（支持 Markdown）…' style={{ ...inputStyle, height: 150, paddingTop: 12, fontFamily: 'JetBrains Mono, monospace' }} />
@@ -253,6 +255,7 @@ const SystemSetting = () => {
         </div>
       </Section>
 
+      {/* 首页内容 — aurora 主题 / 直接重定向到 /dashboard，没有首页，暂注释
       <Section title='首页内容'>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
@@ -262,6 +265,7 @@ const SystemSetting = () => {
           <span style={hintStyle('home')}>{hintText('home')}</span>
         </div>
       </Section>
+      */}
     </div>
   );
 };

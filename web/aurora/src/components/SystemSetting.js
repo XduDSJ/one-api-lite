@@ -151,10 +151,10 @@ const SystemSetting = () => {
           </div>
           <div>
             <label style={labelStyle}>连续失败自动禁用渠道</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <input type='checkbox' name='ChannelAutoDisableEnabled' checked={inputs.ChannelAutoDisableEnabled === true || inputs.ChannelAutoDisableEnabled === 'true'} onChange={handleInputChange} style={{ width: 18, height: 18 }} />
-              <span style={{ fontSize: 13, color: '#A1A1AA' }}>启用（连续失败达阈值后自动禁用渠道，需手动启用恢复）</span>
-            </div>
+            <select name='ChannelAutoDisableEnabled' value={inputs.ChannelAutoDisableEnabled || 'false'} onChange={handleInputChange} style={inputStyle}>
+              <option value='false'>关闭</option>
+              <option value='true'>启用（连续失败达阈值后自动禁用渠道，需手动启用恢复）</option>
+            </select>
           </div>
           <div>
             <label style={labelStyle}>连续失败阈值（达到此次数后自动禁用渠道）</label>

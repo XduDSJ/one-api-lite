@@ -151,10 +151,26 @@ const SystemSetting = () => {
           </div>
           <div>
             <label style={labelStyle}>连续失败自动禁用渠道</label>
-            <select name='ChannelAutoDisableEnabled' value={inputs.ChannelAutoDisableEnabled || 'false'} onChange={handleInputChange} style={inputStyle}>
-              <option value='false'>关闭</option>
-              <option value='true'>启用（连续失败达阈值后自动禁用渠道，需手动启用恢复）</option>
-            </select>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button
+                type='button'
+                onClick={() => setInputs((prev) => ({ ...prev, ChannelAutoDisableEnabled: 'true' }))}
+                style={{
+                  height: 32, padding: '0 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none',
+                  background: (inputs.ChannelAutoDisableEnabled === 'true' || inputs.ChannelAutoDisableEnabled === true) ? 'linear-gradient(135deg, #B86F05, #945200)' : 'rgba(255,255,255,0.05)',
+                  color: (inputs.ChannelAutoDisableEnabled === 'true' || inputs.ChannelAutoDisableEnabled === true) ? '#FFFFFF' : '#71717A',
+                }}
+              >启用</button>
+              <button
+                type='button'
+                onClick={() => setInputs((prev) => ({ ...prev, ChannelAutoDisableEnabled: 'false' }))}
+                style={{
+                  height: 32, padding: '0 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none',
+                  background: (inputs.ChannelAutoDisableEnabled === 'false' || inputs.ChannelAutoDisableEnabled === undefined) ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.05)',
+                  color: (inputs.ChannelAutoDisableEnabled === 'false' || inputs.ChannelAutoDisableEnabled === undefined) ? '#EF4444' : '#71717A',
+                }}
+              >关闭</button>
+            </div>
           </div>
           <div>
             <label style={labelStyle}>连续失败阈值（达到此次数后自动禁用渠道）</label>

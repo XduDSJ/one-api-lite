@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { API, showError, showSuccess } from '../../helpers';
 import { renderQuota } from '../../helpers/render';
 import NumberStepper from '../../components/NumberStepper';
+import Dropdown from '../../components/Dropdown';
 
 const EditUser = () => {
   const { id } = useParams();
@@ -10,18 +11,7 @@ const EditUser = () => {
   const [inputs, setInputs] = useState({ username: '', display_name: '', password: '', quota: 0, group: 'default' });
   const [loading, setLoading] = useState(isEdit);
   const [groupOptions, setGroupOptions] = useState(['default']);
-  const [groupDropdownOpen, setGroupDropdownOpen] = useState(false);
-  const groupDropdownRef = useRef(null);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!groupDropdownOpen) return;
-    const handleClick = (e) => {
-      if (groupDropdownRef.current && !groupDropdownRef.current.contains(e.target)) setGroupDropdownOpen(false);
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [groupDropdownOpen]);
 
   useEffect(() => {
     if (isEdit) {
@@ -84,21 +74,12 @@ const EditUser = () => {
           <div><label style={labelStyle}>额度</label><NumberStepper value={inputs.quota} onChange={(v) => setInputs({ ...inputs, quota: v })} style={inputStyle} /></div>
           <div>
             <label style={labelStyle}>分组</label>
-            <div style={{ position: 'relative' }} ref={groupDropdownRef}>
-              <div onClick={() => setGroupDropdownOpen(!groupDropdownOpen)} style={{ ...inputStyle, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ color: inputs.group ? '#FFFFFF' : '#71717A' }}>{inputs.group || '选择分组…'}</span>
-                <span style={{ color: '#71717A', fontSize: 10 }}>{groupDropdownOpen ? '▲' : '▼'}</span>
-              </div>
-              {groupDropdownOpen && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10, background: '#131319', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, maxHeight: 200, overflowY: 'auto', marginTop: 4, boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
-                  {groupOptions.map((g) => (
-                    <div key={g} onClick={() => { setInputs({ ...inputs, group: g }); setGroupDropdownOpen(false); }} style={{ padding: '8px 12px', fontSize: 13, cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)', background: inputs.group === g ? 'rgba(184,111,5,0.12)' : 'transparent', color: inputs.group === g ? '#B86F05' : '#D1D5DB' }}>
-                      {g}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <Dropdown
+              placeholder='选择分组…'
+              value={inputs.group}
+              options={groupOptions.map((g) => ({ label: g, value: g, selected: inputs.group === g }))}
+              onSelect={(g) => setInputs({ ...inputs, group: g })}
+            />
           </div>
           <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
             <Link to='/user' className='aurora-btn aurora-btn-ghost'>取消</Link>

@@ -1,9 +1,13 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { API, showError, showSuccess, showInfo, copy } from '../../helpers';
 import { CHANNEL_OPTIONS } from '../../constants';
+import Dropdown from '../../components/Dropdown';
 import NumberStepper from '../../components/NumberStepper';
+
+// 多选分组切换辅助
+const toggleInArray = (arr, v) => arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
 
 const typeMap = {};
 CHANNEL_OPTIONS.forEach((o) => { typeMap[o.value] = o; });
@@ -26,17 +30,6 @@ const EditChannel = () => {
   const [loading, setLoading] = useState(isEdit);
   const [fetchingModels, setFetchingModels] = useState(false);
   const [groupOptions, setGroupOptions] = useState(['default']);
-  const [groupDropdownOpen, setGroupDropdownOpen] = useState(false);
-  const groupDropdownRef = useRef(null);
-
-  useEffect(() => {
-    if (!groupDropdownOpen) return;
-    const handleClick = (e) => {
-      if (groupDropdownRef.current && !groupDropdownRef.current.contains(e.target)) setGroupDropdownOpen(false);
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [groupDropdownOpen]);
   const [inputs, setInputs] = useState({
     type: 1, name: '', key: '', base_url: '',
     models: [], groups: ['default'],
@@ -475,28 +468,14 @@ const EditChannel = () => {
               <label style={labelStyle}>权重</label>
               <NumberStepper name='weight' value={inputs.weight} onChange={(v) => setInputs({ ...inputs, weight: v })} style={inputStyle} />
             </div>
-            <div style={{ flex: 1, position: 'relative' }} ref={groupDropdownRef}>
+            <div style={{ flex: 1 }}>
               <label style={labelStyle}>分组</label>
-              <div onClick={() => setGroupDropdownOpen(!groupDropdownOpen)} style={{ ...inputStyle, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ color: inputs.groups?.length ? '#FFFFFF' : '#71717A' }}>{inputs.groups?.join(', ') || '选择分组…'}</span>
-                <span style={{ color: '#71717A', fontSize: 10 }}>{groupDropdownOpen ? '▲' : '▼'}</span>
-              </div>
-              {groupDropdownOpen && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10, background: '#131319', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, maxHeight: 200, overflowY: 'auto', marginTop: 4, boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
-                  {groupOptions.map((g) => {
-                    const selected = inputs.groups?.includes(g);
-                    return (
-                      <div key={g} onClick={() => {
-                        const current = inputs.groups || [];
-                        setInputs({ ...inputs, groups: selected ? current.filter((x) => x !== g) : [...current, g] });
-                      }} style={{ padding: '8px 12px', fontSize: 13, cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: selected ? 'rgba(184,111,5,0.12)' : 'transparent', color: selected ? '#B86F05' : '#D1D5DB' }}>
-                        <span>{g}</span>
-                        {selected && <span style={{ color: '#B86F05' }}>✓</span>}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              <Dropdown
+                multiple
+                placeholder='选择分组…'
+                options={groupOptions.map((g) => ({ label: g, value: g, selected: (inputs.groups || []).includes(g) }))}
+                onToggle={(g) => setInputs({ ...inputs, groups: toggleInArray(inputs.groups || [], g) })}
+              />
             </div>
           </div>
         </div>

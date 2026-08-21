@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { API, showError, showSuccess } from '../../helpers';
 import NumberStepper from '../../components/NumberStepper';
+import Dropdown from '../../components/Dropdown';
 
 const Section = ({ title, children }) => (
   <div style={{ padding: 24, marginBottom: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16 }}>
@@ -30,24 +31,6 @@ const EditToken = () => {
   const [modelOptions, setModelOptions] = useState([]); // string[]
   const [selectedChannels, setSelectedChannels] = useState([]); // [id, ...]
   const [selectedModels, setSelectedModels] = useState([]); // [string, ...]
-  const [groupDropdownOpen, setGroupDropdownOpen] = useState(false);
-  const [channelDropdownOpen, setChannelDropdownOpen] = useState(false);
-  const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
-  const modelDropdownRef = useRef(null);
-  const groupDropdownRef = useRef(null);
-  const channelDropdownRef = useRef(null);
-
-  // 点击外部关闭所有下拉框
-  useEffect(() => {
-    if (!modelDropdownOpen && !groupDropdownOpen && !channelDropdownOpen) return;
-    const handleClick = (e) => {
-      if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target)) setModelDropdownOpen(false);
-      if (groupDropdownRef.current && !groupDropdownRef.current.contains(e.target)) setGroupDropdownOpen(false);
-      if (channelDropdownRef.current && !channelDropdownRef.current.contains(e.target)) setChannelDropdownOpen(false);
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [modelDropdownOpen, groupDropdownOpen, channelDropdownOpen]);
 
   useEffect(() => {
     // 加载分组选项（从渠道列表提取）
@@ -164,33 +147,6 @@ const EditToken = () => {
   const inputStyle = { width: '100%', height: 44, background: '#0D0D12', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, color: '#FFFFFF', fontSize: 13, padding: '0 14px' };
   const labelStyle = { fontSize: 13, color: '#A1A1AA', marginBottom: 8, display: 'block' };
 
-  // 标签样式（选中项 + 删除叉号）
-  const tagStyle = {
-    display: 'inline-flex', alignItems: 'center', gap: 6,
-    height: 26, padding: '0 8px 0 10px',
-    borderRadius: 6, fontSize: 12, fontWeight: 500,
-    background: 'rgba(184,111,5,0.12)', color: '#B86F05',
-    cursor: 'default', margin: '0 4px 4px 0',
-  };
-  const tagRemoveStyle = {
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    width: 14, height: 14, borderRadius: '50%',
-    background: 'rgba(184,111,5,0.2)', color: '#B86F05',
-    fontSize: 10, cursor: 'pointer', lineHeight: 1,
-  };
-
-  // 下拉菜单样式
-  const dropdownStyle = {
-    position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
-    background: '#131319', border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: 8, maxHeight: 200, overflowY: 'auto',
-    marginTop: 4, boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-  };
-  const dropdownItemStyle = {
-    padding: '8px 12px', fontSize: 13, color: '#D1D5DB',
-    cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)',
-  };
-
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#71717A' }}>加载中…</div>;
 
   return (
@@ -245,21 +201,14 @@ const EditToken = () => {
       </Section>
 
       <Section title='分组'>
-        <div style={{ position: 'relative' }} ref={groupDropdownRef}>
+        <div>
           <label style={labelStyle}>所属分组</label>
-          <div onClick={() => setGroupDropdownOpen(!groupDropdownOpen)} style={{ ...inputStyle, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ color: inputs.group ? '#FFFFFF' : '#71717A' }}>{inputs.group || '选择分组…'}</span>
-            <span style={{ color: '#71717A', fontSize: 10 }}>{groupDropdownOpen ? '▲' : '▼'}</span>
-          </div>
-          {groupDropdownOpen && (
-            <div style={dropdownStyle}>
-              {groupOptions.map((g) => (
-                <div key={g} onClick={() => { setInputs({ ...inputs, group: g }); setGroupDropdownOpen(false); }} style={{ ...dropdownItemStyle, background: inputs.group === g ? 'rgba(184,111,5,0.12)' : 'transparent', color: inputs.group === g ? '#B86F05' : '#D1D5DB' }}>
-                  {g}
-                </div>
-              ))}
-            </div>
-          )}
+          <Dropdown
+            placeholder='选择分组…'
+            value={inputs.group}
+            options={groupOptions.map((g) => ({ label: g, value: g, selected: inputs.group === g }))}
+            onSelect={(g) => setInputs({ ...inputs, group: g })}
+          />
         </div>
       </Section>
 
@@ -274,38 +223,14 @@ const EditToken = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
             <label style={labelStyle}>允许使用的渠道（留空=不限制）</label>
-            {/* 已选标签 */}
-            {selectedChannels.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', marginBottom: 8 }}>
-                {selectedChannels.map((chId) => {
-                  const ch = channelOptions.find((c) => c.id === chId);
-                  return (
-                    <span key={chId} style={tagStyle}>
-                      {ch ? ch.name : `#${chId}`}
-                      <span style={tagRemoveStyle} onClick={() => toggleChannel(chId)}>✕</span>
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-            {/* 下拉选择 */}
-            <div style={{ position: 'relative' }} ref={channelDropdownRef}>
-              <div onClick={() => setChannelDropdownOpen(!channelDropdownOpen)} style={{ ...inputStyle, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ color: '#71717A' }}>{channelDropdownOpen ? '选择渠道…' : `点击选择（已选 ${selectedChannels.length}）`}</span>
-                <span style={{ color: '#71717A', fontSize: 10 }}>{channelDropdownOpen ? '▲' : '▼'}</span>
-              </div>
-              {channelDropdownOpen && (
-                <div style={dropdownStyle}>
-                  {channelOptions.length === 0 && <div style={{ ...dropdownItemStyle, color: '#71717A' }}>暂无可用渠道</div>}
-                  {channelOptions.map((ch) => (
-                    <div key={ch.id} onClick={() => toggleChannel(ch.id)} style={{ ...dropdownItemStyle, background: selectedChannels.includes(ch.id) ? 'rgba(45,212,191,0.12)' : 'transparent', color: selectedChannels.includes(ch.id) ? '#2DD4BF' : '#D1D5DB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span>{ch.name}</span>
-                      {selectedChannels.includes(ch.id) && <span style={{ color: '#2DD4BF' }}>✓</span>}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <Dropdown
+              multiple
+              showTags
+              triggerText='点击选择'
+              placeholder='选择渠道…'
+              options={channelOptions.map((ch) => ({ label: ch.name, value: ch.id, selected: selectedChannels.includes(ch.id) }))}
+              onToggle={(chId) => toggleChannel(chId)}
+            />
           </div>
         </div>
       </Section>
@@ -317,35 +242,16 @@ const EditToken = () => {
           </label>
           {inputs.model_limits_enabled && (
             <div>
-              <label style={labelStyle}>允许的模型（已选 {selectedModels.length} 个）</label>
-              {/* 已选标签 */}
-              {selectedModels.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', marginBottom: 8 }}>
-                  {selectedModels.map((m) => (
-                    <span key={m} style={tagStyle}>
-                      {m}
-                      <span style={tagRemoveStyle} onClick={() => toggleModel(m)}>✕</span>
-                    </span>
-                  ))}
-                </div>
-              )}
-              {/* 下拉选择 */}
-              <div style={{ position: 'relative' }} ref={modelDropdownRef}>
-                <div onClick={() => setModelDropdownOpen(!modelDropdownOpen)} style={{ ...inputStyle, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#71717A' }}>{modelDropdownOpen ? '选择模型…' : '点击添加模型'}</span>
-                  <span style={{ color: '#71717A', fontSize: 10 }}>{modelDropdownOpen ? '▲' : '▼'}</span>
-                </div>
-                {modelDropdownOpen && (
-                  <div style={dropdownStyle}>
-                    {modelOptions.filter((m) => !selectedModels.includes(m)).map((m) => (
-                      <div key={m} onClick={() => toggleModel(m)} style={dropdownItemStyle}>
-                        {m}
-                      </div>
-                    ))}
-                    {modelOptions.filter((m) => !selectedModels.includes(m)).length === 0 && <div style={{ ...dropdownItemStyle, color: '#71717A' }}>全部已选</div>}
-                  </div>
-                )}
-              </div>
+              <label style={labelStyle}>允许的模型</label>
+              <Dropdown
+                multiple
+                showTags
+                hideSelected
+                triggerText='点击添加模型'
+                placeholder='选择模型…'
+                options={modelOptions.map((m) => ({ label: m, value: m, selected: selectedModels.includes(m) }))}
+                onToggle={(m) => toggleModel(m)}
+              />
             </div>
           )}
         </div>

@@ -255,11 +255,11 @@ const LogPage = () => {
             } else {
               add(1);
               if (activePage > 4) addEllipsis();
-              // 当前页前后各1页，但不超过首页/尾页
-              const start = Math.max(2, activePage - 1);
-              const end = Math.min(totalPages - 1, activePage + 1);
+              // 当前页前后各2页，但不超过首页/尾页
+              const start = Math.max(2, activePage - 2);
+              const end = Math.min(totalPages - 1, activePage + 2);
               for (let i = start; i <= end; i++) add(i);
-              if (activePage < totalPages - 3) addEllipsis();
+              if (activePage < totalPages - 4) addEllipsis();
               add(totalPages);
             }
             return pages.map((item, idx) => {

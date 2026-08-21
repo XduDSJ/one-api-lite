@@ -55,6 +55,7 @@ func InitOptionMap() {
 	config.OptionMap["RetryTimes"] = strconv.Itoa(config.RetryTimes)
 	config.OptionMap["ChannelKeyCooldownSec"] = strconv.Itoa(config.ChannelKeyCooldownSec)
 	config.OptionMap["ChannelKeyFailureThreshold"] = strconv.Itoa(config.ChannelKeyFailureThreshold)
+	config.OptionMap["ChannelFailCooldownSec"] = strconv.Itoa(config.ChannelFailCooldownSec)
 	config.OptionMap["KeyRetryEnabled"] = strconv.FormatBool(config.KeyRetryEnabled)
 	config.OptionMap["AutomaticDisableKeyEnabled"] = strconv.FormatBool(config.AutomaticDisableKeyEnabled)
 	config.OptionMap["Theme"] = config.Theme
@@ -165,6 +166,8 @@ func updateOptionMap(key string, value string) (err error) {
 		config.ChannelKeyCooldownSec, _ = strconv.Atoi(value)
 	case "ChannelKeyFailureThreshold":
 		config.ChannelKeyFailureThreshold, _ = strconv.Atoi(value)
+	case "ChannelFailCooldownSec":
+		config.ChannelFailCooldownSec, _ = strconv.Atoi(value)
 	case "ChatLink":
 		config.ChatLink = value
 	case "ChannelDisableThreshold":

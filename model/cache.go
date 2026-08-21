@@ -24,6 +24,38 @@ var (
 	GroupModelsCacheSeconds   = config.SyncFrequency
 )
 
+// 渠道级失败冷却缓存（纯内存，不落库）
+var channelFailCacheMu sync.RWMutex
+var channelFailCache = make(map[int]int64) // channelId -> 冷却到期时间(unix秒)
+
+// MarkChannelFail 标记渠道失败，进入冷却期
+func MarkChannelFail(channelId int, cooldownSec int) {
+	if cooldownSec <= 0 {
+		return
+	}
+	channelFailCacheMu.Lock()
+	defer channelFailCacheMu.Unlock()
+	channelFailCache[channelId] = time.Now().Unix() + int64(cooldownSec)
+}
+
+// IsChannelCooling 判断渠道是否在冷却期内
+func IsChannelCooling(channelId int) bool {
+	channelFailCacheMu.RLock()
+	defer channelFailCacheMu.RUnlock()
+	expire, ok := channelFailCache[channelId]
+	if !ok {
+		return false
+	}
+	return time.Now().Unix() < expire
+}
+
+// ClearChannelFail 清除渠道冷却（成功时调用）
+func ClearChannelFail(channelId int) {
+	channelFailCacheMu.Lock()
+	defer channelFailCacheMu.Unlock()
+	delete(channelFailCache, channelId)
+}
+
 func CacheGetTokenByKey(key string) (*Token, error) {
 	keyCol := "`key`"
 	if common.UsingPostgreSQL {
@@ -258,9 +290,13 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 
 	// 渠道子集白名单 + 多 key 预过滤：channelIds 非空时先按 ch.Id 过滤（白名单短路，
 	// 避免无谓的 HasUsableKey 查库），再跳过「该 model 全 key 不可用」的渠道。
+	// 同时跳过处于失败冷却期的渠道（ChannelFailCooldownSec 控制）
 	var usable []*Channel
 	for _, ch := range candidates {
 		if len(channelIds) > 0 && !containsInt(ch.Id, channelIds) {
+			continue
+		}
+		if IsChannelCooling(ch.Id) {
 			continue
 		}
 		if HasUsableKey(ch.Id, ch.MultiKeyMode, model) {
@@ -274,6 +310,9 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 		channelSyncLock.RUnlock()
 		for _, ch := range lowTail {
 			if len(channelIds) > 0 && !containsInt(ch.Id, channelIds) {
+				continue
+			}
+			if IsChannelCooling(ch.Id) {
 				continue
 			}
 			if HasUsableKey(ch.Id, ch.MultiKeyMode, model) {

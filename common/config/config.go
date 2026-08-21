@@ -72,6 +72,7 @@ var AutomaticDisableChannelEnabled = false
 var AutomaticEnableChannelEnabled = false
 var ChannelKeyCooldownSec      = 300  // key 基础冷却秒数
 var ChannelKeyFailureThreshold = 5    // key 熔断阈值
+var ChannelFailCooldownSec     = 300  // 渠道失败冷却秒数（失败后临时跳过该渠道）
 var KeyRetryEnabled            = true // 是否开启 key 级重试
 var AutomaticDisableKeyEnabled = true // key 级自动禁用总开关
 var QuotaRemindThreshold int64 = 1000

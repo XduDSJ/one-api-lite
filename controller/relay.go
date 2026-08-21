@@ -140,6 +140,7 @@ func Relay(c *gin.Context) {
 	bizErr := relayHelper(c, relayMode)
 	if bizErr == nil {
 		monitor.Emit(channelId, true)
+		dbmodel.ClearChannelFail(channelId)
 		return
 	}
 	lastFailedChannelId := channelId
@@ -147,6 +148,10 @@ func Relay(c *gin.Context) {
 	group := c.GetString(ctxkey.Group)
 	originalModel := c.GetString(ctxkey.OriginalModel)
 	go processChannelRelayError(ctx, userId, channelId, channelName, *bizErr)
+	// 标记渠道失败冷却，冷却期内 Distribute 和重试都会跳过该渠道
+	if shouldRetry(c, bizErr.StatusCode) && config.ChannelFailCooldownSec > 0 {
+		dbmodel.MarkChannelFail(channelId, config.ChannelFailCooldownSec)
+	}
 	requestId := c.GetString(helper.RequestIdKey)
 	retryTimes := config.RetryTimes
 	if !shouldRetry(c, bizErr.StatusCode) {
@@ -225,12 +230,16 @@ func Relay(c *gin.Context) {
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 		bizErr = relayHelper(c, relayMode)
 		if bizErr == nil {
+			dbmodel.ClearChannelFail(c.GetInt(ctxkey.ChannelId))
 			return
 		}
 		channelId := c.GetInt(ctxkey.ChannelId)
 		lastFailedChannelId = channelId
 		channelName := c.GetString(ctxkey.ChannelName)
 		go processChannelRelayError(ctx, userId, channelId, channelName, *bizErr)
+		if config.ChannelFailCooldownSec > 0 {
+			dbmodel.MarkChannelFail(channelId, config.ChannelFailCooldownSec)
+		}
 		retryCount++
 	}
 	if bizErr != nil {

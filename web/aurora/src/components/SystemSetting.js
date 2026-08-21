@@ -143,6 +143,16 @@ const SystemSetting = () => {
         </div>
       </Section>
 
+      <Section title='渠道与重试设置'>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label style={labelStyle}>渠道失败冷却秒数（失败后临时跳过该渠道，0=不冷却）</label>
+            <input name='ChannelFailCooldownSec' value={inputs.ChannelFailCooldownSec ?? 300} onChange={handleInputChange} type='number' min='0' style={inputStyle} />
+          </div>
+          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' style={{ alignSelf: 'flex-start' }} disabled={saving.retry} onClick={() => submitOptions('retry', ['ChannelFailCooldownSec'])}>{saving.retry ? '保存中…' : '保存本节'}</button>
+        </div>
+      </Section>
+
       <Section title='首页内容'>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>

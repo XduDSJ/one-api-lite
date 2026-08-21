@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/songquanpeng/one-api/common"
@@ -171,7 +172,7 @@ func Relay(c *gin.Context) {
 	// key 级重试：多 key 模式下换同渠道可用 key 重试。
 	// 仅当 KeyRetryEnabled 且多 key 模式且应重试且流式响应未写出时进入。
 	if config.KeyRetryEnabled && c.GetInt(ctxkey.MultiKeyMode) != dbmodel.MultiKeyModeOff &&
-		shouldRetry(c, bizErr.StatusCode) && !c.Writer.Written() {
+		shouldRetryByKey(bizErr.StatusCode, bizErr.Error.Message) && !c.Writer.Written() {
 		if failedKeyId := c.GetInt(ctxkey.ChannelKeyId); failedKeyId != 0 {
 			addFailedKeyId(c, failedKeyId)
 		}
@@ -197,7 +198,7 @@ func Relay(c *gin.Context) {
 				// key 级重试不调 processChannelRelayError——per-key 错误不应禁用整渠道。
 				// per-key 的禁用/冷却/熔断已由 reportKeyResult 在各 relay controller 内处理。
 				logger.Errorf(ctx, "key 级重试失败 (channel id %d, key id %d): %s", channelId, key.Id, bizErr.Error.Message)
-				if !shouldRetry(c, bizErr.StatusCode) || c.Writer.Written() {
+				if !shouldRetryByKey(bizErr.StatusCode, bizErr.Error.Message) || c.Writer.Written() {
 					break
 				}
 			}
@@ -307,6 +308,28 @@ func shouldRetry(c *gin.Context, statusCode int) bool {
 		return false
 	}
 	return true
+}
+
+// shouldRetryByKey 判断 key 级重试是否应触发。
+// 与 shouldRetry 的区别：400 且错误属于预算/配额类时也重试（换 key 可解决）。
+// 渠道级重试不使用此函数——换渠道未必能解决 per-key 的预算问题。
+func shouldRetryByKey(statusCode int, message string) bool {
+	if statusCode == http.StatusBadRequest {
+		msg := strings.ToLower(message)
+		// 预算/配额/余额类 400：换 key 有意义
+		keywords := []string{
+			"budget", "quota", "exceeded", "insufficient", "limit", "balance",
+			"预算", "额度", "余额", "配额", "超限", "不足",
+		}
+		for _, kw := range keywords {
+			if strings.Contains(msg, kw) {
+				return true
+			}
+		}
+		return false
+	}
+	// 非 400 沿用原逻辑：5xx/429/其他可重试状态码
+	return shouldRetry(nil, statusCode)
 }
 
 func processChannelRelayError(ctx context.Context, userId int, channelId int, channelName string, err model.ErrorWithStatusCode) {

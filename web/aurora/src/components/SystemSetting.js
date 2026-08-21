@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { API, showError, showSuccess } from '../helpers';
 
@@ -13,11 +13,28 @@ const Section = ({ title, children }) => (
   </div>
 );
 
+// 每个 Section 的字段映射
+const SECTION_KEYS = {
+  basic: ['SystemName', 'Logo'],
+  ops: ['QuotaPerUnit', 'DisplayInCurrency'],
+  content: ['Notice', 'About'],
+  auth: ['RegisterEnabled', 'EmailVerificationEnabled'],
+  smtp: ['SMTPServer', 'SMTPPort', 'SMTPAccount', 'SMTPToken'],
+  retry: ['ChannelFailCooldownSec', 'ChannelAutoDisableEnabled', 'ChannelAutoDisableFailureCount'],
+  home: ['HomePageContent'],
+};
+
+// key → section 反向映射
+const keyToSection = {};
+Object.entries(SECTION_KEYS).forEach(([sec, keys]) => keys.forEach((k) => { keyToSection[k] = sec; }));
+
 const SystemSetting = () => {
   const { t } = useTranslation();
   const [inputs, setInputs] = useState({});
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState({}); // 按节 key 记录 saving 状态
+  const [savedHint, setSavedHint] = useState({}); // {sectionKey: 'saving'|'saved'|''}
+  const timersRef = useRef({}); // 防抖定时器
+  const initialRef = useRef({}); // 初始值，避免加载完就触发自动保存
 
   useEffect(() => {
     API.get('/api/option/').then((res) => {
@@ -25,34 +42,78 @@ const SystemSetting = () => {
         const opts = {};
         res.data.data.forEach((o) => { opts[o.key] = o.value; });
         setInputs(opts);
+        initialRef.current = { ...opts };
       }
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
 
+  // 自动保存单个 key（防抖 1 秒）
+  const autoSave = useCallback((key) => {
+    const section = keyToSection[key];
+    if (!section) return;
+    // 清除该 section 的已有定时器
+    if (timersRef.current[section]) clearTimeout(timersRef.current[section]);
+    timersRef.current[section] = setTimeout(async () => {
+      const keys = SECTION_KEYS[section];
+      setSavedHint((prev) => ({ ...prev, [section]: 'saving' }));
+      try {
+        const results = await Promise.all(
+          keys.map((k) => API.put('/api/option/', { key: k, value: inputs[k] ?? '' }))
+        );
+        const failed = results.find((r) => !r.data.success);
+        if (failed) {
+          showError(failed.data.message);
+          setSavedHint((prev) => ({ ...prev, [section]: '' }));
+        } else {
+          setSavedHint((prev) => ({ ...prev, [section]: 'saved' }));
+          setTimeout(() => setSavedHint((prev) => ({ ...prev, [section]: '' })), 2000);
+        }
+      } catch (err) {
+        showError(err.message || '保存失败');
+        setSavedHint((prev) => ({ ...prev, [section]: '' }));
+      }
+    }, 1000);
+  }, [inputs]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setInputs((prev) => ({ ...prev, [name]: value }));
+    setInputs((prev) => {
+      const next = { ...prev, [name]: value };
+      // 检查是否跟初始值不同（避免加载完就保存）
+      if (initialRef.current[name] !== value) {
+        // 用 next 而不是 prev 来触发自动保存
+        setTimeout(() => autoSave(name), 0);
+      }
+      return next;
+    });
   };
 
-  // 批量提交一节内的多个 key，统一成功/失败提示
-  const submitOptions = async (sectionKey, keys) => {
-    setSaving((prev) => ({ ...prev, [sectionKey]: true }));
-    try {
-      const results = await Promise.all(
-        keys.map((key) => API.put('/api/option/', { key, value: inputs[key] ?? '' }))
-      );
-      const failed = results.find((r) => !r.data.success);
-      if (failed) showError(failed.data.message);
-      else showSuccess('保存成功');
-    } catch (err) {
-      showError(err.message || '保存失败');
-    } finally {
-      setSaving((prev) => ({ ...prev, [sectionKey]: false }));
-    }
+  // 按钮点击也触发自动保存
+  const handleBtnChange = (name, value) => {
+    setInputs((prev) => {
+      const next = { ...prev, [name]: value };
+      if (initialRef.current[name] !== value) {
+        setTimeout(() => autoSave(name), 0);
+      }
+      return next;
+    });
   };
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#71717A' }}>加载中…</div>;
+
+  const hintStyle = (section) => {
+    const h = savedHint[section];
+    if (h === 'saving') return { fontSize: 12, color: '#F5A623' };
+    if (h === 'saved') return { fontSize: 12, color: '#2DD4BF' };
+    return { fontSize: 12, color: '#52525B' };
+  };
+  const hintText = (section) => {
+    const h = savedHint[section];
+    if (h === 'saving') return '保存中…';
+    if (h === 'saved') return '已自动保存 ✓';
+    return '修改后自动保存';
+  };
 
   return (
     <div>
@@ -66,7 +127,7 @@ const SystemSetting = () => {
             <label style={labelStyle}>Logo 地址</label>
             <input name='Logo' value={inputs.Logo || ''} onChange={handleInputChange} placeholder='https://...' style={inputStyle} />
           </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' style={{ alignSelf: 'flex-start' }} disabled={saving.basic} onClick={() => submitOptions('basic', ['SystemName', 'Logo'])}>{saving.basic ? '保存中…' : '保存本节'}</button>
+          <span style={hintStyle('basic')}>{hintText('basic')}</span>
         </div>
       </Section>
 
@@ -83,7 +144,7 @@ const SystemSetting = () => {
               <option value='true'>是</option>
             </select>
           </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' style={{ alignSelf: 'flex-start' }} disabled={saving.ops} onClick={() => submitOptions('ops', ['QuotaPerUnit', 'DisplayInCurrency'])}>{saving.ops ? '保存中…' : '保存本节'}</button>
+          <span style={hintStyle('ops')}>{hintText('ops')}</span>
         </div>
       </Section>
 
@@ -97,7 +158,7 @@ const SystemSetting = () => {
             <label style={labelStyle}>关于页面内容</label>
             <textarea name='About' value={inputs.About || ''} onChange={handleInputChange} placeholder='输入关于页面内容（支持 Markdown）…' style={{ ...inputStyle, height: 150, paddingTop: 12, fontFamily: 'JetBrains Mono, monospace' }} />
           </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' style={{ alignSelf: 'flex-start' }} disabled={saving.content} onClick={() => submitOptions('content', ['Notice', 'About'])}>{saving.content ? '保存中…' : '保存本节'}</button>
+          <span style={hintStyle('content')}>{hintText('content')}</span>
         </div>
       </Section>
 
@@ -117,7 +178,7 @@ const SystemSetting = () => {
               <option value='true'>开启</option>
             </select>
           </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' style={{ alignSelf: 'flex-start' }} disabled={saving.auth} onClick={() => submitOptions('auth', ['RegisterEnabled', 'EmailVerificationEnabled'])}>{saving.auth ? '保存中…' : '保存本节'}</button>
+          <span style={hintStyle('auth')}>{hintText('auth')}</span>
         </div>
       </Section>
 
@@ -139,7 +200,7 @@ const SystemSetting = () => {
             <label style={labelStyle}>SMTP 密码/Token</label>
             <input type='password' name='SMTPToken' value={inputs.SMTPToken || ''} onChange={handleInputChange} placeholder='••••••••' style={inputStyle} />
           </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' style={{ alignSelf: 'flex-start' }} disabled={saving.smtp} onClick={() => submitOptions('smtp', ['SMTPServer', 'SMTPPort', 'SMTPAccount', 'SMTPToken'])}>{saving.smtp ? '保存中…' : '保存本节'}</button>
+          <span style={hintStyle('smtp')}>{hintText('smtp')}</span>
         </div>
       </Section>
 
@@ -154,7 +215,7 @@ const SystemSetting = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <button
                 type='button'
-                onClick={() => setInputs((prev) => ({ ...prev, ChannelAutoDisableEnabled: 'true' }))}
+                onClick={() => handleBtnChange('ChannelAutoDisableEnabled', 'true')}
                 style={{
                   height: 32, padding: '0 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none',
                   background: (inputs.ChannelAutoDisableEnabled === 'true' || inputs.ChannelAutoDisableEnabled === true) ? 'linear-gradient(135deg, #B86F05, #945200)' : 'rgba(255,255,255,0.05)',
@@ -163,7 +224,7 @@ const SystemSetting = () => {
               >启用</button>
               <button
                 type='button'
-                onClick={() => setInputs((prev) => ({ ...prev, ChannelAutoDisableEnabled: 'false' }))}
+                onClick={() => handleBtnChange('ChannelAutoDisableEnabled', 'false')}
                 style={{
                   height: 32, padding: '0 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none',
                   background: (inputs.ChannelAutoDisableEnabled === 'false' || inputs.ChannelAutoDisableEnabled === undefined) ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.05)',
@@ -176,7 +237,7 @@ const SystemSetting = () => {
             <label style={labelStyle}>连续失败阈值（达到此次数后自动禁用渠道）</label>
             <input name='ChannelAutoDisableFailureCount' value={inputs.ChannelAutoDisableFailureCount ?? 5} onChange={handleInputChange} type='number' min='1' style={inputStyle} />
           </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' style={{ alignSelf: 'flex-start' }} disabled={saving.retry} onClick={() => submitOptions('retry', ['ChannelFailCooldownSec', 'ChannelAutoDisableEnabled', 'ChannelAutoDisableFailureCount'])}>{saving.retry ? '保存中…' : '保存本节'}</button>
+          <span style={hintStyle('retry')}>{hintText('retry')}</span>
         </div>
       </Section>
 
@@ -186,7 +247,7 @@ const SystemSetting = () => {
             <label style={labelStyle}>首页内容（支持 Markdown 或 URL）</label>
             <textarea name='HomePageContent' value={inputs.HomePageContent || ''} onChange={handleInputChange} placeholder='输入首页内容…' style={{ ...inputStyle, height: 150, paddingTop: 12, fontFamily: 'JetBrains Mono, monospace' }} />
           </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' style={{ alignSelf: 'flex-start' }} disabled={saving.home} onClick={() => submitOptions('home', ['HomePageContent'])}>{saving.home ? '保存中…' : '保存本节'}</button>
+          <span style={hintStyle('home')}>{hintText('home')}</span>
         </div>
       </Section>
     </div>

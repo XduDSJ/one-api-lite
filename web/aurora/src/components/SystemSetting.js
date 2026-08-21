@@ -78,11 +78,15 @@ const SystemSetting = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    // 数字字段过滤非数字
+    let val = value;
+    if (e.target.type === 'number') {
+      val = value.replace(/[^\d]/g, '');
+      if (val === '' ) val = '0';
+    }
     setInputs((prev) => {
-      const next = { ...prev, [name]: value };
-      // 检查是否跟初始值不同（避免加载完就保存）
-      if (initialRef.current[name] !== value) {
-        // 用 next 而不是 prev 来触发自动保存
+      const next = { ...prev, [name]: val };
+      if (initialRef.current[name] !== val) {
         setTimeout(() => autoSave(name), 0);
       }
       return next;

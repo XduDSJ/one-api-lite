@@ -59,7 +59,12 @@ const SystemSetting = () => {
       setSavedHint((prev) => ({ ...prev, [section]: 'saving' }));
       try {
         const results = await Promise.all(
-          keys.map((k) => API.put('/api/option/', { key: k, value: inputs[k] ?? '' }))
+          keys.map((k) => {
+            let v = inputs[k] ?? '';
+            // 数字字段空值兜底为0
+            if (v === '' && ['ChannelFailCooldownSec', 'ChannelAutoDisableFailureCount', 'QuotaPerUnit'].includes(k)) v = '0';
+            return API.put('/api/option/', { key: k, value: v });
+          })
         );
         const failed = results.find((r) => !r.data.success);
         if (failed) {
@@ -78,11 +83,12 @@ const SystemSetting = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    // 数字字段过滤非数字
+    // 数字字段过滤非数字，允许空值（保存时兜底）
     let val = value;
     if (e.target.type === 'number') {
       val = value.replace(/[^\d]/g, '');
-      if (val === '' ) val = '0';
+      // 去掉前导0：0300 → 300，但保留单个0
+      if (val.length > 1 && val[0] === '0') val = val.replace(/^0+/, '');
     }
     setInputs((prev) => {
       const next = { ...prev, [name]: val };
@@ -97,7 +103,9 @@ const SystemSetting = () => {
   const handleBtnChange = (name, value) => {
     setInputs((prev) => {
       const next = { ...prev, [name]: value };
-      if (initialRef.current[name] !== value) {
+      // 初始值可能是 undefined/''/'false'，统一按字符串比较
+      const initVal = initialRef.current[name] ?? 'false';
+      if (initVal !== value) {
         setTimeout(() => autoSave(name), 0);
       }
       return next;

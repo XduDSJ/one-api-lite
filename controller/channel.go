@@ -424,6 +424,46 @@ func EnableChannelKey(c *gin.Context) {
 	return
 }
 
+// DisableChannelKey 手动禁用某 key（需人工或 API 恢复）
+func DisableChannelKey(c *gin.Context) {
+	channelId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+	keyId, err := strconv.ParseInt(c.Param("keyId"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+	keys, err := model.GetChannelKeysByChannelId(channelId)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+	var targetKey *model.ChannelKey
+	for i := range keys {
+		if keys[i].Id == keyId {
+			targetKey = &keys[i]
+			break
+		}
+	}
+	if targetKey == nil {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": "key 不存在"})
+		return
+	}
+	targetKey.Status = model.KeyStatusDisabled
+	targetKey.UpdatedTime = helper.GetTimestamp()
+	err = model.UpdateChannelKey(targetKey)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+	model.InvalidateChannelCache(channelId)
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": ""})
+	return
+}
+
 // GetChannelKeysStatus 查询某渠道所有 key 的状态摘要
 func GetChannelKeysStatus(c *gin.Context) {
 	channelId, err := strconv.Atoi(c.Param("id"))
@@ -434,7 +474,7 @@ func GetChannelKeysStatus(c *gin.Context) {
 		})
 		return
 	}
-	keys, err := model.GetEnabledChannelKeys(channelId)
+	keys, err := model.GetChannelKeysByChannelId(channelId)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -444,6 +484,7 @@ func GetChannelKeysStatus(c *gin.Context) {
 	}
 	// 每条 key 附带派生的 quota_state（active/low_quota/exhausted/cooling/disabled），
 	// 让 UI 徽章反映「软预判已跳过→已转移」等运行态，而非仅看 status 字段。
+	// 查所有 key（含禁用的），让前端能看到被自动禁用的 key 并手动恢复。
 	type keyWithState struct {
 		model.ChannelKey
 		QuotaState string `json:"quota_state"`

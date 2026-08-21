@@ -105,6 +105,23 @@ const EditChannel = () => {
   };
   const removeKey = (idx) => setKeys(keys.filter((_, i) => i !== idx));
   const updateKey = (idx, field, value) => setKeys(keys.map((k, i) => i === idx ? { ...k, [field]: value } : k));
+  // 启用/禁用 key（仅对已保存的 key，id > 0）
+  const toggleKeyStatus = async (idx) => {
+    const k = keys[idx];
+    if (!k.id || k.id < 0) return;
+    const isDisabled = k.status === 2;
+    const endpoint = isDisabled ? 'enable' : 'disable';
+    try {
+      const res = await API.post(`/api/channel/${id}/key/${k.id}/${endpoint}`);
+      if (res.data.success) {
+        setKeys(keys.map((kk, i) => i === idx ? { ...kk, status: isDisabled ? 1 : 2, cooled_until: 0 } : kk));
+      } else {
+        showError(res.data.message || '操作失败');
+      }
+    } catch (e) {
+      showError(e.message || '操作失败');
+    }
+  };
 
   // === 模型映射（设计稿 Section-Mapping 3:2408） ===
 
@@ -271,25 +288,43 @@ const EditChannel = () => {
                     <span style={{ width: 68, fontSize: 11.5, fontWeight: 500, color: '#71717A', textAlign: 'center' }}>优先级</span>
                     <span style={{ width: 118, fontSize: 11.5, fontWeight: 500, color: '#71717A' }}>每日配额</span>
                     <span style={{ width: 118, fontSize: 11.5, fontWeight: 500, color: '#71717A' }}>重置时刻</span>
-                    <span style={{ width: 56, fontSize: 11.5, fontWeight: 500, color: '#71717A', textAlign: 'center' }}>操作</span>
+                    <span style={{ width: 120, fontSize: 11.5, fontWeight: 500, color: '#71717A', textAlign: 'center' }}>操作</span>
                   </div>
                   {keys.map((k, idx) => {
                     const limit = k.daily_quota_limit || 0;
                     const used = k.daily_used_quota || 0;
                     const pct = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
                     const barColor = pct < 50 ? '#2DD4BF' : pct < 80 ? '#F5A623' : '#EF4444';
+                    // key 状态徽章：1=启用 2=禁用 3=冷却 4=耗尽
+                    const isSaved = k.id && k.id > 0;
+                    const statusInfo = isSaved ? (() => {
+                      switch (k.status) {
+                        case 2: return { label: '禁用', color: '#EF4444', bg: 'rgba(239,68,68,0.12)' };
+                        case 3: return { label: '冷却', color: '#F5A623', bg: 'rgba(245,166,35,0.12)' };
+                        case 4: return { label: '耗尽', color: '#EF4444', bg: 'rgba(239,68,68,0.12)' };
+                        default: return { label: '启用', color: '#2DD4BF', bg: 'rgba(45,212,191,0.12)' };
+                      }
+                    })() : null;
                     return (
                     <div key={idx} style={{ background: 'rgba(255,255,255,0.02)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
                       {/* 编辑行 */}
                       <div style={{ display: 'flex', alignItems: 'center', padding: '8px 4px', gap: 8 }}>
-                        <input value={k.key_value} onChange={(e) => updateKey(idx, 'key_value', e.target.value)} placeholder='sk-...' style={{ width: 248, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#FFFFFF', fontSize: 12, padding: '0 8px', fontFamily: 'JetBrains Mono, monospace' }} />
+                        <div style={{ width: 248, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <input value={k.key_value} onChange={(e) => updateKey(idx, 'key_value', e.target.value)} placeholder='sk-...' style={{ flex: 1, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#FFFFFF', fontSize: 12, padding: '0 8px', fontFamily: 'JetBrains Mono, monospace' }} />
+                          {statusInfo && <span style={{ flexShrink: 0, padding: '2px 6px', borderRadius: 4, fontSize: 10, fontWeight: 600, color: statusInfo.color, background: statusInfo.bg, whiteSpace: 'nowrap' }}>{statusInfo.label}</span>}
+                        </div>
                         <input value={k.remark} onChange={(e) => updateKey(idx, 'remark', e.target.value)} placeholder='—' style={{ width: 118, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#FFFFFF', fontSize: 12, padding: '0 8px' }} />
                         <NumberStepper value={k.priority} onChange={(v) => updateKey(idx, 'priority', v)} width={68} height={36} center style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, fontSize: 12 }} />
                         <input type='text' inputMode='numeric' value={k.daily_quota_limit} onChange={(e) => updateKey(idx, 'daily_quota_limit', parseInt(e.target.value.replace(/[^\d]/g, '')) || 0)} placeholder='0' style={{ width: 118, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#FFFFFF', fontSize: 12, padding: '0 8px' }} />
                         <select value={k.quota_reset_rule} onChange={(e) => updateKey(idx, 'quota_reset_rule', e.target.value)} style={{ width: 118, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#FFFFFF', fontSize: 12, padding: '0 8px' }}>
                           {resetOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
-                        <button onClick={() => removeKey(idx)} style={{ width: 56, height: 36, background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: 6, color: '#EF4444', fontSize: 11.5, fontWeight: 500, cursor: 'pointer' }}>删除</button>
+                        <div style={{ width: 120, display: 'flex', gap: 4, justifyContent: 'center' }}>
+                          {isSaved && (
+                            <button onClick={() => toggleKeyStatus(idx)} style={{ height: 36, padding: '0 10px', background: k.status === 2 ? 'rgba(45,212,191,0.1)' : 'rgba(245,166,35,0.1)', border: 'none', borderRadius: 6, color: k.status === 2 ? '#2DD4BF' : '#F5A623', fontSize: 11.5, fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap' }}>{k.status === 2 ? '启用' : '禁用'}</button>
+                          )}
+                          <button onClick={() => removeKey(idx)} style={{ width: 50, height: 36, background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: 6, color: '#EF4444', fontSize: 11.5, fontWeight: 500, cursor: 'pointer' }}>删除</button>
+                        </div>
                       </div>
                       {/* 配额使用条 — 仅在有配额限制时显示 */}
                       {limit > 0 && (

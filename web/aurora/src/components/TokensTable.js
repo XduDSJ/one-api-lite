@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import Pagination from './Pagination';
 import { API, showError, showSuccess, copy } from '../helpers';
 import { ITEMS_PER_PAGE } from '../constants';
 import { renderQuota, renderNumber } from '../helpers/render';
@@ -114,16 +115,7 @@ const TokensTable = () => {
         {pageTokens.length === 0 && <div style={{ padding: 48, textAlign: 'center', color: '#71717A' }}>暂无令牌</div>}
       </div>
 
-      <div className='aurora-pagination'>
-        <span className='aurora-pagi-info'>第 {activePage} 页 / 共 {totalPages} 页 · {tokens.length} 条</span>
-        <div className='aurora-pagi-btns'>
-          <button className='aurora-pagi-btn' onClick={() => setActivePage(activePage - 1)} disabled={activePage <= 1}>‹</button>
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => i + 1).map((p) => (
-            <button key={p} className={`aurora-pagi-btn ${activePage === p ? 'active' : ''}`} onClick={() => setActivePage(p)}>{p}</button>
-          ))}
-          <button className='aurora-pagi-btn' onClick={() => setActivePage(activePage + 1)} disabled={activePage >= totalPages}>›</button>
-        </div>
-      </div>
+      <Pagination activePage={activePage} totalPages={totalPages} total={tokens.length} onPageChange={setActivePage} />
     </div>
   );
 };

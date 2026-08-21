@@ -253,13 +253,30 @@ const LogPage = () => {
             if (totalPages <= 7) {
               for (let i = 1; i <= totalPages; i++) add(i);
             } else {
+              // 固定7个数字位：首页 + 尾页 + 中间5个
+              // 中间5个以当前页为中心，靠近首/尾页时偏移
               add(1);
-              if (activePage > 4) addEllipsis();
-              // 当前页前后各2页，但不超过首页/尾页
-              const start = Math.max(2, activePage - 2);
-              const end = Math.min(totalPages - 1, activePage + 2);
-              for (let i = start; i <= end; i++) add(i);
-              if (activePage < totalPages - 4) addEllipsis();
+              let start, end;
+              if (activePage <= 4) {
+                // 靠近首页：显示 2,3,4,5,6
+                start = 2;
+                end = 6;
+                for (let i = start; i <= end; i++) add(i);
+                addEllipsis();
+              } else if (activePage >= totalPages - 3) {
+                // 靠近尾页：显示 totalPages-5 ... totalPages-1
+                addEllipsis();
+                start = totalPages - 5;
+                end = totalPages - 1;
+                for (let i = start; i <= end; i++) add(i);
+              } else {
+                // 中间：当前页前后各2页
+                addEllipsis();
+                start = activePage - 2;
+                end = activePage + 2;
+                for (let i = start; i <= end; i++) add(i);
+                addEllipsis();
+              }
               add(totalPages);
             }
             return pages.map((item, idx) => {

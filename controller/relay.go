@@ -141,6 +141,7 @@ func Relay(c *gin.Context) {
 	if bizErr == nil {
 		monitor.Emit(channelId, true)
 		dbmodel.ClearChannelFail(channelId)
+		dbmodel.ResetChannelFailCount(channelId)
 		return
 	}
 	lastFailedChannelId := channelId
@@ -151,6 +152,15 @@ func Relay(c *gin.Context) {
 	// 标记渠道失败冷却，冷却期内 Distribute 和重试都会跳过该渠道
 	if shouldRetry(c, bizErr.StatusCode) && config.ChannelFailCooldownSec > 0 {
 		dbmodel.MarkChannelFail(channelId, config.ChannelFailCooldownSec)
+	}
+	// 渠道连续失败自动禁用：达阈值后禁用渠道，需手动启用
+	if config.ChannelAutoDisableEnabled && shouldRetry(c, bizErr.StatusCode) {
+		failCount := dbmodel.IncChannelFailCount(channelId)
+		if failCount >= config.ChannelAutoDisableFailureCount {
+			logger.Errorf(ctx, "channel #%d failed %d times consecutively, auto disabling", channelId, failCount)
+			dbmodel.UpdateChannelStatusById(channelId, dbmodel.ChannelStatusAutoDisabled)
+			dbmodel.ResetChannelFailCount(channelId)
+		}
 	}
 	requestId := c.GetString(helper.RequestIdKey)
 	retryTimes := config.RetryTimes
@@ -231,6 +241,7 @@ func Relay(c *gin.Context) {
 		bizErr = relayHelper(c, relayMode)
 		if bizErr == nil {
 			dbmodel.ClearChannelFail(c.GetInt(ctxkey.ChannelId))
+			dbmodel.ResetChannelFailCount(c.GetInt(ctxkey.ChannelId))
 			return
 		}
 		channelId := c.GetInt(ctxkey.ChannelId)
@@ -239,6 +250,14 @@ func Relay(c *gin.Context) {
 		go processChannelRelayError(ctx, userId, channelId, channelName, *bizErr)
 		if config.ChannelFailCooldownSec > 0 {
 			dbmodel.MarkChannelFail(channelId, config.ChannelFailCooldownSec)
+		}
+		if config.ChannelAutoDisableEnabled {
+			failCount := dbmodel.IncChannelFailCount(channelId)
+			if failCount >= config.ChannelAutoDisableFailureCount {
+				logger.Errorf(ctx, "channel #%d failed %d times consecutively, auto disabling", channelId, failCount)
+				dbmodel.UpdateChannelStatusById(channelId, dbmodel.ChannelStatusAutoDisabled)
+				dbmodel.ResetChannelFailCount(channelId)
+			}
 		}
 		retryCount++
 	}

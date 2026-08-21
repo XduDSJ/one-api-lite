@@ -149,7 +149,18 @@ const SystemSetting = () => {
             <label style={labelStyle}>渠道失败冷却秒数（失败后临时跳过该渠道，0=不冷却）</label>
             <input name='ChannelFailCooldownSec' value={inputs.ChannelFailCooldownSec ?? 300} onChange={handleInputChange} type='number' min='0' style={inputStyle} />
           </div>
-          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' style={{ alignSelf: 'flex-start' }} disabled={saving.retry} onClick={() => submitOptions('retry', ['ChannelFailCooldownSec'])}>{saving.retry ? '保存中…' : '保存本节'}</button>
+          <div>
+            <label style={labelStyle}>连续失败自动禁用渠道</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <input type='checkbox' name='ChannelAutoDisableEnabled' checked={inputs.ChannelAutoDisableEnabled === true || inputs.ChannelAutoDisableEnabled === 'true'} onChange={handleInputChange} style={{ width: 18, height: 18 }} />
+              <span style={{ fontSize: 13, color: '#A1A1AA' }}>启用（连续失败达阈值后自动禁用渠道，需手动启用恢复）</span>
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>连续失败阈值（达到此次数后自动禁用渠道）</label>
+            <input name='ChannelAutoDisableFailureCount' value={inputs.ChannelAutoDisableFailureCount ?? 5} onChange={handleInputChange} type='number' min='1' style={inputStyle} />
+          </div>
+          <button className='aurora-btn aurora-btn-primary aurora-btn-sm' style={{ alignSelf: 'flex-start' }} disabled={saving.retry} onClick={() => submitOptions('retry', ['ChannelFailCooldownSec', 'ChannelAutoDisableEnabled', 'ChannelAutoDisableFailureCount'])}>{saving.retry ? '保存中…' : '保存本节'}</button>
         </div>
       </Section>
 

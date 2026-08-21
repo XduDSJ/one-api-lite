@@ -56,6 +56,25 @@ func ClearChannelFail(channelId int) {
 	delete(channelFailCache, channelId)
 }
 
+// 渠道连续失败计数器（纯内存，不落库）
+var channelFailCountMu sync.Mutex
+var channelFailCount = make(map[int]int)
+
+// IncChannelFailCount 连续失败+1，返回当前连续失败次数
+func IncChannelFailCount(channelId int) int {
+	channelFailCountMu.Lock()
+	defer channelFailCountMu.Unlock()
+	channelFailCount[channelId]++
+	return channelFailCount[channelId]
+}
+
+// ResetChannelFailCount 重置连续失败计数（成功时调用）
+func ResetChannelFailCount(channelId int) {
+	channelFailCountMu.Lock()
+	defer channelFailCountMu.Unlock()
+	delete(channelFailCount, channelId)
+}
+
 func CacheGetTokenByKey(key string) (*Token, error) {
 	keyCol := "`key`"
 	if common.UsingPostgreSQL {

@@ -74,7 +74,21 @@ func testChannel(ctx context.Context, channel *model.Channel, request *relaymode
 		Header: make(http.Header),
 	}
 	c.Request.Header.Set("Content-Type", "application/json")
-	// Authorization 在下方 key 遍历循环内设置
+	// 多 key 模式：遍历启用 key 逐个尝试，首个成功即返回。
+	// 避免 channel.Key（单 key 历史字段）恰好是超预算/失效 key 导致测试失败。
+	var apiKeys []string
+	if channel.MultiKeyMode != model.MultiKeyModeOff {
+		if keys, kerr := model.GetEnabledChannelKeys(channel.Id); kerr == nil && len(keys) > 0 {
+			for _, k := range keys {
+				apiKeys = append(apiKeys, k.KeyValue)
+			}
+		}
+	}
+	if len(apiKeys) == 0 {
+		apiKeys = []string{channel.Key}
+	}
+	// 先设置第一个 key，meta.GetByContext 会从 header 读取 APIKey
+	c.Request.Header.Set("Authorization", "Bearer "+apiKeys[0])
 	c.Set(ctxkey.Channel, channel.Type)
 	c.Set(ctxkey.BaseURL, channel.GetBaseURL())
 	cfg, _ := channel.LoadConfig()
@@ -128,22 +142,10 @@ func testChannel(ctx context.Context, channel *model.Channel, request *relaymode
 	}()
 	logger.SysLog(string(jsonData))
 
-	// 多 key 模式：遍历启用 key 逐个尝试，首个成功即返回。
-	// 避免 channel.Key（单 key 历史字段）恰好是超预算/失效 key 导致测试失败。
-	var apiKeys []string
-	if channel.MultiKeyMode != model.MultiKeyModeOff {
-		if keys, kerr := model.GetEnabledChannelKeys(channel.Id); kerr == nil && len(keys) > 0 {
-			for _, k := range keys {
-				apiKeys = append(apiKeys, k.KeyValue)
-			}
-		}
-	}
-	if len(apiKeys) == 0 {
-		apiKeys = []string{channel.Key}
-	}
-
 	for _, apiKey := range apiKeys {
+		// 每次换 key 同步更新 header 和 meta.APIKey（SetupRequestHeader 用 meta.APIKey）
 		c.Request.Header.Set("Authorization", "Bearer "+apiKey)
+		meta.APIKey = apiKey
 		requestBody := bytes.NewBuffer(jsonData)
 		c.Request.Body = io.NopCloser(requestBody)
 		w.Body.Reset()

@@ -244,26 +244,26 @@ const LogPage = () => {
         <div className='aurora-pagi-btns'>
           <button className='aurora-pagi-btn' onClick={() => { setActivePage(activePage - 1); loadLogs(activePage - 1); }} disabled={activePage <= 1}>‹</button>
           {(() => {
-            // 省略号分页：首页 + 当前页前后2页 + 尾页，中间用 … 省略
-            const pages = [];
-            const add = (p) => pages.push({ type: 'page', value: p });
-            const addEllipsis = () => pages.push({ type: 'ellipsis' });
-            if (totalPages <= 7) {
-              for (let i = 1; i <= totalPages; i++) add(i);
+            // 固定5个数字按钮位，位置永远不动
+            // 中间位始终是当前页，左右各2位
+            const slots = [null, null, null, null, null]; // 5个固定位
+            if (totalPages <= 5) {
+              // 总页数≤5：依次填入，不足的位留空
+              for (let i = 0; i < totalPages; i++) slots[i] = i + 1;
             } else {
-              add(1);
-              if (activePage > 4) addEllipsis();
-              const start = Math.max(2, activePage - 1);
-              const end = Math.min(totalPages - 1, activePage + 1);
-              for (let i = start; i <= end; i++) add(i);
-              if (activePage < totalPages - 3) addEllipsis();
-              add(totalPages);
+              // 总页数>5：中间位=当前页，左右各2位
+              slots[2] = activePage;
+              slots[1] = activePage > 1 ? activePage - 1 : null;
+              slots[0] = activePage > 2 ? activePage - 2 : null;
+              slots[3] = activePage < totalPages ? activePage + 1 : null;
+              slots[4] = activePage < totalPages - 1 ? activePage + 2 : null;
             }
-            return pages.map((item, idx) => {
-              if (item.type === 'ellipsis') {
-                return <span key={`e${idx}`} className='aurora-pagi-btn' style={{ border: 'none', background: 'transparent', color: '#71717A', cursor: 'default' }}>…</span>;
+            return slots.map((p, idx) => {
+              if (p === null) {
+                // 空占位，保持位置不变
+                return <span key={`s${idx}`} className='aurora-pagi-btn' style={{ border: 'none', background: 'transparent', color: 'transparent', cursor: 'default', minWidth: 32 }}>·</span>;
               }
-              return <button key={item.value} className={`aurora-pagi-btn ${activePage === item.value ? 'active' : ''}`} onClick={() => { setActivePage(item.value); loadLogs(item.value); }}>{item.value}</button>;
+              return <button key={p} className={`aurora-pagi-btn ${activePage === p ? 'active' : ''}`} onClick={() => { setActivePage(p); loadLogs(p); }} style={{ minWidth: 32 }}>{p}</button>;
             });
           })()}
           <button className='aurora-pagi-btn' onClick={() => { setActivePage(activePage + 1); loadLogs(activePage + 1); }} disabled={activePage >= totalPages}>›</button>

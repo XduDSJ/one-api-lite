@@ -73,8 +73,8 @@ func testChannel(ctx context.Context, channel *model.Channel, request *relaymode
 		Body:   nil,
 		Header: make(http.Header),
 	}
-	c.Request.Header.Set("Authorization", "Bearer "+channel.Key)
 	c.Request.Header.Set("Content-Type", "application/json")
+	// Authorization 在下方 key 遍历循环内设置
 	c.Set(ctxkey.Channel, channel.Type)
 	c.Set(ctxkey.BaseURL, channel.GetBaseURL())
 	cfg, _ := channel.LoadConfig()
@@ -127,41 +127,72 @@ func testChannel(ctx context.Context, channel *model.Channel, request *relaymode
 		})
 	}()
 	logger.SysLog(string(jsonData))
-	requestBody := bytes.NewBuffer(jsonData)
-	c.Request.Body = io.NopCloser(requestBody)
-	resp, err := adaptor.DoRequest(c, meta, requestBody)
-	if err != nil {
-		return "", err, nil
-	}
-	if resp != nil && resp.StatusCode != http.StatusOK {
-		err := controller.RelayErrorHandler(resp)
-		errorMessage := err.Error.Message
-		if errorMessage != "" {
-			errorMessage = ", error message: " + errorMessage
+
+	// 多 key 模式：遍历启用 key 逐个尝试，首个成功即返回。
+	// 避免 channel.Key（单 key 历史字段）恰好是超预算/失效 key 导致测试失败。
+	var apiKeys []string
+	if channel.MultiKeyMode != model.MultiKeyModeOff {
+		if keys, kerr := model.GetEnabledChannelKeys(channel.Id); kerr == nil && len(keys) > 0 {
+			for _, k := range keys {
+				apiKeys = append(apiKeys, k.KeyValue)
+			}
 		}
-		return "", fmt.Errorf("http status code: %d%s", resp.StatusCode, errorMessage), &err.Error
 	}
-	usage, respErr := adaptor.DoResponse(c, resp, meta)
-	if respErr != nil {
-		return "", fmt.Errorf("%s", respErr.Error.Message), &respErr.Error
+	if len(apiKeys) == 0 {
+		apiKeys = []string{channel.Key}
 	}
-	if usage == nil {
-		return "", errors.New("usage is nil"), nil
+
+	for _, apiKey := range apiKeys {
+		c.Request.Header.Set("Authorization", "Bearer "+apiKey)
+		requestBody := bytes.NewBuffer(jsonData)
+		c.Request.Body = io.NopCloser(requestBody)
+		w.Body.Reset()
+		resp, reqErr := adaptor.DoRequest(c, meta, requestBody)
+		if reqErr != nil {
+			err = reqErr
+			continue
+		}
+		if resp != nil && resp.StatusCode != http.StatusOK {
+			errObj := controller.RelayErrorHandler(resp)
+			errorMessage := errObj.Error.Message
+			if errorMessage != "" {
+				errorMessage = ", error message: " + errorMessage
+			}
+			err = fmt.Errorf("http status code: %d%s", resp.StatusCode, errorMessage)
+			openaiErr = &errObj.Error
+			if resp.Body != nil {
+				resp.Body.Close()
+			}
+			continue
+		}
+		usage, respErr := adaptor.DoResponse(c, resp, meta)
+		if respErr != nil {
+			err = fmt.Errorf("%s", respErr.Error.Message)
+			openaiErr = &respErr.Error
+			continue
+		}
+		if usage == nil {
+			err = errors.New("usage is nil")
+			continue
+		}
+		rawResponse := w.Body.String()
+		_, responseMessage, err = parseTestResponse(rawResponse)
+		if err != nil {
+			logger.SysError(fmt.Sprintf("failed to parse error: %s, \nresponse: %s", err.Error(), rawResponse))
+			continue
+		}
+		result := w.Result()
+		respBody, readErr := io.ReadAll(result.Body)
+		if readErr != nil {
+			err = readErr
+			continue
+		}
+		logger.SysLog(fmt.Sprintf("testing channel #%d, response: \n%s", channel.Id, string(respBody)))
+		err = nil
+		openaiErr = nil
+		break
 	}
-	rawResponse := w.Body.String()
-	_, responseMessage, err = parseTestResponse(rawResponse)
-	if err != nil {
-		logger.SysError(fmt.Sprintf("failed to parse error: %s, \nresponse: %s", err.Error(), rawResponse))
-		return "", err, nil
-	}
-	result := w.Result()
-	// print result.Body
-	respBody, err := io.ReadAll(result.Body)
-	if err != nil {
-		return "", err, nil
-	}
-	logger.SysLog(fmt.Sprintf("testing channel #%d, response: \n%s", channel.Id, string(respBody)))
-	return responseMessage, nil, nil
+	return responseMessage, err, openaiErr
 }
 
 func TestChannel(c *gin.Context) {
